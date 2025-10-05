@@ -2,11 +2,13 @@
 
 ## 1. Visão Geral da Arquitetura
 
-O sistema "Combinado" é uma aplicação web baseada em Flask, projetada para gerenciar transações de tokens próprios (1 token = 1 real) entre clientes e prestadores de serviços, com um administrador centralizado para controle de tokenomics e configurações. O sistema implementa um modelo conceitual de blockchain internamente, sem usar blockchain real, para garantir rastreabilidade, auditabilidade e segurança das transações, evitando taxas de transação externa.
+O sistema "Combinado" é uma aplicação web baseada em Flask, projetada para gerenciar transações de tokens próprios (1 token = 1 real) entre clientes e prestadores de serviços, com um administrador centralizado para controle de tokenomics e configurações. 
+
+**IMPORTANTE:** O sistema **NÃO utiliza blockchain**. Ele funciona com um **modelo interno próprio** inspirado em conceitos de rastreabilidade e auditabilidade, mas implementado totalmente no banco de dados relacional, sem qualquer dependência de tecnologia blockchain.
 
 - **Framework Principal:** Flask (Python)
-- **Banco de Dados:** SQLAlchemy com SQLite para desenvolvimento e PostgreSQL para produção.
-- **Modelo Blockchain Interno:** O sistema segue o modelo conceitual de blockchain (carteiras, escrow, rastreabilidade, auditabilidade) mas implementado internamente no banco de dados, sem usar blockchain real para evitar taxas de transação. Todas as transações são rastreáveis e auditáveis através de logs internos.
+- **Banco de Dados:** SQLAlchemy com PostgreSQL para produção e SQLite para desenvolvimento.
+- **Modelo de Transações Interno:** Sistema próprio de carteiras virtuais, escrow e transações rastreáveis implementado totalmente no banco de dados relacional (PostgreSQL). Todas as transações são registradas com IDs únicos, timestamps e histórico completo para rastreabilidade e auditoria. **NÃO utiliza blockchain.**
 - **Tokenomics:** Tokens próprios (1:1 com BRL), gerenciamento de compra e venda pelo administrador, dedução automática de taxas.
 - **Papéis de Usuário:** Administrador, Cliente, Prestador (um usuário pode ter múltiplos papéis).
 - **Implantação:** Código versionado no GitHub, backend hospedado em serviço de deploy para aplicações Flask.
@@ -55,9 +57,9 @@ O projeto deve seguir uma estrutura modular e organizada para facilitar a manute
 
 
 
-## 5. Modelo Blockchain Interno
+## 5. Modelo de Transações Interno
 
-O sistema implementa um modelo conceitual de blockchain sem usar tecnologia blockchain real, proporcionando os benefícios de segurança, rastreabilidade e auditabilidade sem as desvantagens de taxas de transação externa.
+**IMPORTANTE:** O sistema **NÃO utiliza blockchain**. Ele implementa um **modelo próprio de transações** no banco de dados relacional que se inspira em conceitos de rastreabilidade e auditabilidade, mas **sem usar qualquer tecnologia blockchain real**. Isso proporciona os benefícios de segurança e controle sem as desvantagens de taxas externas e complexidade.
 
 ### 5.1. Características do Modelo Interno
 
@@ -68,13 +70,14 @@ O sistema implementa um modelo conceitual de blockchain sem usar tecnologia bloc
 - **Integridade de Dados:** Validações rigorosas para garantir que saldos nunca fiquem inconsistentes.
 - **Atomicidade:** Transações são processadas de forma atômica, garantindo que não ocorram estados intermediários inválidos.
 
-### 5.2. Benefícios do Modelo
+### 5.2. Benefícios do Modelo Próprio
 
-- **Custo Zero de Transação:** Sem taxas de blockchain externa.
-- **Performance Superior:** Transações instantâneas sem dependência de rede externa.
-- **Controle Total:** Administração completa do sistema de tokens e carteiras.
-- **Flexibilidade:** Possibilidade de implementar regras de negócio específicas.
-- **Segurança:** Controle total sobre a segurança e validação das transações.
+- **Custo Zero de Transação:** Sem taxas de rede externa, todas as operações são internas.
+- **Performance Superior:** Transações instantâneas processadas diretamente no banco de dados.
+- **Controle Total:** Administração completa do sistema de tokens e carteiras sem dependências externas.
+- **Flexibilidade:** Possibilidade de implementar regras de negócio específicas sem limitações externas.
+- **Segurança:** Controle total sobre a segurança, validação e auditoria das transações.
+- **Simplicidade:** Sem complexidade de contratos inteligentes, wallets externas ou redes descentralizadas.
 
 ## 6. Terminologia e Interface do Usuário
 
