@@ -1,0 +1,204 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Dashboard Administrativo - Sistema Combinado{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard Administrativo</h1>
+    <div class="text-muted">
+        <i class="fas fa-clock me-1"></i>
+        <span id="current-time"></span>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.total_usuarios }}</h4>
+                        <p class="mb-0">Total de Usuários</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.usuarios_ativos }}</h4>
+                        <p class="mb-0">Usuários Ativos</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.clientes }}</h4>
+                        <p class="mb-0">Clientes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-tie fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.prestadores }}</h4>
+                        <p class="mb-0">Prestadores</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-cog fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.criar_usuario') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus me-2"></i>Criar Usuário
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.adicionar_tokens') }}" class="btn btn-success w-100">
+                            <i class="fas fa-coins me-2"></i>Adicionar Tokens
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.configuracoes') }}" class="btn btn-warning w-100">
+                            <i class="fas fa-cogs me-2"></i>Configurações
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.relatorios') }}" class="btn btn-info w-100">
+                            <i class="fas fa-chart-bar me-2"></i>Relatórios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações do Sistema -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Status do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Sistema:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="badge bg-success">Online</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Usuários Novos (Mês):</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ stats.usuarios_recentes }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Tokens no Sistema:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ stats.total_tokens_sistema|format_currency }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Resumo Financeiro</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Transações (Mês):</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ stats.transacoes_mes }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Receita (Mês):</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ stats.receita_mes|format_currency }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Usuários Inativos:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="badge bg-secondary">{{ stats.usuarios_inativos }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleString('pt-BR');
+    document.getElementById('current-time').textContent = timeString;
+}
+
+// Atualizar o tempo a cada segundo
+setInterval(updateTime, 1000);
+updateTime(); // Chamada inicial
+</script>
+{% endblock %}

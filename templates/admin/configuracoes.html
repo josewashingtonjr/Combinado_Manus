@@ -1,0 +1,122 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Configurações do Sistema - Admin{% endblock %}
+
+{% block admin_content %}
+<h2 class="mb-4"><i class="fas fa-cogs me-2"></i>Configurações do Sistema</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-percentage me-2"></i>Taxas do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% if form %}
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.taxa_sistema.label(class="form-label") }}
+                            {{ form.taxa_sistema(class="form-control") }}
+                            <small class="form-text text-muted">Porcentagem cobrada em cada transação (ex: 5 para 5%)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.taxa_saque.label(class="form-label") }}
+                            {{ form.taxa_saque(class="form-control") }}
+                            <small class="form-text text-muted">Taxa fixa para saques (em reais)</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Salvar Configurações
+                        </button>
+                    {% else %}
+                        <div class="mb-3">
+                            <label class="form-label">Taxa do Sistema (%)</label>
+                            <input type="number" class="form-control" value="5" step="0.1" min="0" max="100">
+                            <small class="form-text text-muted">Porcentagem cobrada em cada transação</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Taxa de Saque (R$)</label>
+                            <input type="number" class="form-control" value="2.50" step="0.01" min="0">
+                            <small class="form-text text-muted">Taxa fixa para saques</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Salvar Configurações
+                        </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Segurança</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Tamanho Mínimo de Senha</label>
+                    <input type="number" class="form-control" value="8" min="6" max="20">
+                    <small class="form-text text-muted">Número mínimo de caracteres para senhas</small>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="require2fa" checked>
+                    <label class="form-check-label" for="require2fa">
+                        Exigir autenticação de dois fatores (2FA)
+                    </label>
+                </div>
+                
+                <button type="button" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i>Salvar Segurança
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Sistema</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Versão:</strong> 1.0.0</p>
+                <p><strong>Ambiente:</strong> Desenvolvimento</p>
+                <p><strong>Banco de Dados:</strong> PostgreSQL</p>
+                <p><strong>Status:</strong> <span class="badge bg-success">Online</span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Ações Perigosas</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Use com extrema cautela</p>
+                
+                <button type="button" class="btn btn-warning btn-sm w-100 mb-2">
+                    <i class="fas fa-sync me-1"></i>Limpar Cache
+                </button>
+                
+                <button type="button" class="btn btn-danger btn-sm w-100" onclick="return confirm('Tem certeza? Esta ação não pode ser desfeita!')">
+                    <i class="fas fa-trash me-1"></i>Resetar Sistema
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

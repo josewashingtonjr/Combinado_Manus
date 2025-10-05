@@ -1,0 +1,125 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Relatórios - Admin{% endblock %}
+
+{% block admin_content %}
+<h2 class="mb-4"><i class="fas fa-chart-bar me-2"></i>Relatórios e Estatísticas</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <h3 class="mb-0">0</h3>
+                <p class="text-muted mb-0">Usuários Ativos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-exchange-alt fa-3x text-success mb-3"></i>
+                <h3 class="mb-0">0</h3>
+                <p class="text-muted mb-0">Transações Hoje</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-coins fa-3x text-warning mb-3"></i>
+                <h3 class="mb-0">R$ 0,00</h3>
+                <p class="text-muted mb-0">Volume Total</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                <h3 class="mb-0">R$ 0,00</h3>
+                <p class="text-muted mb-0">Receita (Taxas)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-download me-2"></i>Exportar Relatórios</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <h6>Relatório de Usuários</h6>
+                <p class="text-muted small">Lista completa de todos os usuários cadastrados</p>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-file-excel me-1"></i>Exportar Excel
+                </button>
+                <button class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+                </button>
+            </div>
+            <div class="col-md-6 mb-3">
+                <h6>Relatório de Transações</h6>
+                <p class="text-muted small">Histórico completo de todas as transações</p>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-file-excel me-1"></i>Exportar Excel
+                </button>
+                <button class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+                </button>
+            </div>
+            <div class="col-md-6 mb-3">
+                <h6>Relatório Financeiro</h6>
+                <p class="text-muted small">Resumo financeiro com receitas e taxas</p>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-file-excel me-1"></i>Exportar Excel
+                </button>
+                <button class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+                </button>
+            </div>
+            <div class="col-md-6 mb-3">
+                <h6>Relatório de Auditoria</h6>
+                <p class="text-muted small">Logs de ações e atividades do sistema</p>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-file-excel me-1"></i>Exportar Excel
+                </button>
+                <button class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Filtrar por Período</h5>
+    </div>
+    <div class="card-body">
+        <form class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" class="form-control">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Data Final</label>
+                <input type="date" class="form-control">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Nota:</strong> Os relatórios são gerados em tempo real com base nos dados atuais do sistema.
+</div>
+{% endblock %}

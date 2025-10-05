@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Gestão de Tokens - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-coins me-2"></i>Gestão de Tokens</h2>
+    <a href="{{ url_for('admin.adicionar_tokens') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Adicionar Tokens
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-coins me-2"></i>Total de Tokens no Sistema</h5>
+                <h2 class="mb-0">0</h2>
+                <small>Tokens em circulação</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-check-circle me-2"></i>Tokens Ativos</h5>
+                <h2 class="mb-0">0</h2>
+                <small>Em carteiras de usuários</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-lock me-2"></i>Tokens em Escrow</h5>
+                <h2 class="mb-0">0</h2>
+                <small>Bloqueados em transações</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Histórico de Transações de Tokens</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data/Hora</th>
+                        <th>Usuário</th>
+                        <th>Tipo</th>
+                        <th>Quantidade</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>Nenhuma transação registrada ainda
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Nota:</strong> O sistema de tokens segue a regra <strong>1 token = R$ 1,00</strong>. 
+    Tokens são usados internamente para controle, mas os usuários visualizam apenas valores em reais.
+</div>
+{% endblock %}

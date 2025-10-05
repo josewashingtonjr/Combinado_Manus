@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-cog me-2"></i>Admin - Sistema Combinado
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
+                        <i class="fas fa-users me-1"></i>Usuários
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.tokens') }}">
+                        <i class="fas fa-coins me-1"></i>Tokens
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.configuracoes') }}">
+                        <i class="fas fa-cogs me-1"></i>Configurações
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.relatorios') }}">
+                        <i class="fas fa-chart-bar me-1"></i>Relatórios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.logs') }}">
+                        <i class="fas fa-list-alt me-1"></i>Logs
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-shield me-1"></i>{{ session.admin_email }}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i>Sair
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar (opcional para telas maiores) -->
+        <div class="col-md-2 d-none d-md-block">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Menu Rápido</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('admin.usuarios') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-users me-2"></i>Usuários
+                    </a>
+                    <a href="{{ url_for('admin.tokens') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-coins me-2"></i>Tokens
+                    </a>
+                    <a href="{{ url_for('admin.configuracoes') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-cogs me-2"></i>Configurações
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo Principal -->
+        <div class="col-md-10">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
