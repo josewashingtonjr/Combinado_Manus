@@ -15,11 +15,14 @@ class AdminService:
             'total_usuarios': User.query.count(),
             'usuarios_ativos': User.query.filter_by(active=True).count(),
             'usuarios_inativos': User.query.filter_by(active=False).count(),
-            'clientes': User.query.filter(User.roles.contains('cliente')).count(),
-            'prestadores': User.query.filter(User.roles.contains('prestador')).count(),
             'usuarios_recentes': User.query.filter(
                 User.created_at >= datetime.utcnow().replace(day=1)
             ).count(),
+            # TODO: Buscar do banco quando modelo de Contestacao for implementado
+            'contestacoes_abertas': 0,  # Pendentes + Em Análise
+            # TODO: Buscar do banco quando modelo de Contrato for implementado
+            'contratos_ativos': 0,
+            'contratos_finalizados': 0,
             # TODO: Adicionar estatísticas de tokens e transações quando implementadas
             'total_tokens_sistema': 0,
             'transacoes_mes': 0,

@@ -101,3 +101,246 @@ O sistema utiliza terminologias diferentes dependendo do tipo de usuário para m
 ### 6.3. Benefícios da Abordagem
 
 Esta diferenciação permite que os usuários finais tenham uma experiência mais familiar e intuitiva, trabalhando diretamente com valores em reais, enquanto o sistema mantém internamente a lógica de tokens para controle técnico e auditabilidade.
+
+
+---
+
+## 7. Interface de Usuário e Design (Atualizado em 05/10/2025)
+
+### 7.1. Princípios de Design
+
+O sistema segue princípios modernos de UI/UX para garantir usabilidade e eficiência:
+
+- **Minimalismo:** Textos concisos nos cards e elementos visuais
+- **Hierarquia Visual:** Uso de cores e ícones para comunicação rápida
+- **Acessibilidade:** Navegação clara com menu lateral expansível
+- **Responsividade:** Adaptação para desktop e mobile
+
+### 7.2. Dashboard Administrativo
+
+**Layout:**
+- Menu lateral expansível (coluna esquerda, 2/12)
+- Conteúdo principal (coluna direita, 10/12)
+- Cards de estatísticas na primeira linha
+
+**Cards de Métricas (Primeira Linha):**
+
+| Card | Cor | Ícone | Texto | Métrica |
+|------|-----|-------|-------|---------|
+| 1º | Azul (`bg-primary`) | `fa-users` | "Usuários" | Total de usuários |
+| 2º | Verde (`bg-success`) | `fa-user-check` | "Ativos" | Usuários ativos |
+| 3º | Vermelho (`bg-danger`) | `fa-exclamation-triangle` | "Contestações" | Contestações abertas |
+| 4º | Amarelo (`bg-warning`) | `fa-file-contract` | "Contratos" | Contratos ativos |
+| 5º | Azul claro (`bg-info`) | `fa-check-circle` | "Finalizados" | Contratos finalizados |
+
+**Observações:**
+- Textos curtos e objetivos (ex: "Contestações" ao invés de "Contestações em Aberto")
+- Card de contestações possui link "Ver Todas" no rodapé
+- Cores seguem convenção semântica (vermelho = urgente, verde = ok)
+
+### 7.3. Menu Lateral (Sidebar)
+
+**Estrutura:**
+- Header azul com título "Acesso Rápido" e ícone de raio
+- Categorias principais expansíveis/colapsáveis
+- Subcategorias com indentação visual
+- Ícones coloridos para identificação rápida
+
+**Categorias e Subcategorias:**
+
+1. **Dashboard** (link direto)
+   - Ícone: `fa-tachometer-alt` (azul)
+
+2. **Usuários** (expansível)
+   - Ícone: `fa-users` (verde)
+   - Subcategorias:
+     - Listar Todos
+     - Criar Novo
+
+3. **Tokens** (expansível)
+   - Ícone: `fa-coins` (amarelo)
+   - Subcategorias:
+     - Gerenciar
+     - Adicionar
+
+4. **Contestações** (expansível)
+   - Ícone: `fa-exclamation-triangle` (vermelho)
+   - Subcategorias:
+     - Todas
+     - Pendentes
+     - Em Análise
+
+5. **Contratos** (expansível)
+   - Ícone: `fa-file-contract` (azul claro)
+   - Subcategorias:
+     - Todos
+     - Ativos
+     - Finalizados
+
+6. **Configurações** (expansível)
+   - Ícone: `fa-cogs` (cinza)
+   - Subcategorias:
+     - Taxas e Multas
+     - Segurança
+
+7. **Relatórios** (expansível)
+   - Ícone: `fa-chart-bar` (azul)
+   - Subcategorias:
+     - Financeiro
+     - Usuários
+     - Contratos
+
+8. **Logs** (link direto)
+   - Ícone: `fa-list-alt` (cinza)
+
+**Funcionalidades:**
+- Clique na categoria → Expande/colapsa subcategorias
+- Animação suave com Bootstrap Collapse
+- Visível apenas em telas médias/grandes (desktop)
+- Em mobile, usa navbar superior
+
+### 7.4. Sistema de Contestações
+
+**Fluxo de Contestação:**
+1. Usuário (cliente ou prestador) abre contestação
+2. Valor do contrato é bloqueado em escrow
+3. Admin recebe notificação (card vermelho no dashboard)
+4. Admin analisa evidências e histórico
+5. Admin toma decisão com justificativa obrigatória
+6. Sistema distribui valores conforme decisão
+7. Ambas as partes são notificadas
+
+**Opções de Decisão:**
+- Aprovar - Favor do Cliente (Reembolso Total)
+- Aprovar - Favor do Prestador (Pagamento Total)
+- Dividir 50/50
+- Divisão Personalizada (% customizado)
+- Rejeitar Contestação
+
+**Status de Contestação:**
+- `pendente` - Aguardando análise (vermelho)
+- `em_analise` - Admin analisando (amarelo)
+- `resolvida` - Decisão tomada (verde)
+- `rejeitada` - Contestação indevida (cinza)
+
+### 7.5. Configurações do Sistema
+
+**Taxas Configuráveis:**
+- Taxa de Transação (%)
+- Taxa de Saque (R$)
+- Taxa de Depósito (R$)
+- Valor Mínimo de Saque (R$)
+
+**Multas e Penalidades:**
+- Multa por Cancelamento de Contrato (%)
+- Multa por Atraso (% por dia)
+- Multa Máxima por Atraso (%)
+- Multa por Contestação Indevida (R$)
+- Prazo para Contestação (dias)
+
+**Segurança:**
+- Tamanho Mínimo de Senha
+- Autenticação de Dois Fatores (2FA)
+
+### 7.6. Padrões de Cores
+
+**Cores Semânticas:**
+- Azul (`primary`) - Informação geral, navegação
+- Verde (`success`) - Status positivo, ativo
+- Vermelho (`danger`) - Alerta, urgente, contestações
+- Amarelo (`warning`) - Atenção, em progresso
+- Azul claro (`info`) - Informação complementar
+- Cinza (`secondary`) - Neutro, configurações
+
+**Aplicação:**
+- Cards seguem cores semânticas
+- Badges de status usam as mesmas cores
+- Ícones do menu lateral coloridos para identificação
+
+### 7.7. Responsividade
+
+**Desktop (≥768px):**
+- Menu lateral visível
+- Cards em linha (4-5 cards por linha)
+- Conteúdo em 10 colunas
+
+**Mobile (<768px):**
+- Menu lateral oculto
+- Navbar superior com menu hambúrguer
+- Cards empilhados verticalmente
+- Conteúdo em largura total
+
+---
+
+## 8. Atualizações Recentes (05/10/2025)
+
+### 8.1. Melhorias de UI/UX
+
+✅ **Cards do Dashboard:**
+- Textos reduzidos para visual mais limpo
+- "Contestações em Aberto" → "Contestações"
+- "Contratos Ativos" → "Contratos"
+- "Contratos Finalizados" → "Finalizados"
+- "Usuários Ativos" → "Ativos"
+
+✅ **Menu Lateral Moderno:**
+- Implementado menu expansível com subcategorias
+- 8 categorias principais com 20+ subcategorias
+- Ícones coloridos para identificação rápida
+- Acesso direto a funcionalidades específicas
+
+✅ **Sistema de Contestações:**
+- Card vermelho no dashboard para visibilidade
+- Templates completos de listagem e análise
+- Formulário de decisão com 5 opções
+- Integração com sistema de escrow
+
+✅ **Configurações Completas:**
+- Gestão de taxas (transação, saque, depósito)
+- Configuração de multas e penalidades
+- Parâmetros de contestação
+- Interface intuitiva com formulários separados
+
+### 8.2. Arquivos Modificados
+
+**Templates:**
+- `/templates/admin/dashboard.html` - Cards atualizados
+- `/templates/admin/base_admin.html` - Menu lateral moderno
+- `/templates/admin/contestacoes.html` - Lista de contestações
+- `/templates/admin/analisar_contestacao.html` - Análise individual
+- `/templates/admin/configuracoes.html` - Taxas e multas
+
+**Backend:**
+- `/routes/admin_routes.py` - Rotas de contestações e configurações
+- `/services/admin_service.py` - Stats atualizadas
+
+**Documentação:**
+- `/docs/MELHORIAS_DASHBOARD_CONFIG.md` - Documentação de melhorias
+- `/docs/MELHORIAS_MENU_LATERAL.md` - Documentação do menu
+- `/docs/PLANTA_ARQUITETONICA.md` - Esta atualização
+
+### 8.3. Próximas Implementações
+
+**Banco de Dados:**
+- [ ] Modelo `Contestacao` com campos completos
+- [ ] Modelo `Contrato` com status e histórico
+- [ ] Modelo `ConfiguracaoSistema` para persistência
+- [ ] Modelo `HistoricoContestacao` para auditoria
+
+**Lógica de Negócio:**
+- [ ] Implementar decisões de contestação
+- [ ] Sistema de notificações em tempo real
+- [ ] Cálculo automático de multas
+- [ ] Bloqueio/liberação de valores em escrow
+
+**Relatórios:**
+- [ ] Relatório de contestações por período
+- [ ] Taxa de resolução favorável
+- [ ] Tempo médio de análise
+- [ ] Usuários com mais contestações
+
+---
+
+**Última Atualização:** 05 de Outubro de 2025  
+**Versão do Sistema:** 1.1.0  
+**Status:** Em Desenvolvimento Ativo

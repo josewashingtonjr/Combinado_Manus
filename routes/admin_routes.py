@@ -161,3 +161,120 @@ def logs():
     page = request.args.get('page', 1, type=int)
     # Implementar quando tivermos o modelo de logs
     return render_template('admin/logs.html')
+
+# ==============================================================================
+#  GESTÃO DE CONTESTAÇÕES
+# ==============================================================================
+
+@admin_bp.route('/contestacoes')
+@admin_required
+def contestacoes():
+    """Lista todas as contestações de contratos"""
+    status_filter = request.args.get('status', '')
+    tipo_filter = request.args.get('tipo', '')
+    contrato_id = request.args.get('contrato_id', '')
+    
+    # TODO: Implementar filtros quando tivermos o modelo de Contestacao
+    contestacoes = []  # AdminService.get_contestacoes(status=status_filter, tipo=tipo_filter)
+    contestacoes_pendentes = 0  # len([c for c in contestacoes if c.status == 'pendente'])
+    
+    stats = {
+        'pendentes': 0,
+        'em_analise': 0,
+        'resolvidas': 0,
+        'rejeitadas': 0
+    }
+    
+    return render_template('admin/contestacoes.html', 
+                         contestacoes=contestacoes,
+                         contestacoes_pendentes=contestacoes_pendentes,
+                         stats=stats)
+
+@admin_bp.route('/contestacoes/<int:contestacao_id>')
+@admin_required
+def analisar_contestacao(contestacao_id):
+    """Analisar uma contestação específica"""
+    # TODO: Buscar contestação do banco
+    contestacao = {
+        'id': contestacao_id,
+        'contrato_id': 1,
+        'usuario_nome': 'Cliente Teste',
+        'usuario_tipo': 'cliente',
+        'tipo': 'Serviço não entregue',
+        'status': 'pendente',
+        'motivo': 'O prestador não entregou o serviço no prazo acordado.',
+        'valor': 150.00,
+        'valor_contrato': 150.00,
+        'cliente_nome': 'Cliente Teste',
+        'prestador_nome': 'Prestador Teste',
+        'created_at': None,
+        'contrato_data': None,
+        'prioridade': 'alta',
+        'evidencias': [],
+        'historico': []
+    }
+    
+    return render_template('admin/analisar_contestacao.html', contestacao=contestacao)
+
+@admin_bp.route('/contestacoes/<int:contestacao_id>/decidir', methods=['POST'])
+@admin_required
+def decidir_contestacao(contestacao_id):
+    """Tomar decisão sobre uma contestação"""
+    decisao = request.form.get('decisao')
+    justificativa = request.form.get('justificativa')
+    percentual_cliente = request.form.get('percentual_cliente', type=float)
+    
+    # TODO: Implementar lógica de decisão
+    # AdminService.decidir_contestacao(contestacao_id, decisao, justificativa, percentual_cliente)
+    
+    flash('Decisão registrada com sucesso!', 'success')
+    return redirect(url_for('admin.contestacoes'))
+
+@admin_bp.route('/contestacoes/<int:contestacao_id>/marcar-em-analise', methods=['POST'])
+@admin_required
+def marcar_em_analise(contestacao_id):
+    """Marcar contestação como em análise"""
+    # TODO: Implementar
+    # AdminService.marcar_contestacao_em_analise(contestacao_id)
+    return {'ok': True}
+
+@admin_bp.route('/contratos/<int:contrato_id>')
+@admin_required
+def ver_contrato(contrato_id):
+    """Ver detalhes de um contrato"""
+    # TODO: Implementar quando tivermos o modelo de Contrato
+    flash('Funcionalidade em desenvolvimento', 'info')
+    return redirect(url_for('admin.dashboard'))
+
+# ==============================================================================
+#  SALVAR CONFIGURAÇÕES
+# ==============================================================================
+
+@admin_bp.route('/configuracoes/salvar', methods=['POST'])
+@admin_required
+def salvar_configuracoes():
+    """Salvar configurações de taxas e multas"""
+    tipo = request.form.get('tipo')
+    
+    if tipo == 'taxas':
+        # TODO: Salvar no banco de dados
+        config_data = {
+            'taxa_transacao': request.form.get('taxa_transacao', type=float),
+            'taxa_saque': request.form.get('taxa_saque', type=float),
+            'taxa_deposito': request.form.get('taxa_deposito', type=float),
+            'valor_minimo_saque': request.form.get('valor_minimo_saque', type=float)
+        }
+        flash('Taxas atualizadas com sucesso!', 'success')
+        
+    elif tipo == 'multas':
+        # TODO: Salvar no banco de dados
+        config_data = {
+            'multa_cancelamento': request.form.get('multa_cancelamento', type=float),
+            'multa_atraso': request.form.get('multa_atraso', type=float),
+            'multa_atraso_maxima': request.form.get('multa_atraso_maxima', type=float),
+            'multa_contestacao_indevida': request.form.get('multa_contestacao_indevida', type=float),
+            'prazo_contestacao': request.form.get('prazo_contestacao', type=int)
+        }
+        flash('Multas e penalidades atualizadas com sucesso!', 'success')
+    
+    return redirect(url_for('admin.configuracoes'))

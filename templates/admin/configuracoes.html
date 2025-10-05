@@ -23,42 +23,90 @@
                 <h5 class="mb-0"><i class="fas fa-percentage me-2"></i>Taxas do Sistema</h5>
             </div>
             <div class="card-body">
-                <form method="POST">
-                    {% if form %}
-                        {{ form.hidden_tag() }}
-                        
-                        <div class="mb-3">
-                            {{ form.taxa_sistema.label(class="form-label") }}
-                            {{ form.taxa_sistema(class="form-control") }}
-                            <small class="form-text text-muted">Porcentagem cobrada em cada transação (ex: 5 para 5%)</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            {{ form.taxa_saque.label(class="form-label") }}
-                            {{ form.taxa_saque(class="form-control") }}
-                            <small class="form-text text-muted">Taxa fixa para saques (em reais)</small>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Salvar Configurações
-                        </button>
-                    {% else %}
-                        <div class="mb-3">
-                            <label class="form-label">Taxa do Sistema (%)</label>
-                            <input type="number" class="form-control" value="5" step="0.1" min="0" max="100">
-                            <small class="form-text text-muted">Porcentagem cobrada em cada transação</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Taxa de Saque (R$)</label>
-                            <input type="number" class="form-control" value="2.50" step="0.01" min="0">
-                            <small class="form-text text-muted">Taxa fixa para saques</small>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Salvar Configurações
-                        </button>
-                    {% endif %}
+                <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="tipo" value="taxas">
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Taxa de Transação (%)</strong></label>
+                        <input type="number" name="taxa_transacao" class="form-control" 
+                               value="{{ config.taxa_transacao or 5 }}" step="0.1" min="0" max="100" required>
+                        <small class="form-text text-muted">Porcentagem cobrada em cada transação entre cliente e prestador</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Taxa de Saque (R$)</strong></label>
+                        <input type="number" name="taxa_saque" class="form-control" 
+                               value="{{ config.taxa_saque or 2.50 }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Taxa fixa cobrada para saques da carteira</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Taxa de Depósito (R$)</strong></label>
+                        <input type="number" name="taxa_deposito" class="form-control" 
+                               value="{{ config.taxa_deposito or 0 }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Taxa fixa para depósitos na carteira (0 = gratuito)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Valor Mínimo de Saque (R$)</strong></label>
+                        <input type="number" name="valor_minimo_saque" class="form-control" 
+                               value="{{ config.valor_minimo_saque or 10 }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Valor mínimo permitido para saques</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Taxas
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Multas e Penalidades</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="tipo" value="multas">
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Multa por Cancelamento de Contrato (%)</strong></label>
+                        <input type="number" name="multa_cancelamento" class="form-control" 
+                               value="{{ config.multa_cancelamento or 10 }}" step="0.1" min="0" max="100" required>
+                        <small class="form-text text-muted">Porcentagem do valor do contrato cobrada como multa ao cancelar</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Multa por Atraso (% por dia)</strong></label>
+                        <input type="number" name="multa_atraso" class="form-control" 
+                               value="{{ config.multa_atraso or 1 }}" step="0.1" min="0" max="10" required>
+                        <small class="form-text text-muted">Porcentagem cobrada por dia de atraso na entrega</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Multa Máxima por Atraso (%)</strong></label>
+                        <input type="number" name="multa_atraso_maxima" class="form-control" 
+                               value="{{ config.multa_atraso_maxima or 30 }}" step="0.1" min="0" max="100" required>
+                        <small class="form-text text-muted">Limite máximo da multa por atraso</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Multa por Contestação Indevida (R$)</strong></label>
+                        <input type="number" name="multa_contestacao_indevida" class="form-control" 
+                               value="{{ config.multa_contestacao_indevida or 50 }}" step="0.01" min="0" required>
+                        <small class="form-text text-muted">Valor cobrado quando uma contestação é considerada indevida</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Prazo para Contestação (dias)</strong></label>
+                        <input type="number" name="prazo_contestacao" class="form-control" 
+                               value="{{ config.prazo_contestacao or 7 }}" min="1" max="30" required>
+                        <small class="form-text text-muted">Número de dias após conclusão do contrato para abrir contestação</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Multas
+                    </button>
                 </form>
             </div>
         </div>

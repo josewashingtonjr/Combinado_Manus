@@ -1,0 +1,269 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Analisar Contestação #{{ contestacao.id }} - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="mb-4">
+    <a href="{{ url_for('admin.contestacoes') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar para Contestações
+    </a>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-gavel me-2"></i>Análise de Contestação #{{ contestacao.id }}</h2>
+    <div>
+        {% if contestacao.status == 'pendente' %}
+            <span class="badge bg-danger fs-6">Pendente</span>
+        {% elif contestacao.status == 'em_analise' %}
+            <span class="badge bg-warning fs-6">Em Análise</span>
+        {% elif contestacao.status == 'resolvida' %}
+            <span class="badge bg-success fs-6">Resolvida</span>
+        {% else %}
+            <span class="badge bg-secondary fs-6">Rejeitada</span>
+        {% endif %}
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <!-- Informações do Contrato -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Informações do Contrato</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td><strong>ID do Contrato:</strong></td>
+                        <td>#{{ contestacao.contrato_id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cliente:</strong></td>
+                        <td>{{ contestacao.cliente_nome }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Prestador:</strong></td>
+                        <td>{{ contestacao.prestador_nome }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Valor do Contrato:</strong></td>
+                        <td><strong class="text-primary">R$ {{ "%.2f"|format(contestacao.valor_contrato) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data de Criação:</strong></td>
+                        <td>{{ contestacao.contrato_data.strftime('%d/%m/%Y') if contestacao.contrato_data else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status do Contrato:</strong></td>
+                        <td><span class="badge bg-warning">Em Disputa</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações da Contestação -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Detalhes da Contestação</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td><strong>Contestante:</strong></td>
+                        <td>{{ contestacao.usuario_nome }} ({{ contestacao.usuario_tipo }})</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tipo:</strong></td>
+                        <td><span class="badge bg-secondary">{{ contestacao.tipo }}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data da Contestação:</strong></td>
+                        <td>{{ contestacao.created_at.strftime('%d/%m/%Y %H:%M') if contestacao.created_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Valor em Disputa:</strong></td>
+                        <td><strong class="text-danger">R$ {{ "%.2f"|format(contestacao.valor) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Prioridade:</strong></td>
+                        <td>
+                            {% if contestacao.prioridade == 'alta' %}
+                                <span class="badge bg-danger">Alta</span>
+                            {% elif contestacao.prioridade == 'media' %}
+                                <span class="badge bg-warning">Média</span>
+                            {% else %}
+                                <span class="badge bg-info">Baixa</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Motivo da Contestação -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-comment-alt me-2"></i>Motivo da Contestação</h5>
+    </div>
+    <div class="card-body">
+        <p class="mb-0">{{ contestacao.motivo or 'Nenhum motivo fornecido' }}</p>
+    </div>
+</div>
+
+<!-- Evidências -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Evidências Anexadas</h5>
+    </div>
+    <div class="card-body">
+        {% if contestacao.evidencias %}
+            <div class="row">
+                {% for evidencia in contestacao.evidencias %}
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file fa-3x text-primary mb-2"></i>
+                            <p class="mb-1 small">{{ evidencia.nome }}</p>
+                            <a href="{{ evidencia.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                <i class="fas fa-download"></i> Baixar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Nenhuma evidência anexada</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Histórico de Ações -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Histórico de Ações</h5>
+    </div>
+    <div class="card-body">
+        {% if contestacao.historico %}
+            <div class="timeline">
+                {% for acao in contestacao.historico %}
+                <div class="timeline-item mb-3">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="fas fa-circle text-primary"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>{{ acao.descricao }}</strong></p>
+                            <small class="text-muted">{{ acao.data.strftime('%d/%m/%Y %H:%M') }} - {{ acao.usuario }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">Nenhuma ação registrada ainda</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Ações do Administrador -->
+{% if contestacao.status in ['pendente', 'em_analise'] %}
+<div class="card border-warning">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-gavel me-2"></i>Decisão do Administrador</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.decidir_contestacao', contestacao_id=contestacao.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Decisão:</strong></label>
+                <select name="decisao" class="form-select" required>
+                    <option value="">Selecione uma decisão</option>
+                    <option value="aprovar_cliente">Aprovar - Favor do Cliente (Reembolso Total)</option>
+                    <option value="aprovar_prestador">Aprovar - Favor do Prestador (Pagamento Total)</option>
+                    <option value="dividir_50_50">Dividir 50/50</option>
+                    <option value="dividir_personalizado">Divisão Personalizada</option>
+                    <option value="rejeitar">Rejeitar Contestação</option>
+                </select>
+            </div>
+            
+            <div class="mb-3" id="divisao-personalizada" style="display: none;">
+                <label class="form-label">Percentual para o Cliente (%):</label>
+                <input type="number" name="percentual_cliente" class="form-control" min="0" max="100" step="1">
+                <small class="text-muted">O restante será destinado ao prestador</small>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label"><strong>Justificativa da Decisão:</strong></label>
+                <textarea name="justificativa" class="form-control" rows="4" required 
+                          placeholder="Explique detalhadamente o motivo da sua decisão..."></textarea>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check me-1"></i>Confirmar Decisão
+                </button>
+                <button type="button" class="btn btn-warning" onclick="marcarEmAnalise()">
+                    <i class="fas fa-clock me-1"></i>Marcar como Em Análise
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    Esta contestação já foi {{ 'resolvida' if contestacao.status == 'resolvida' else 'rejeitada' }}.
+    {% if contestacao.decisao_justificativa %}
+    <br><br>
+    <strong>Justificativa:</strong> {{ contestacao.decisao_justificativa }}
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+document.querySelector('select[name="decisao"]')?.addEventListener('change', function() {
+    const divisaoDiv = document.getElementById('divisao-personalizada');
+    if (this.value === 'dividir_personalizado') {
+        divisaoDiv.style.display = 'block';
+    } else {
+        divisaoDiv.style.display = 'none';
+    }
+});
+
+function marcarEmAnalise() {
+    if (confirm('Deseja marcar esta contestação como "Em Análise"?')) {
+        fetch('{{ url_for("admin.marcar_em_analise", contestacao_id=contestacao.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
