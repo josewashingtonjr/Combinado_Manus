@@ -232,31 +232,126 @@
     - Testar cenários de erro: saldo insuficiente, ordens inexistentes, etc.
     - _Requisitos: 11.1, 11.2, 11.4, Planta Arquitetônica_
 
-- [ ] 9. Finalizar e documentar o sistema completo seguindo PDR rigoroso
-  - [ ] 9.1 Realizar testes de ponta a ponta validando arquitetura de tokenomics
-    - Consultar Planta Arquitetônica para todos os fluxos críticos do sistema
-    - Testar fluxo completo admin: login → criação tokens → gestão usuários → resolução disputas
-    - Testar fluxo completo cliente: login → compra tokens → criação ordem → pagamento
-    - Testar fluxo completo prestador: login → aceitação ordem → conclusão → recebimento → saque
-    - Validar terminologia diferenciada em todos os navegadores (admin vê tokens, usuários veem R$)
-    - Verificar responsividade em dispositivos móveis mantendo funcionalidades
-    - Confirmar integridade matemática: admin_balance + circulation = total_created
-    - Testar cenários de erro e recuperação em todos os fluxos
-    - _Requisitos: 1.1, 1.2, 1.3, 1.4, Arquitetura de Tokenomics_
+- [ ] 9. Corrigir problemas críticos identificados no sistema
+  - [x] 9.1 Implementar funcionalidade de troca de senha para admin
+    - Consultar Planta Arquitetônica (docs/PLANTA_ARQUITETONICA.md) para padrões de segurança
+    - Consultar Requirements e Design para validações de segurança necessárias
+    - Criar interface no painel admin para alterar senha
+    - Implementar validação de senha atual antes da alteração
+    - Adicionar hash da nova senha usando werkzeug.security
+    - Criar logs de auditoria para mudanças de senha admin
+    - Testar funcionalidade de troca de senha
+    - Atualizar Planta Arquitetônica se necessário com novos fluxos de segurança
+    - _Requisitos: 6.1, 6.2_
 
-  - [ ] 9.2 Atualizar documentação completa conforme PDR e arquitetura implementada
-    - Consultar Requirements 11 para documentação obrigatória conforme PDR
-    - Consultar Planta Arquitetônica para documentar implementações realizadas
-    - Consultar docs/PADRAO_TEMPLATES.md para documentar padrões de interface
-    - Atualizar STATUS_SISTEMA.md com arquitetura de tokenomics implementada
-    - Documentar todas as mudanças: admin ID 0, fluxos de tokens, terminologia
-    - Criar guia específico para admin: criação tokens, gestão sistema, resolução disputas
-    - Criar guia para usuários: compra/saque (sem mencionar tokens), criação ordens
-    - Atualizar README.md com credenciais: admin@combinado.com/admin123
-    - Documentar arquitetura de segurança: tokens nunca "desaparecem", sempre rastreáveis
-    - Criar documentação técnica: WalletService, fluxos admin→usuário, validação integridade
-    - Atualizar Planta Arquitetônica com implementações realizadas
-    - _Requisitos: 11.1, 11.2, 11.4, PDR Etapas 6-7, docs/PADRAO_TEMPLATES.md_
+  - [x] 9.2 Corrigir erro 500 na criação de usuários
+    - Consultar Planta Arquitetônica para fluxo correto de criação de usuários
+    - Consultar Requirements e Design para validações necessárias
+    - Investigar logs de erro para identificar causa do erro 500
+    - Corrigir problemas na validação de dados de usuário
+    - Verificar criação automática de carteira para novos usuários
+    - Implementar tratamento de erros mais robusto na criação
+    - Testar criação de usuários admin e usuários comuns
+    - Atualizar documentação se necessário com correções implementadas
+    - _Requisitos: 7.2, 7.4_
+
+  - [x] 9.3 Adicionar copyright e informações de versão
+    - Consultar docs/PADRAO_TEMPLATES.md para padrões de interface
+    - Consultar Planta Arquitetônica para estrutura de templates
+    - Adicionar copyright "W-jr (89) 98137-5841" em todos os templates base
+    - Implementar sistema de versionamento do sistema
+    - Adicionar informações de versão no footer das páginas
+    - Criar página "Sobre" com informações do desenvolvedor
+    - Atualizar Planta Arquitetônica com informações de versionamento
+    - _Requisitos: Sistema de informações_
+
+  - [x] 9.4 Corrigir funcionalidade do menu de contratos
+    - Consultar Planta Arquitetônica seção de navegação e menus
+    - Consultar Requirements 8.1, 8.2 para funcionalidades de ordens/contratos
+    - Consultar docs/PADRAO_TEMPLATES.md para padrões de menu
+    - Investigar problemas no menu de contratos/ordens
+    - Corrigir rotas e templates relacionados a contratos
+    - Implementar listagem correta de ordens/contratos
+    - Testar navegação completa do menu de contratos
+    - Atualizar documentação com correções de navegação
+    - _Requisitos: 2.5, 8.1, 8.2_
+
+  - [x] 9.5 Implementar relatórios funcionais de contratos e usuários
+    - Consultar Planta Arquitetônica seção 7.2 para dashboard e relatórios
+    - Consultar Requirements 5.1, 12.1 para especificações de relatórios
+    - Consultar docs/PADRAO_TEMPLATES.md para padrões de interface de relatórios
+    - Criar relatório de contratos com dados reais do banco
+    - Implementar relatório de usuários com estatísticas
+    - Adicionar filtros por data, status, tipo de usuário
+    - Criar exportação de relatórios em PDF/Excel
+    - Testar geração de relatórios com dados reais
+    - Atualizar Planta Arquitetônica com funcionalidades de relatórios
+    - _Requisitos: 5.1, 12.1_
+
+  - [x] 9.6 Corrigir visibilidade do admin para recebimento de tokens
+    - Consultar Planta Arquitetônica seção de tokenomics e admin como fonte central
+    - Consultar Requirements 5.3, 10.1 para gestão de tokens admin
+    - Verificar por que admin não aparece na lista de usuários
+    - Corrigir filtros de usuários para incluir AdminUser
+    - Implementar interface para admin receber tokens de outros admins
+    - Testar transferência de tokens para conta admin
+    - Atualizar Planta Arquitetônica se necessário com fluxos de tokens admin
+    - _Requisitos: 5.3, 10.1_
+
+- [x] 10. Implementar dashboard financeiro avançado
+  - [x] 10.1 Criar cards de taxas recebidas na dashboard admin
+    - Consultar Planta Arquitetônica seção 7.2 para dashboard e métricas
+    - Consultar Requirements 12.1 para especificações de cards
+    - Consultar docs/PADRAO_TEMPLATES.md para padrões de design de cards
+    - Implementar cálculo de taxas totais recebidas pelo sistema
+    - Criar card colorido mostrando receita de taxas em tempo real
+    - Adicionar gráfico de evolução das taxas por período
+    - Implementar métricas de taxa média por transação
+    - Atualizar Planta Arquitetônica com novas métricas financeiras
+    - _Requisitos: 12.1, Planta Arquitetônica seção 7.2_
+
+  - [x] 10.2 Desenvolver aba financeira completa para admin
+    - Consultar Planta Arquitetônica seção 7.5 para configurações financeiras
+    - Consultar Requirements para sistema financeiro e configurações
+    - Consultar docs/PADRAO_TEMPLATES.md para padrões de interface financeira
+    - Criar nova seção "Financeiro" no menu lateral admin
+    - Implementar dashboard financeiro com receitas e custos
+    - Adicionar relatórios financeiros detalhados
+    - Criar interface para configurar taxas do sistema
+    - Implementar previsões e análises financeiras
+    - Preparar estrutura para futuros pagamentos de clientes
+    - Atualizar Planta Arquitetônica com nova seção financeira
+    - _Requisitos: Sistema financeiro, 12.1_
+
+  - [x] 10.3 Implementar card de valores totais em circulação
+    - Consultar Planta Arquitetônica seção de tokenomics para arquitetura de tokens
+    - Consultar Requirements 10.1, 10.3 para arquitetura de tokenomics
+    - Consultar docs/PADRAO_TEMPLATES.md para padrões de cards de métricas
+    - Criar card mostrando total de tokens em circulação
+    - Adicionar breakdown por tipo: saldo usuários, escrow, admin
+    - Implementar alertas para inconsistências nos totais
+    - Criar gráfico de distribuição de tokens no sistema
+    - Adicionar histórico de evolução da circulação
+    - Atualizar Planta Arquitetônica com métricas de circulação
+    - _Requisitos: 10.1, 10.3, Arquitetura de Tokenomics_
+
+- [ ] 11. Finalizar e documentar o sistema completo seguindo PDR rigoroso
+  - [ ] 11.1 Realizar testes de ponta a ponta validando todas as correções
+    - Testar fluxo completo admin: login → troca senha → criação usuários → gestão tokens
+    - Testar menu de contratos e relatórios funcionando corretamente
+    - Validar dashboard financeiro com dados reais
+    - Verificar cards de taxas e circulação funcionando
+    - Confirmar copyright e versão em todas as páginas
+    - Testar cenários de erro corrigidos
+    - _Requisitos: 1.1, 1.2, 1.3, 1.4, Correções implementadas_
+
+  - [ ] 11.2 Atualizar documentação completa com todas as correções
+    - Documentar todas as correções implementadas
+    - Atualizar guia do admin com novas funcionalidades
+    - Criar documentação da aba financeira
+    - Atualizar STATUS_SISTEMA.md com problemas resolvidos
+    - Documentar sistema de versionamento e copyright
+    - _Requisitos: 11.1, 11.2, 11.4, PDR Etapas 6-7_
 
 - [-] 10. Implementar funcionalidades administrativas avançadas conforme Planta
   - [x] 10.1 Desenvolver interface de gestão de tokens para admin

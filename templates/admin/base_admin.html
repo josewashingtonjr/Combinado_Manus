@@ -29,6 +29,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.contratos') }}">
+                        <i class="fas fa-file-contract me-1"></i>Contratos
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('admin.contestacoes') }}">
                         <i class="fas fa-exclamation-triangle me-1"></i>Contestações
                     </a>
@@ -56,6 +61,10 @@
                         <i class="fas fa-user-shield me-1"></i>{{ session.admin_email }}
                     </a>
                     <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.alterar_senha') }}">
+                            <i class="fas fa-key me-1"></i>Alterar Senha
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{{ url_for('auth.admin_logout') }}">
                             <i class="fas fa-sign-out-alt me-1"></i>Sair
                         </a></li>
@@ -120,6 +129,34 @@
                         </div>
                     </div>
                     
+                    <!-- Financeiro (Nova Seção) -->
+                    <div class="list-group-item p-0">
+                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
+                           data-bs-toggle="collapse" href="#menuFinanceiro" role="button">
+                            <span><i class="fas fa-chart-line me-2 text-success"></i><strong>Financeiro</strong></span>
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="collapse" id="menuFinanceiro">
+                            <div class="list-group list-group-flush">
+                                <a href="{{ url_for('admin.financeiro_dashboard') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                                <a href="{{ url_for('admin.financeiro_receitas') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-money-bill-wave me-2"></i>Receitas
+                                </a>
+                                <a href="{{ url_for('admin.financeiro_taxas') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-percentage me-2"></i>Configurar Taxas
+                                </a>
+                                <a href="{{ url_for('admin.financeiro_previsoes') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-chart-area me-2"></i>Previsões
+                                </a>
+                                <a href="{{ url_for('admin.financeiro_relatorios') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-file-invoice-dollar me-2"></i>Relatórios
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Contestações -->
                     <div class="list-group-item p-0">
                         <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
@@ -151,13 +188,13 @@
                         </a>
                         <div class="collapse" id="menuContratos">
                             <div class="list-group list-group-flush">
-                                <a href="#" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contratos') }}" class="list-group-item list-group-item-action ps-4 border-0">
                                     <i class="fas fa-list me-2"></i>Todos
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contratos_ativos') }}" class="list-group-item list-group-item-action ps-4 border-0">
                                     <i class="fas fa-hourglass-half me-2"></i>Ativos
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contratos_finalizados') }}" class="list-group-item list-group-item-action ps-4 border-0">
                                     <i class="fas fa-check-circle me-2"></i>Finalizados
                                 </a>
                             </div>
@@ -178,6 +215,9 @@
                                 </a>
                                 <a href="{{ url_for('admin.configuracoes') }}#seguranca" class="list-group-item list-group-item-action ps-4 border-0">
                                     <i class="fas fa-shield-alt me-2"></i>Segurança
+                                </a>
+                                <a href="{{ url_for('admin.alterar_senha') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-key me-2"></i>Alterar Senha
                                 </a>
                             </div>
                         </div>

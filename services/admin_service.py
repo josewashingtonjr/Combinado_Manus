@@ -56,6 +56,46 @@ class AdminService:
         ).scalar()
         receita_mes = receita_mes_result or 0.0
         
+        # Taxas totais recebidas (histórico completo)
+        taxas_totais_result = db.session.query(
+            func.sum(Transaction.amount)
+        ).filter(
+            Transaction.type == 'taxa_sistema'
+        ).scalar()
+        taxas_totais = taxas_totais_result or 0.0
+        
+        # Número de transações que geraram taxas no mês
+        transacoes_com_taxa_mes = Transaction.query.filter(
+            Transaction.type == 'taxa_sistema',
+            Transaction.created_at >= inicio_mes
+        ).count()
+        
+        # Taxa média por transação no mês
+        taxa_media_mes = receita_mes / transacoes_com_taxa_mes if transacoes_com_taxa_mes > 0 else 0.0
+        
+        # Métricas detalhadas de circulação (nova funcionalidade)
+        try:
+            # Tokens em escrow (bloqueados em transações)
+            tokens_em_escrow = db.session.query(
+                func.sum(Wallet.escrow_balance)
+            ).scalar() or 0.0
+            
+            # Tokens disponíveis com usuários (saldo livre)
+            tokens_disponiveis_usuarios = db.session.query(
+                func.sum(Wallet.balance)
+            ).filter(
+                Wallet.user_id != WalletService.ADMIN_USER_ID
+            ).scalar() or 0.0
+            
+            # Percentual de tokens em escrow
+            percentual_escrow = (tokens_em_escrow / tokens_em_circulacao * 100) if tokens_em_circulacao > 0 else 0.0
+            
+        except Exception:
+            # Fallback se houver erro no cálculo
+            tokens_em_escrow = 0.0
+            tokens_disponiveis_usuarios = 0.0
+            percentual_escrow = 0.0
+        
         # Volume total de transações do mês
         volume_transacoes_mes = db.session.query(
             func.sum(func.abs(Transaction.amount))
@@ -84,6 +124,16 @@ class AdminService:
             'transacoes_mes': transacoes_mes,
             'receita_mes': receita_mes,
             'volume_transacoes_mes': volume_transacoes_mes,
+            
+            # Métricas de taxas (nova funcionalidade financeira)
+            'taxas_totais': taxas_totais,
+            'transacoes_com_taxa_mes': transacoes_com_taxa_mes,
+            'taxa_media_mes': taxa_media_mes,
+            
+            # Métricas detalhadas de circulação (nova funcionalidade)
+            'tokens_em_escrow': tokens_em_escrow,
+            'tokens_disponiveis_usuarios': tokens_disponiveis_usuarios,
+            'percentual_escrow': percentual_escrow,
             
             # Métricas adicionais
             'taxa_usuarios_ativos': (usuarios_ativos / total_usuarios * 100) if total_usuarios > 0 else 0,
@@ -115,7 +165,14 @@ class AdminService:
         db.session.add(user)
         db.session.commit()
         
-        # TODO: Criar carteira para o usuário quando implementada
+        # Criar carteira para o usuário
+        try:
+            from services.wallet_service import WalletService
+            WalletService.create_wallet_for_user(user.id)
+        except Exception as e:
+            # Se falhar na criação da carteira, reverter criação do usuário
+            db.session.rollback()
+            raise ValueError(f"Erro ao criar carteira para usuário: {str(e)}")
         
         return user
     

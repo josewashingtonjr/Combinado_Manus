@@ -33,6 +33,7 @@
                 <li role="none"><a href="#inicio" class="nav__link" role="menuitem">Início</a></li>
                 <li role="none"><a href="#recursos" class="nav__link" role="menuitem">Recursos</a></li>
                 <li role="none"><a href="#precos" class="nav__link" role="menuitem">Preços</a></li>
+                <li role="none"><a href="{{ url_for('home.about') }}" class="nav__link" role="menuitem">Sobre</a></li>
                 <li role="none"><a href="#contato" class="nav__link" role="menuitem">Contato</a></li>
             </ul>
             
@@ -478,10 +479,10 @@
             
             <div class="footer__bottom">
                 <p class="footer__copyright">
-                    Copyright © W-Jr | Tel: (89) 98137-5841
+                    {{ copyright_text }}
                 </p>
                 <p class="footer__version">
-                    Versão do sistema: <span id="appVersion">0.1.0</span>
+                    {{ version_name }} - Versão {{ version }} | {{ build_info }}
                 </p>
             </div>
         </div>

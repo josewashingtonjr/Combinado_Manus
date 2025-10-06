@@ -16,7 +16,21 @@ def index():
 @home_bp.route('/sobre')
 def about():
     """Página sobre a plataforma"""
-    return render_template('home/about.html')
+    # Informações básicas para teste
+    context = {
+        'version': '1.2.1',
+        'version_name': 'Sistema Combinado',
+        'copyright_text': '© 2025 W-jr (89) 98137-5841. Todos os direitos reservados.',
+        'contact_phone': '(89) 98137-5841',
+        'copyright_holder': 'W-jr',
+        'copyright_year': '2025',
+        'build_date': '2025-10-06',
+        'build_number': '20251006001',
+        'build_info': 'Build 20251006001 - 2025-10-06',
+        'full_version': 'Sistema Combinado v1.2.1',
+        'developer_info': 'W-jr (89) 98137-5841'
+    }
+    return render_template('sobre_simples.html', **context)
 
 @home_bp.route('/recursos')
 def features():

@@ -1,0 +1,128 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Transferir Tokens para Admin Principal{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-exchange-alt me-2"></i>Transferir Tokens para Admin Principal</h2>
+    <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-coins me-2"></i>Transferir Tokens</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Quantidade de Tokens</label>
+                        <input type="number" class="form-control" id="amount" name="amount" 
+                               min="1" step="1" placeholder="Ex: 1000" required>
+                        <div class="form-text">
+                            Quantidade de tokens a serem transferidos para o admin principal (ID 0).
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                  placeholder="Motivo da transferência..." required>Transferência para admin principal</textarea>
+                        <div class="form-text">
+                            Descrição que aparecerá no histórico de transações para auditoria.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>Transferir Tokens
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-user-cog me-2"></i>Seu Saldo Atual</h6>
+            </div>
+            <div class="card-body">
+                {% if current_admin_wallet %}
+                <div class="text-center">
+                    <h4 class="text-primary mb-1">{{ "{:,.0f}".format(current_admin_wallet.balance) }} tokens</h4>
+                    <small class="text-muted">Saldo disponível</small>
+                </div>
+                {% if current_admin_wallet.escrow_balance > 0 %}
+                <hr>
+                <div class="text-center">
+                    <h6 class="text-warning mb-1">{{ "{:,.0f}".format(current_admin_wallet.escrow_balance) }} tokens</h6>
+                    <small class="text-muted">Em escrow</small>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-muted mb-0">Erro ao carregar saldo</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card bg-light mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-crown me-2"></i>Admin Principal</h6>
+            </div>
+            <div class="card-body">
+                {% if admin_principal_wallet %}
+                <div class="text-center">
+                    <h4 class="text-success mb-1">{{ "{:,.0f}".format(admin_principal_wallet.balance) }} tokens</h4>
+                    <small class="text-muted">Saldo atual do admin principal</small>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Erro ao carregar saldo do admin principal</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Como Funciona</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                        <strong>Origem:</strong> Tokens saem da sua carteira admin
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-success me-2"></i>
+                        <strong>Destino:</strong> Admin principal (ID 0)
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-info me-2"></i>
+                        <strong>Rastreabilidade:</strong> Transação registrada para ambos
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-warning me-2"></i>
+                        <strong>Auditoria:</strong> Logs imutáveis para compliance
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

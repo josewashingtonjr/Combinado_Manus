@@ -1,58 +1,266 @@
 #!/usr/bin/env python3.11
 # -*- coding: utf-8 -*-
 
-from models import User, db
+from models import User, Order, Transaction, db
 from datetime import datetime, timedelta
-from sqlalchemy import desc
+from sqlalchemy import desc, func
+from services.wallet_service import WalletService
 
 class ClienteService:
     """Serviço para operações da área do cliente"""
     
     @staticmethod
     def get_dashboard_data(user_id):
-        """Retorna dados para o dashboard do cliente"""
+        """Retorna dados reais para o dashboard do cliente com terminologia em R$"""
         user = User.query.get(user_id)
+        if not user:
+            raise ValueError("Usuário não encontrado")
         
-        # TODO: Implementar quando tivermos os modelos de Wallet, Transaction, Order
-        dashboard_data = {
-            'saldo_atual': 0.00,  # TODO: Buscar do modelo Wallet
-            'tokens_disponiveis': 0.00,
-            'transacoes_mes': 0,  # TODO: Contar transações do mês atual
-            'ordens_ativas': 0,   # TODO: Contar ordens ativas
-            'ordens_concluidas': 0,  # TODO: Contar ordens concluídas
-            'gasto_total_mes': 0.00,  # TODO: Somar gastos do mês
-            'economia_mes': 0.00,     # TODO: Calcular economia
-            'ultima_transacao': None,  # TODO: Buscar última transação
-            'proximas_ordens': [],     # TODO: Buscar próximas ordens
-            'alertas': [],             # TODO: Verificar alertas (saldo baixo, etc.)
-        }
+        # Obter informações da carteira (dados reais)
+        try:
+            wallet_info = WalletService.get_wallet_info(user_id)
+            saldo_atual = wallet_info['balance']
+            saldo_bloqueado = wallet_info['escrow_balance']
+            saldo_disponivel = saldo_atual  # Saldo disponível para uso
+        except Exception:
+            # Fallback se carteira não existir
+            WalletService.ensure_user_has_wallet(user_id)
+            saldo_atual = 0.0
+            saldo_bloqueado = 0.0
+            saldo_disponivel = 0.0
         
-        # Verificar alertas
-        if dashboard_data['saldo_atual'] < 10.00:
-            dashboard_data['alertas'].append({
-                'tipo': 'warning',
-                'mensagem': 'Saldo baixo. Considere solicitar mais tokens.'
+        # Início do mês atual para filtros
+        inicio_mes = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Contar transações do mês atual
+        transacoes_mes = Transaction.query.filter(
+            Transaction.user_id == user_id,
+            Transaction.created_at >= inicio_mes
+        ).count()
+        
+        # Contar ordens ativas (criadas pelo cliente)
+        ordens_ativas = Order.query.filter(
+            Order.client_id == user_id,
+            Order.status.in_(['disponivel', 'aceita', 'em_andamento'])
+        ).count()
+        
+        # Contar ordens concluídas
+        ordens_concluidas = Order.query.filter(
+            Order.client_id == user_id,
+            Order.status == 'concluida'
+        ).count()
+        
+        # Calcular gasto total do mês (transações negativas)
+        gasto_mes_result = db.session.query(
+            func.sum(func.abs(Transaction.amount))
+        ).filter(
+            Transaction.user_id == user_id,
+            Transaction.amount < 0,
+            Transaction.created_at >= inicio_mes
+        ).scalar()
+        gasto_total_mes = gasto_mes_result or 0.0
+        
+        # Buscar última transação
+        ultima_transacao_obj = Transaction.query.filter_by(
+            user_id=user_id
+        ).order_by(desc(Transaction.created_at)).first()
+        
+        ultima_transacao = None
+        if ultima_transacao_obj:
+            ultima_transacao = {
+                'data': ultima_transacao_obj.created_at.strftime('%d/%m/%Y %H:%M'),
+                'valor': abs(ultima_transacao_obj.amount),
+                'tipo': ultima_transacao_obj.type,
+                'descricao': ultima_transacao_obj.description
+            }
+        
+        # Buscar próximas ordens (ordens ativas com data futura)
+        proximas_ordens_obj = Order.query.filter(
+            Order.client_id == user_id,
+            Order.status.in_(['aceita', 'em_andamento'])
+        ).order_by(Order.created_at.desc()).limit(3).all()
+        
+        proximas_ordens = []
+        for ordem in proximas_ordens_obj:
+            proximas_ordens.append({
+                'titulo': ordem.title,
+                'data': ordem.created_at.strftime('%d/%m/%Y'),
+                'status': ordem.status,
+                'valor': ordem.value
             })
+        
+        # Verificar alertas baseados em dados reais
+        alertas = []
+        
+        # Alerta de saldo baixo (menos de R$ 50,00)
+        if saldo_disponivel < 50.0:
+            alertas.append({
+                'tipo': 'warning',
+                'mensagem': 'Saldo baixo. Considere adicionar mais saldo à sua conta.'
+            })
+        
+        # Alerta se tem saldo bloqueado
+        if saldo_bloqueado > 0:
+            alertas.append({
+                'tipo': 'info',
+                'mensagem': f'Você tem R$ {saldo_bloqueado:.2f} em garantia para ordens ativas.'
+            })
+        
+        # Alerta se não tem ordens ativas há muito tempo
+        if ordens_ativas == 0 and saldo_disponivel > 0:
+            alertas.append({
+                'tipo': 'info',
+                'mensagem': 'Que tal criar uma nova ordem de serviço?'
+            })
+        
+        dashboard_data = {
+            # Valores em formato numérico (serão convertidos para R$ no template)
+            'saldo_atual': saldo_atual,
+            'tokens_disponiveis': saldo_disponivel,  # Terminologia interna, será exibido como "Saldo Disponível"
+            'saldo_bloqueado': saldo_bloqueado,
+            
+            # Contadores
+            'transacoes_mes': transacoes_mes,
+            'ordens_ativas': ordens_ativas,
+            'ordens_concluidas': ordens_concluidas,
+            
+            # Valores financeiros
+            'gasto_total_mes': gasto_total_mes,
+            'economia_mes': 0.0,  # TODO: Implementar cálculo de economia
+            
+            # Atividades
+            'ultima_transacao': ultima_transacao,
+            'proximas_ordens': proximas_ordens,
+            'alertas': alertas,
+            
+            # Estatísticas adicionais
+            'total_gasto_historico': ClienteService._calcular_gasto_total(user_id),
+            'media_valor_ordem': ClienteService._calcular_media_valor_ordem(user_id),
+            'taxa_conclusao': ClienteService._calcular_taxa_conclusao(user_id)
+        }
         
         return dashboard_data
     
     @staticmethod
-    def get_wallet_data(user_id):
-        """Retorna dados da carteira do cliente"""
-        user = User.query.get(user_id)
+    def _calcular_gasto_total(user_id):
+        """Calcula o gasto total histórico do cliente"""
+        gasto_total = db.session.query(
+            func.sum(func.abs(Transaction.amount))
+        ).filter(
+            Transaction.user_id == user_id,
+            Transaction.amount < 0,
+            Transaction.type.in_(['escrow_bloqueio', 'pagamento', 'taxa_sistema'])
+        ).scalar()
+        return gasto_total or 0.0
+    
+    @staticmethod
+    def _calcular_media_valor_ordem(user_id):
+        """Calcula o valor médio das ordens do cliente"""
+        media = db.session.query(
+            func.avg(Order.value)
+        ).filter(
+            Order.client_id == user_id
+        ).scalar()
+        return media or 0.0
+    
+    @staticmethod
+    def _calcular_taxa_conclusao(user_id):
+        """Calcula a taxa de conclusão das ordens do cliente"""
+        total_ordens = Order.query.filter_by(client_id=user_id).count()
+        ordens_concluidas = Order.query.filter_by(
+            client_id=user_id, 
+            status='concluida'
+        ).count()
         
-        # TODO: Implementar quando tivermos o modelo Wallet
+        if total_ordens == 0:
+            return 0.0
+        
+        return (ordens_concluidas / total_ordens) * 100
+    
+    @staticmethod
+    def get_wallet_data(user_id):
+        """Retorna dados reais da carteira do cliente com terminologia em R$"""
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError("Usuário não encontrado")
+        
+        # Obter informações da carteira
+        try:
+            wallet_info = WalletService.get_wallet_info(user_id)
+            saldo_atual = wallet_info['balance']
+            saldo_bloqueado = wallet_info['escrow_balance']
+            saldo_disponivel = saldo_atual
+        except Exception:
+            WalletService.ensure_user_has_wallet(user_id)
+            saldo_atual = 0.0
+            saldo_bloqueado = 0.0
+            saldo_disponivel = 0.0
+        
+        # Obter transações recentes (últimas 10)
+        transacoes_recentes_obj = Transaction.query.filter_by(
+            user_id=user_id
+        ).order_by(desc(Transaction.created_at)).limit(10).all()
+        
+        transacoes_recentes = []
+        for t in transacoes_recentes_obj:
+            transacoes_recentes.append({
+                'id': t.id,
+                'data': t.created_at.strftime('%d/%m/%Y %H:%M'),
+                'tipo': t.type,
+                'valor': t.amount,
+                'descricao': t.description,
+                'status': 'Concluída'
+            })
+        
+        # Calcular estatísticas
+        total_recebido = db.session.query(
+            func.sum(Transaction.amount)
+        ).filter(
+            Transaction.user_id == user_id,
+            Transaction.amount > 0
+        ).scalar() or 0.0
+        
+        total_gasto = db.session.query(
+            func.sum(func.abs(Transaction.amount))
+        ).filter(
+            Transaction.user_id == user_id,
+            Transaction.amount < 0
+        ).scalar() or 0.0
+        
+        # Maior transação (em valor absoluto)
+        maior_transacao = db.session.query(
+            func.max(func.abs(Transaction.amount))
+        ).filter(
+            Transaction.user_id == user_id
+        ).scalar() or 0.0
+        
+        # Média mensal (últimos 3 meses)
+        tres_meses_atras = datetime.utcnow() - timedelta(days=90)
+        transacoes_3_meses = db.session.query(
+            func.sum(func.abs(Transaction.amount))
+        ).filter(
+            Transaction.user_id == user_id,
+            Transaction.created_at >= tres_meses_atras
+        ).scalar() or 0.0
+        media_mensal = transacoes_3_meses / 3
+        
         wallet_data = {
-            'saldo_atual': 0.00,
-            'tokens_bloqueados': 0.00,  # Em escrow
-            'tokens_disponiveis': 0.00,
-            'historico_saldos': [],     # Histórico dos últimos 30 dias
-            'transacoes_recentes': [],  # Últimas 10 transações
+            # Valores principais (serão exibidos como R$ no template)
+            'saldo_atual': saldo_atual,
+            'tokens_bloqueados': saldo_bloqueado,  # Será exibido como "Saldo em Garantia"
+            'tokens_disponiveis': saldo_disponivel,  # Será exibido como "Saldo Disponível"
+            
+            # Histórico e transações
+            'historico_saldos': [],  # TODO: Implementar histórico diário
+            'transacoes_recentes': transacoes_recentes,
+            
+            # Estatísticas financeiras
             'estatisticas': {
-                'total_recebido': 0.00,
-                'total_gasto': 0.00,
-                'media_mensal': 0.00,
-                'maior_transacao': 0.00
+                'total_recebido': total_recebido,
+                'total_gasto': total_gasto,
+                'media_mensal': media_mensal,
+                'maior_transacao': maior_transacao,
+                'saldo_total': saldo_atual + saldo_bloqueado
             }
         }
         

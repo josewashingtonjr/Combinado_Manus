@@ -1,0 +1,103 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Criar Tokens - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-plus-circle me-2"></i>Criar Novos Tokens</h2>
+    <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-coins me-2"></i>Criar Tokens no Sistema</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Quantidade de Tokens</label>
+                        <input type="number" class="form-control" id="amount" name="amount" 
+                               min="1" step="1" required placeholder="Ex: 10000">
+                        <div class="form-text">
+                            Quantidade de tokens a serem criados no sistema. Estes tokens serão adicionados ao saldo do admin.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                  placeholder="Motivo da criação dos tokens...">Criação de tokens pelo admin</textarea>
+                        <div class="form-text">
+                            Descrição que aparecerá no histórico de transações para auditoria.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus-circle me-1"></i>Criar Tokens
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações Importantes</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Fonte Única:</strong> Apenas o admin pode criar tokens do zero
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Rastreabilidade:</strong> Todas as criações são registradas
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Integridade:</strong> Sistema valida automaticamente
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <strong>Auditoria:</strong> Logs imutáveis para compliance
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Dica</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">
+                    <small>
+                        Tokens criados aqui ficam disponíveis no saldo do admin para serem vendidos aos usuários. 
+                        Recomenda-se criar em lotes para reduzir o número de transações de criação.
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

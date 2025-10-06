@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Sobre - {{ version_name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12 text-center">
+            <h1>{{ version_name }}</h1>
+            <p>Versão: {{ version }}</p>
+            <p>{{ copyright_text }}</p>
+            <p>Contato: {{ contact_phone }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

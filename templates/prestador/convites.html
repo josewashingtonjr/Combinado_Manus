@@ -1,0 +1,193 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Convites Recebidos - Sistema Combinado{% endblock %}
+
+{% block prestador_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Convites Recebidos</h1>
+    <div class="text-muted">
+        <i class="fas fa-envelope me-1"></i>
+        {{ invites|length }} convite(s) para {{ user.email }}
+    </div>
+</div>
+
+<!-- Lista de Convites -->
+<div class="row">
+    {% if invites %}
+        {% for invite in invites %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 {% if invite.status == 'pendente' and not invite.is_expired %}border-warning{% elif invite.status == 'aceito' %}border-success{% elif invite.status == 'recusado' %}border-danger{% else %}border-secondary{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user me-1"></i>{{ invite.client_name }}
+                    </h6>
+                    {% if invite.status == 'pendente' and not invite.is_expired %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock me-1"></i>Pendente
+                        </span>
+                    {% elif invite.status == 'aceito' %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i>Aceito
+                        </span>
+                    {% elif invite.status == 'recusado' %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-times me-1"></i>Recusado
+                        </span>
+                    {% elif invite.status == 'expirado' or invite.is_expired %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-calendar-times me-1"></i>Expirado
+                        </span>
+                    {% elif invite.status == 'convertido' %}
+                        <span class="badge bg-primary">
+                            <i class="fas fa-exchange-alt me-1"></i>Convertido
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ invite.service_title }}</h5>
+                    <p class="card-text">{{ invite.service_description[:100] }}{% if invite.service_description|length > 100 %}...{% endif %}</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Valor:</strong><br>
+                            {% if invite.final_value and invite.final_value != invite.original_value %}
+                                <span class="text-decoration-line-through text-muted">{{ invite.original_value|format_currency }}</span><br>
+                                <span class="text-success h5">{{ invite.final_value|format_currency }}</span>
+                            {% else %}
+                                <span class="h5 text-success">{{ invite.original_value|format_currency }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <strong>Entrega:</strong><br>
+                            <span class="text-primary">{{ invite.delivery_date.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar-plus me-1"></i>
+                                Criado: {{ invite.created_at.strftime('%d/%m/%Y') }}
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <i class="fas fa-calendar-times me-1"></i>
+                                Expira: {{ invite.expires_at.strftime('%d/%m/%Y') }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    {% if invite.responded_at %}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-reply me-1"></i>
+                            Respondido em: {{ invite.responded_at.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    {% if invite.can_be_accepted %}
+                        <a href="{{ url_for('prestador.ver_convite', token=invite.token) }}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>Ver Detalhes
+                        </a>
+                        <a href="{{ url_for('prestador.ver_convite', token=invite.token) }}" 
+                           class="btn btn-success btn-sm">
+                            <i class="fas fa-handshake me-1"></i>Responder
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('prestador.ver_convite', token=invite.token) }}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-eye me-1"></i>Ver Detalhes
+                        </a>
+                        {% if invite.status == 'convertido' %}
+                            <span class="badge bg-primary ms-2">
+                                <i class="fas fa-check-double me-1"></i>Convertido em Ordem
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-envelope-open fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nenhum convite recebido ainda</h5>
+                    <p class="text-muted">
+                        Convites de clientes aparecerão aqui quando enviados para seu email: 
+                        <strong>{{ user.email }}</strong>
+                    </p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Ver Ordens Disponíveis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Informações sobre Convites -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Como Funcionam os Convites</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h6><i class="fas fa-envelope text-primary me-2"></i>Recebimento</h6>
+                        <p class="small">Clientes podem enviar convites específicos para seu email com detalhes do serviço.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="fas fa-edit text-warning me-2"></i>Negociação</h6>
+                        <p class="small">Você pode aceitar, recusar ou propor alterações no valor e prazo antes de aceitar.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="fas fa-shield-alt text-success me-2"></i>Garantia</h6>
+                        <p class="small">Taxa de contestação de {{ "10.00"|format_currency }} é necessária para aceitar convites.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="fas fa-clock text-danger me-2"></i>Prazo</h6>
+                        <p class="small">Convites têm prazo de validade. Responda rapidamente para não perder oportunidades.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar lista de convites a cada 30 segundos
+setInterval(function() {
+    location.reload();
+}, 30000);
+
+// Animação dos cards
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(function(card, index) {
+        setTimeout(function() {
+            card.classList.add('fade-in');
+        }, index * 100);
+    });
+});
+
+// Destacar convites pendentes
+document.addEventListener('DOMContentLoaded', function() {
+    const pendingCards = document.querySelectorAll('.border-warning');
+    pendingCards.forEach(function(card) {
+        card.style.boxShadow = '0 0 10px rgba(255, 193, 7, 0.5)';
+    });
+});
+</script>
+{% endblock %}

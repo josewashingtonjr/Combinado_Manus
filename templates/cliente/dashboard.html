@@ -11,13 +11,25 @@
     </div>
 </div>
 
-<!-- Alertas -->
+<!-- Alertas de Saldo e Sistema -->
 {% if data.alertas %}
 <div class="row mb-4">
     <div class="col-12">
         {% for alerta in data.alertas %}
         <div class="alert alert-{{ alerta.tipo }} alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>{{ alerta.mensagem }}
+            {% if alerta.tipo == 'warning' %}
+                <i class="fas fa-exclamation-triangle me-2"></i>
+            {% elif alerta.tipo == 'info' %}
+                <i class="fas fa-info-circle me-2"></i>
+            {% else %}
+                <i class="fas fa-bell me-2"></i>
+            {% endif %}
+            {{ alerta.mensagem }}
+            {% if alerta.tipo == 'warning' and 'Saldo baixo' in alerta.mensagem %}
+                <a href="{{ url_for('cliente.solicitar_tokens') }}" class="btn btn-sm btn-outline-warning ms-2">
+                    <i class="fas fa-plus me-1"></i>Adicionar Saldo
+                </a>
+            {% endif %}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         {% endfor %}
@@ -32,8 +44,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="mb-0">{{ data.saldo_atual|format_currency }}</h4>
-                        <p class="mb-0">Saldo Atual</p>
+                        <h4 class="mb-0">{{ data.saldo_atual|format_value_by_user_type(user_type) }}</h4>
+                        <p class="mb-0">{{ terminology.balance_label }} Atual</p>
+                        {% if data.saldo_bloqueado > 0 %}
+                        <small class="text-light">+{{ data.saldo_bloqueado|format_value_by_user_type(user_type) }} em garantia</small>
+                        {% endif %}
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-wallet fa-2x"></i>
@@ -48,11 +63,12 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="mb-0">{{ data.tokens_disponiveis|format_currency }}</h4>
-                        <p class="mb-0">Saldo Disponível</p>
+                        <h4 class="mb-0">{{ data.tokens_disponiveis|format_value_by_user_type(user_type) }}</h4>
+                        <p class="mb-0">{{ terminology.balance_label }} Disponível</p>
+                        <small class="text-light">Para novas ordens</small>
                     </div>
                     <div class="align-self-center">
-                        <i class="fas fa-coins fa-2x"></i>
+                        <i class="fas fa-money-bill-wave fa-2x"></i>
                     </div>
                 </div>
             </div>
@@ -66,6 +82,7 @@
                     <div>
                         <h4 class="mb-0">{{ data.ordens_ativas }}</h4>
                         <p class="mb-0">Ordens Ativas</p>
+                        <small class="text-light">{{ data.ordens_concluidas }} concluídas</small>
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-clipboard-list fa-2x"></i>
@@ -82,6 +99,7 @@
                     <div>
                         <h4 class="mb-0">{{ data.transacoes_mes }}</h4>
                         <p class="mb-0">Transações (Mês)</p>
+                        <small class="text-light">{{ data.gasto_total_mes|format_value_by_user_type(user_type) }} gastos</small>
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-exchange-alt fa-2x"></i>
@@ -146,7 +164,7 @@
                         <strong>Gasto Total:</strong>
                     </div>
                     <div class="col-6">
-                        {{ data.gasto_total_mes|format_currency }}
+                        {{ data.gasto_total_mes|format_value_by_user_type(user_type) }}
                     </div>
                 </div>
                 <hr>
@@ -155,7 +173,7 @@
                         <strong>Economia:</strong>
                     </div>
                     <div class="col-6 text-success">
-                        {{ data.economia_mes|format_currency }}
+                        {{ data.economia_mes|format_value_by_user_type(user_type) }}
                     </div>
                 </div>
                 <hr>
@@ -226,10 +244,10 @@
                 <div class="row">
                     <div class="col-md-4">
                         <h6><i class="fas fa-shield-alt text-success me-2"></i>Segurança</h6>
-                        <p class="small">Todas as transações são protegidas por escrow. Seus tokens só são liberados após a confirmação do serviço.</p>
+                        <p class="small">Todas as transações são protegidas por garantia. Seu saldo só é liberado após a confirmação do serviço.</p>
                     </div>
                     <div class="col-md-4">
-                        <h6><i class="fas fa-coins text-warning me-2"></i>Saldo</h6>
+                        <h6><i class="fas fa-money-bill-wave text-warning me-2"></i>Saldo</h6>
                         <p class="small">Adicione saldo à sua conta através do administrador para começar a usar o sistema.</p>
                     </div>
                     <div class="col-md-4">

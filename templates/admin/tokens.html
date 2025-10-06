@@ -5,9 +5,20 @@
 {% block admin_content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-coins me-2"></i>Gestão de Tokens</h2>
-    <a href="{{ url_for('admin.adicionar_tokens') }}" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i>Adicionar Tokens
-    </a>
+    <div class="btn-group">
+        <a href="{{ url_for('admin.criar_tokens') }}" class="btn btn-success">
+            <i class="fas fa-plus-circle me-1"></i>Criar Tokens
+        </a>
+        <a href="{{ url_for('admin.adicionar_tokens') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-1"></i>Adicionar para Usuário
+        </a>
+        <a href="{{ url_for('admin.transferir_para_admin') }}" class="btn btn-warning">
+            <i class="fas fa-crown me-1"></i>Transferir para Admin
+        </a>
+        <a href="{{ url_for('admin.verificar_integridade') }}" class="btn btn-info">
+            <i class="fas fa-shield-alt me-1"></i>Verificar Integridade
+        </a>
+    </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -21,39 +32,210 @@
     {% endif %}
 {% endwith %}
 
+<!-- Alertas de Atividade Suspeita -->
+{% if alerts and alerts|length > 0 %}
+<div class="alert alert-warning alert-dismissible fade show mb-4">
+    <h6><i class="fas fa-exclamation-triangle me-2"></i>Alertas de Segurança ({{ alerts|length }})</h6>
+    <ul class="mb-2">
+        {% for alert in alerts[:3] %}
+        <li class="small">{{ alert.message }}</li>
+        {% endfor %}
+        {% if alerts|length > 3 %}
+        <li class="small"><em>... e mais {{ alerts|length - 3 }} alertas</em></li>
+        {% endif %}
+    </ul>
+    <a href="{{ url_for('admin.alertas_tokens') }}" class="btn btn-sm btn-outline-warning">Ver Todos os Alertas</a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<!-- Resumo do Sistema de Tokens -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-coins me-2"></i>Total de Tokens no Sistema</h5>
-                <h2 class="mb-0">0</h2>
-                <small>Tokens em circulação</small>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Total Criado</h6>
+                        <h3 class="mb-0">{{ (token_data.token_summary.total_tokens_created if token_data else 0)|int }}</h3>
+                        <small>Tokens no sistema</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-coins fa-2x"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    
+    <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-check-circle me-2"></i>Tokens Ativos</h5>
-                <h2 class="mb-0">0</h2>
-                <small>Em carteiras de usuários</small>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Em Circulação</h6>
+                        <h3 class="mb-0">{{ (token_data.token_summary.tokens_in_circulation if token_data else 0)|int }}</h3>
+                        <small>Com usuários</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    
+    <div class="col-md-3">
         <div class="card bg-warning text-white">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-lock me-2"></i>Tokens em Escrow</h5>
-                <h2 class="mb-0">0</h2>
-                <small>Bloqueados em transações</small>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Saldo Admin</h6>
+                        <h3 class="mb-0">{{ (token_data.admin_wallet.balance if token_data else 0)|int }}</h3>
+                        <small>Disponível</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-university fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title mb-1">Circulação</h6>
+                        <h3 class="mb-0">{{ (token_data.token_summary.circulation_percentage if token_data else 0)|round(1) }}%</h3>
+                        <small>Percentual</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-pie fa-2x"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Status de Integridade -->
+{% if integrity_check %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-{{ 'success' if integrity_check.system_integrity else 'danger' }}">
+            <div class="card-header bg-{{ 'success' if integrity_check.system_integrity else 'danger' }} text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-{{ 'check-circle' if integrity_check.system_integrity else 'exclamation-triangle' }} me-2"></i>
+                    Status de Integridade do Sistema
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Sistema:</strong> 
+                        <span class="badge bg-{{ 'success' if integrity_check.system_integrity else 'danger' }}">
+                            {{ 'Íntegro' if integrity_check.system_integrity else 'Inconsistente' }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Admin:</strong> 
+                        <span class="badge bg-{{ 'success' if integrity_check.admin_integrity.is_valid else 'danger' }}">
+                            {{ 'Válido' if integrity_check.admin_integrity.is_valid else 'Inválido' }}
+                        </span>
+                    </div>
+                </div>
+                {% if not integrity_check.system_integrity %}
+                <hr>
+                <div class="text-danger">
+                    <small><strong>Discrepância:</strong> {{ (integrity_check.discrepancy or 0)|round(2) }} tokens</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Usuários com Mais Tokens -->
+{% if token_data and token_data.top_users %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Usuários com Mais Tokens</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Saldo</th>
+                                <th>Escrow</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in token_data.top_users[:5] %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.nome }}</strong><br>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </td>
+                                <td>{{ (user.balance or 0)|int }}</td>
+                                <td>{{ (user.escrow_balance or 0)|int }}</td>
+                                <td><strong>{{ (user.total_balance or 0)|int }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estatísticas de Transações</h6>
+            </div>
+            <div class="card-body">
+                {% if token_data.transaction_stats.type_statistics %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                                <th>Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in token_data.transaction_stats.type_statistics[:5] %}
+                            <tr>
+                                <td>{{ stat.type.replace('_', ' ').title() }}</td>
+                                <td>{{ stat.count }}</td>
+                                <td>{{ (stat.total_amount or 0)|int }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">Nenhuma transação registrada ainda</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Transações Recentes do Admin -->
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">Histórico de Transações de Tokens</h5>
+        <h6 class="mb-0"><i class="fas fa-history me-2"></i>Transações Recentes do Admin</h6>
     </div>
     <div class="card-body">
         <div class="table-responsive">
@@ -62,27 +244,57 @@
                     <tr>
                         <th>ID</th>
                         <th>Data/Hora</th>
-                        <th>Usuário</th>
                         <th>Tipo</th>
                         <th>Quantidade</th>
                         <th>Descrição</th>
+                        <th>Usuário Relacionado</th>
                     </tr>
                 </thead>
                 <tbody>
+                    {% if token_data and token_data.admin_transactions %}
+                        {% for transaction in token_data.admin_transactions %}
+                        <tr>
+                            <td><code>{{ transaction.id }}</code></td>
+                            <td>{{ transaction.created_at.strftime('%d/%m/%Y %H:%M') if transaction.created_at else 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if transaction.amount > 0 else 'danger' }}">
+                                    {{ transaction.type.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td class="text-{{ 'success' if transaction.amount > 0 else 'danger' }}">
+                                {{ (transaction.amount or 0)|int }}
+                            </td>
+                            <td>{{ transaction.description }}</td>
+                            <td>
+                                {% if transaction.related_user_id %}
+                                    <small>ID: {{ transaction.related_user_id }}</small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
                     <tr>
                         <td colspan="6" class="text-center text-muted">
                             <i class="fas fa-info-circle me-2"></i>Nenhuma transação registrada ainda
                         </td>
                     </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
+<!-- Informações Importantes -->
 <div class="alert alert-info mt-4">
-    <i class="fas fa-info-circle me-2"></i>
-    <strong>Nota:</strong> O sistema de tokens segue a regra <strong>1 token = R$ 1,00</strong>. 
-    Tokens são usados internamente para controle, mas os usuários visualizam apenas valores em reais.
+    <h6><i class="fas fa-info-circle me-2"></i>Informações Importantes</h6>
+    <ul class="mb-0">
+        <li><strong>Terminologia:</strong> Administradores veem "tokens", usuários veem "R$" (1 token = R$ 1,00)</li>
+        <li><strong>Fonte de Tokens:</strong> Admin (ID 0) é a única fonte de criação de tokens no sistema</li>
+        <li><strong>Fluxo:</strong> Admin cria tokens → vende para usuários → usuários fazem transações → tokens retornam ao admin via taxas/saques</li>
+        <li><strong>Integridade:</strong> Total criado = Saldo admin + Tokens em circulação (sempre)</li>
+    </ul>
 </div>
 {% endblock %}

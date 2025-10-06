@@ -4,6 +4,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from models import User, AdminUser
 from services.auth_service import login_required
+from services.invite_service import InviteService
 import secrets
 # CSRF removido para APIs AJAX
 
@@ -280,3 +281,170 @@ def check_auth():
         return jsonify({
             'authenticated': False
         })
+
+# ==============================================================================
+#  FLUXO DE CADASTRO VIA CONVITE
+# ==============================================================================
+
+@auth_bp.route('/convite/<token>')
+def convite_acesso(token):
+    """Página de acesso via token de convite"""
+    try:
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        # Verificar se o convite pode ser acessado
+        if invite.status != 'pendente' or invite.is_expired:
+            flash('Este convite não está mais disponível ou expirou.', 'error')
+            return redirect(url_for('auth.user_login'))
+        
+        # Verificar se já existe um usuário com este email
+        existing_user = User.query.filter_by(email=invite.invited_email).first()
+        
+        if existing_user:
+            # Usuário já existe, redirecionar para login
+            flash(f'Você já tem uma conta. Faça login para ver o convite.', 'info')
+            session['invite_token'] = token  # Salvar token para após o login
+            return redirect(url_for('auth.user_login'))
+        else:
+            # Usuário não existe, mostrar página de cadastro
+            return render_template('auth/convite_cadastro.html', 
+                                 invite=invite, 
+                                 token=token)
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash('Erro ao processar convite. Tente novamente.', 'error')
+        return redirect(url_for('auth.user_login'))
+
+@auth_bp.route('/convite/<token>/cadastrar', methods=['POST'])
+def processar_cadastro_convite(token):
+    """Processar cadastro de usuário via convite"""
+    try:
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite.status != 'pendente' or invite.is_expired:
+            flash('Este convite não está mais disponível ou expirou.', 'error')
+            return redirect(url_for('auth.user_login'))
+        
+        # Obter dados do formulário
+        nome = request.form.get('nome', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        cpf = request.form.get('cpf', '').strip()
+        phone = request.form.get('phone', '').strip()
+        terms = request.form.get('terms') == 'on'
+        
+        # Validações
+        if not nome or not password or not cpf:
+            flash('Nome, senha e CPF são obrigatórios.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        if len(password) < 6:
+            flash('A senha deve ter pelo menos 6 caracteres.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        if password != confirm_password:
+            flash('As senhas não coincidem.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        if not terms:
+            flash('Você deve aceitar os termos de uso.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        # Verificar se já existe usuário com este email ou CPF
+        existing_user = User.query.filter(
+            (User.email == invite.invited_email) | (User.cpf == cpf)
+        ).first()
+        
+        if existing_user:
+            flash('Já existe uma conta com este email ou CPF.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        # Criar novo usuário
+        from models import db
+        user = User(
+            nome=nome,
+            email=invite.invited_email,  # Email do convite
+            cpf=cpf,
+            phone=phone,
+            roles='prestador',  # Usuário convidado é prestador
+            active=True
+        )
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Criar carteira para o usuário
+        from services.wallet_service import WalletService
+        WalletService.create_wallet_for_user(user)
+        
+        # Fazer login automático
+        session['user_id'] = user.id
+        session['user_role'] = user.roles
+        session['invite_token'] = token  # Manter token para redirecionamento
+        
+        flash(f'Conta criada com sucesso! Bem-vindo, {nome}!', 'success')
+        
+        # Redirecionar para ver o convite
+        return redirect(url_for('prestador.ver_convite', token=token))
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash(f'Erro ao criar conta: {str(e)}', 'error')
+        return redirect(url_for('auth.convite_acesso', token=token))
+
+@auth_bp.route('/convite/<token>/login', methods=['POST'])
+def processar_login_convite(token):
+    """Processar login de usuário existente via convite"""
+    try:
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite.status != 'pendente' or invite.is_expired:
+            flash('Este convite não está mais disponível ou expirou.', 'error')
+            return redirect(url_for('auth.user_login'))
+        
+        # Obter dados do formulário
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        
+        # Validações
+        if not email or not password:
+            flash('Email e senha são obrigatórios.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        # Verificar se o email corresponde ao convite
+        if email != invite.invited_email:
+            flash('Este convite foi enviado para outro email.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        # Buscar usuário
+        user = User.query.filter_by(email=email, active=True).first()
+        
+        if not user or not user.check_password(password):
+            flash('Email ou senha incorretos.', 'error')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        # Fazer login
+        session['user_id'] = user.id
+        session['user_role'] = user.roles
+        session['invite_token'] = token
+        
+        flash(f'Login realizado com sucesso! Bem-vindo, {user.nome}!', 'success')
+        
+        # Redirecionar para ver o convite
+        return redirect(url_for('prestador.ver_convite', token=token))
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash(f'Erro ao fazer login: {str(e)}', 'error')
+        return redirect(url_for('auth.convite_acesso', token=token))

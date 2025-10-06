@@ -1,12 +1,14 @@
 #!/usr/bin/env python3.11
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint, render_template, redirect, url_for, flash, session, request
+from flask import Blueprint, render_template, redirect, url_for, flash, session, request, make_response
 from forms import CreateUserForm, EditUserForm, SystemConfigForm, AddTokensForm
-from models import User, AdminUser, db
+from models import User, AdminUser, Order, Transaction, db
 from services.admin_service import AdminService
 from services.auth_service import admin_required
+from services.report_service import ReportService
 from sqlalchemy import desc
+from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -20,6 +22,64 @@ def dashboard():
     """Dashboard principal do administrador"""
     stats = AdminService.get_dashboard_stats()
     return render_template('admin/dashboard.html', stats=stats)
+
+# ==============================================================================
+#  GESTÃO DE PERFIL ADMIN
+# ==============================================================================
+
+@admin_bp.route('/alterar-senha', methods=['GET', 'POST'])
+@admin_required
+def alterar_senha():
+    """Alterar senha do administrador"""
+    if request.method == 'POST':
+        try:
+            senha_atual = request.form.get('senha_atual')
+            nova_senha = request.form.get('nova_senha')
+            confirmar_senha = request.form.get('confirmar_senha')
+            
+            # Validações básicas
+            if not senha_atual or not nova_senha or not confirmar_senha:
+                flash('Todos os campos são obrigatórios.', 'error')
+                return render_template('admin/alterar_senha.html')
+            
+            if nova_senha != confirmar_senha:
+                flash('A nova senha e a confirmação não coincidem.', 'error')
+                return render_template('admin/alterar_senha.html')
+            
+            if len(nova_senha) < 6:
+                flash('A nova senha deve ter pelo menos 6 caracteres.', 'error')
+                return render_template('admin/alterar_senha.html')
+            
+            # Obter admin atual
+            from services.auth_service import AuthService
+            admin = AuthService.get_current_admin()
+            
+            if not admin:
+                flash('Erro: Administrador não encontrado.', 'error')
+                return redirect(url_for('auth.admin_login'))
+            
+            # Verificar senha atual
+            if not admin.check_password(senha_atual):
+                flash('Senha atual incorreta.', 'error')
+                return render_template('admin/alterar_senha.html')
+            
+            # Atualizar senha
+            admin.set_password(nova_senha)
+            db.commit()
+            
+            # Log de auditoria
+            from datetime import datetime
+            import logging
+            logging.info(f'Admin {admin.email} alterou senha em {datetime.utcnow()}')
+            
+            flash('Senha alterada com sucesso!', 'success')
+            return redirect(url_for('admin.dashboard'))
+            
+        except Exception as e:
+            db.rollback()
+            flash(f'Erro ao alterar senha: {str(e)}', 'error')
+    
+    return render_template('admin/alterar_senha.html')
 
 # ==============================================================================
 #  GESTÃO DE USUÁRIOS
@@ -121,13 +181,41 @@ def tokens():
 def adicionar_tokens():
     """Adicionar tokens para usuário"""
     form = AddTokensForm()
-    form.user_id.choices = [(u.id, f'{u.nome} ({u.email})') for u in User.query.filter_by(active=True).all()]
+    
+    # Incluir usuários normais ativos
+    user_choices = [(u.id, f'{u.nome} ({u.email})') for u in User.query.filter_by(active=True).all()]
+    
+    # Incluir AdminUsers (para transferências entre admins)
+    admin_choices = [(a.id, f'[ADMIN] {a.email}') for a in AdminUser.query.all() if a.id != 0]  # Excluir admin principal
+    
+    # Combinar as listas
+    form.user_id.choices = user_choices + admin_choices
     
     if form.validate_on_submit():
         try:
-            user = User.query.get(form.user_id.data)
-            AdminService.add_tokens_to_user(user, form.amount.data, form.description.data)
-            flash(f'Tokens adicionados com sucesso para {user.nome}!', 'success')
+            user_id = form.user_id.data
+            
+            # Tentar buscar primeiro como User normal
+            user = User.query.get(user_id)
+            if user:
+                AdminService.add_tokens_to_user(user, form.amount.data, form.description.data)
+                flash(f'Tokens adicionados com sucesso para {user.nome}!', 'success')
+            else:
+                # Se não encontrou como User, buscar como AdminUser
+                admin_user = AdminUser.query.get(user_id)
+                if admin_user:
+                    # Para AdminUsers, usar o WalletService diretamente
+                    from services.wallet_service import WalletService
+                    result = WalletService.admin_sell_tokens_to_user(
+                        user_id=admin_user.id,
+                        amount=form.amount.data,
+                        description=form.description.data
+                    )
+                    flash(f'Tokens transferidos com sucesso para admin {admin_user.email}!', 'success')
+                else:
+                    flash('Usuário não encontrado!', 'error')
+                    return render_template('admin/adicionar_tokens.html', form=form)
+            
             return redirect(url_for('admin.tokens'))
         except Exception as e:
             flash(f'Erro ao adicionar tokens: {str(e)}', 'error')
@@ -177,6 +265,75 @@ def alertas_tokens():
         flash(f'Erro ao carregar alertas: {str(e)}', 'error')
         return redirect(url_for('admin.tokens'))
 
+@admin_bp.route('/tokens/transferir-para-admin', methods=['GET', 'POST'])
+@admin_required
+def transferir_para_admin():
+    """Transferir tokens para o admin principal (ID 0)"""
+    if request.method == 'POST':
+        try:
+            amount = float(request.form.get('amount', 0))
+            description = request.form.get('description', 'Transferência para admin principal')
+            
+            if amount <= 0:
+                flash('Quantidade deve ser maior que zero', 'error')
+                return render_template('admin/transferir_para_admin.html')
+            
+            # Obter admin atual da sessão
+            from services.auth_service import AuthService
+            current_admin = AuthService.get_current_admin()
+            
+            if not current_admin:
+                flash('Erro: Administrador não encontrado.', 'error')
+                return redirect(url_for('auth.admin_login'))
+            
+            # Verificar se não é o próprio admin principal tentando transferir para si mesmo
+            if current_admin.id == 0:
+                flash('Admin principal não pode transferir tokens para si mesmo.', 'error')
+                return render_template('admin/transferir_para_admin.html')
+            
+            # Verificar se admin atual tem carteira e saldo suficiente
+            from services.wallet_service import WalletService
+            current_admin_wallet = WalletService.get_wallet_info(current_admin.id)
+            
+            if not current_admin_wallet or current_admin_wallet['balance'] < amount:
+                flash(f'Saldo insuficiente. Saldo atual: {current_admin_wallet["balance"] if current_admin_wallet else 0:,.0f} tokens', 'error')
+                return render_template('admin/transferir_para_admin.html')
+            
+            # Realizar transferência: admin atual -> admin principal (ID 0)
+            result = WalletService.transfer_tokens_between_users(
+                from_user_id=current_admin.id,
+                to_user_id=0,  # Admin principal
+                amount=amount,
+                description=description
+            )
+            
+            flash(f'Transferidos {amount:,.0f} tokens para o admin principal com sucesso!', 'success')
+            return redirect(url_for('admin.tokens'))
+            
+        except Exception as e:
+            flash(f'Erro ao transferir tokens: {str(e)}', 'error')
+    
+    # GET - mostrar formulário
+    try:
+        from services.auth_service import AuthService
+        from services.wallet_service import WalletService
+        
+        current_admin = AuthService.get_current_admin()
+        if current_admin and current_admin.id != 0:
+            current_admin_wallet = WalletService.get_wallet_info(current_admin.id)
+            admin_principal_wallet = WalletService.get_admin_wallet_info()
+            
+            return render_template('admin/transferir_para_admin.html', 
+                                 current_admin=current_admin,
+                                 current_admin_wallet=current_admin_wallet,
+                                 admin_principal_wallet=admin_principal_wallet)
+        else:
+            flash('Admin principal não precisa transferir tokens para si mesmo.', 'info')
+            return redirect(url_for('admin.tokens'))
+    except Exception as e:
+        flash(f'Erro ao carregar dados: {str(e)}', 'error')
+        return redirect(url_for('admin.tokens'))
+
 # ==============================================================================
 #  CONFIGURAÇÕES DO SISTEMA
 # ==============================================================================
@@ -201,7 +358,13 @@ def configuracoes():
 @admin_required
 def relatorios():
     """Relatórios e auditoria do sistema"""
-    return render_template('admin/relatorios.html')
+    try:
+        # Obter estatísticas para os cards
+        stats = AdminService.get_dashboard_stats()
+        return render_template('admin/relatorios.html', stats=stats)
+    except Exception as e:
+        flash(f'Erro ao carregar estatísticas: {str(e)}', 'error')
+        return render_template('admin/relatorios.html', stats=None)
 
 @admin_bp.route('/logs')
 @admin_required
@@ -287,13 +450,81 @@ def marcar_em_analise(contestacao_id):
     # AdminService.marcar_contestacao_em_analise(contestacao_id)
     return {'ok': True}
 
+# ==============================================================================
+#  GESTÃO DE CONTRATOS/ORDENS
+# ==============================================================================
+
+@admin_bp.route('/contratos')
+@admin_required
+def contratos():
+    """Lista todos os contratos/ordens do sistema"""
+    try:
+        # Obter filtros da URL
+        status_filter = request.args.get('status', '')
+        page = request.args.get('page', 1, type=int)
+        
+        # Query base para ordens (que são os "contratos" do sistema)
+        query = Order.query
+        
+        # Aplicar filtros se especificados
+        if status_filter:
+            query = query.filter(Order.status == status_filter)
+        
+        # Ordenar por data de criação (mais recentes primeiro)
+        query = query.order_by(desc(Order.created_at))
+        
+        # Paginação
+        orders = query.paginate(
+            page=page, per_page=20, error_out=False
+        )
+        
+        # Estatísticas para cards
+        stats = {
+            'total': Order.query.count(),
+            'disponivel': Order.query.filter_by(status='disponivel').count(),
+            'aceita': Order.query.filter_by(status='aceita').count(),
+            'em_andamento': Order.query.filter_by(status='em_andamento').count(),
+            'concluida': Order.query.filter_by(status='concluida').count(),
+            'cancelada': Order.query.filter_by(status='cancelada').count(),
+            'disputada': Order.query.filter_by(status='disputada').count()
+        }
+        
+        return render_template('admin/contratos.html', 
+                             orders=orders, 
+                             stats=stats,
+                             status_filter=status_filter)
+    except Exception as e:
+        flash(f'Erro ao carregar contratos: {str(e)}', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+@admin_bp.route('/contratos/ativos')
+@admin_required
+def contratos_ativos():
+    """Lista contratos ativos (disponível, aceita, em_andamento)"""
+    return redirect(url_for('admin.contratos', status='aceita,em_andamento'))
+
+@admin_bp.route('/contratos/finalizados')
+@admin_required
+def contratos_finalizados():
+    """Lista contratos finalizados"""
+    return redirect(url_for('admin.contratos', status='concluida'))
+
 @admin_bp.route('/contratos/<int:contrato_id>')
 @admin_required
 def ver_contrato(contrato_id):
     """Ver detalhes de um contrato"""
-    # TODO: Implementar quando tivermos o modelo de Contrato
-    flash('Funcionalidade em desenvolvimento', 'info')
-    return redirect(url_for('admin.dashboard'))
+    try:
+        order = Order.query.get_or_404(contrato_id)
+        
+        # Obter transações relacionadas a esta ordem
+        transactions = Transaction.query.filter_by(order_id=contrato_id).order_by(desc(Transaction.created_at)).all()
+        
+        return render_template('admin/ver_contrato.html', 
+                             order=order, 
+                             transactions=transactions)
+    except Exception as e:
+        flash(f'Erro ao carregar contrato: {str(e)}', 'error')
+        return redirect(url_for('admin.contratos'))
 
 # ==============================================================================
 #  SALVAR CONFIGURAÇÕES
@@ -500,3 +731,589 @@ def estatisticas_seguranca():
             'total_attempts_24h': 0,
             'failed_attempts_24h': 0
         }
+
+# ==============================================================================
+#  RELATÓRIOS FUNCIONAIS
+# ==============================================================================
+
+@admin_bp.route('/relatorios/contratos')
+@admin_required
+def relatorios_contratos():
+    """Relatório de contratos com filtros"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        status_filter = request.args.get('status', 'todos')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar relatório
+        data = ReportService.get_contracts_report_data(
+            start_date=start_date,
+            end_date=end_date,
+            status_filter=status_filter
+        )
+        
+        return render_template('admin/relatorio_contratos.html', data=data)
+    except Exception as e:
+        flash(f'Erro ao gerar relatório de contratos: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+@admin_bp.route('/relatorios/usuarios')
+@admin_required
+def relatorios_usuarios():
+    """Relatório de usuários com filtros"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        user_type = request.args.get('user_type', 'todos')
+        status_filter = request.args.get('status', 'todos')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar relatório
+        data = ReportService.get_users_report_data(
+            start_date=start_date,
+            end_date=end_date,
+            user_type=user_type,
+            status_filter=status_filter
+        )
+        
+        return render_template('admin/relatorio_usuarios.html', data=data)
+    except Exception as e:
+        flash(f'Erro ao gerar relatório de usuários: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+@admin_bp.route('/relatorios/financeiro')
+@admin_required
+def relatorios_financeiro():
+    """Relatório financeiro com filtros"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar relatório
+        data = ReportService.get_financial_report_data(
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        return render_template('admin/relatorio_financeiro.html', data=data)
+    except Exception as e:
+        flash(f'Erro ao gerar relatório financeiro: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+@admin_bp.route('/relatorios/convites')
+@admin_required
+def relatorios_convites():
+    """Relatório de convites com filtros"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        status_filter = request.args.get('status', 'todos')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar relatório
+        data = ReportService.get_invites_report_data(
+            start_date=start_date,
+            end_date=end_date,
+            status_filter=status_filter
+        )
+        
+        return render_template('admin/relatorio_convites.html', data=data)
+    except Exception as e:
+        flash(f'Erro ao gerar relatório de convites: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+# ==============================================================================
+#  EXPORTAÇÃO DE RELATÓRIOS
+# ==============================================================================
+
+@admin_bp.route('/export/contracts')
+@admin_required
+def export_contracts():
+    """Exportar relatório de contratos"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        status_filter = request.args.get('status', 'todos')
+        format_type = request.args.get('format', 'excel')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar dados do relatório
+        data = ReportService.get_contracts_report_data(
+            start_date=start_date,
+            end_date=end_date,
+            status_filter=status_filter
+        )
+        
+        # Exportar conforme formato solicitado
+        if format_type == 'excel':
+            file_data = ReportService.export_contracts_to_excel(data)
+            response = make_response(file_data)
+            response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            response.headers['Content-Disposition'] = f'attachment; filename=relatorio_contratos_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+            return response
+        elif format_type == 'pdf':
+            file_data = ReportService.export_contracts_to_pdf(data)
+            response = make_response(file_data)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename=relatorio_contratos_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+            return response
+        else:
+            flash('Formato de exportação inválido', 'error')
+            return redirect(url_for('admin.relatorios'))
+            
+    except Exception as e:
+        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+@admin_bp.route('/export/users')
+@admin_required
+def export_users():
+    """Exportar relatório de usuários"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        user_type = request.args.get('user_type', 'todos')
+        status_filter = request.args.get('status', 'todos')
+        format_type = request.args.get('format', 'excel')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar dados do relatório
+        data = ReportService.get_users_report_data(
+            start_date=start_date,
+            end_date=end_date,
+            user_type=user_type,
+            status_filter=status_filter
+        )
+        
+        # Exportar conforme formato solicitado
+        if format_type == 'excel':
+            file_data = ReportService.export_users_to_excel(data)
+            response = make_response(file_data)
+            response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            response.headers['Content-Disposition'] = f'attachment; filename=relatorio_usuarios_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+            return response
+        elif format_type == 'pdf':
+            file_data = ReportService.export_users_to_pdf(data)
+            response = make_response(file_data)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename=relatorio_usuarios_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+            return response
+        else:
+            flash('Formato de exportação inválido', 'error')
+            return redirect(url_for('admin.relatorios'))
+            
+    except Exception as e:
+        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+@admin_bp.route('/export/financial')
+@admin_required
+def export_financial():
+    """Exportar relatório financeiro"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        format_type = request.args.get('format', 'excel')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar dados do relatório
+        data = ReportService.get_financial_report_data(
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        # Para relatório financeiro, vamos usar uma versão simplificada da exportação
+        if format_type == 'excel':
+            # Implementar exportação financeira para Excel (simplificada)
+            flash('Exportação financeira para Excel em desenvolvimento', 'info')
+            return redirect(url_for('admin.relatorios'))
+        elif format_type == 'pdf':
+            # Implementar exportação financeira para PDF (simplificada)
+            flash('Exportação financeira para PDF em desenvolvimento', 'info')
+            return redirect(url_for('admin.relatorios'))
+        else:
+            flash('Formato de exportação inválido', 'error')
+            return redirect(url_for('admin.relatorios'))
+            
+    except Exception as e:
+        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+@admin_bp.route('/export/invites')
+@admin_required
+def export_invites():
+    """Exportar relatório de convites"""
+    try:
+        # Obter filtros da URL
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        status_filter = request.args.get('status', 'todos')
+        format_type = request.args.get('format', 'excel')
+        
+        # Converter datas
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+        
+        # Gerar dados do relatório
+        data = ReportService.get_invites_report_data(
+            start_date=start_date,
+            end_date=end_date,
+            status_filter=status_filter
+        )
+        
+        # Para relatório de convites, vamos usar uma versão simplificada da exportação
+        if format_type == 'excel':
+            flash('Exportação de convites para Excel em desenvolvimento', 'info')
+            return redirect(url_for('admin.relatorios'))
+        elif format_type == 'pdf':
+            flash('Exportação de convites para PDF em desenvolvimento', 'info')
+            return redirect(url_for('admin.relatorios'))
+        else:
+            flash('Formato de exportação inválido', 'error')
+            return redirect(url_for('admin.relatorios'))
+            
+    except Exception as e:
+        flash(f'Erro ao exportar relatório: {str(e)}', 'error')
+        return redirect(url_for('admin.relatorios'))
+
+# ==============================================================================
+#  SEÇÃO FINANCEIRA AVANÇADA (Nova Funcionalidade)
+# ==============================================================================
+
+@admin_bp.route('/financeiro/dashboard')
+@admin_required
+def financeiro_dashboard():
+    """Dashboard financeiro completo"""
+    try:
+        # Obter estatísticas financeiras detalhadas
+        stats = AdminService.get_dashboard_stats()
+        
+        # Dados específicos para dashboard financeiro
+        from services.wallet_service import WalletService
+        token_summary = WalletService.get_system_token_summary()
+        
+        # Receitas por período (últimos 6 meses)
+        from datetime import datetime, timedelta
+        from sqlalchemy import func, extract
+        
+        receitas_mensais = []
+        for i in range(6):
+            mes_inicio = datetime.utcnow().replace(day=1) - timedelta(days=30*i)
+            mes_fim = mes_inicio.replace(day=28) + timedelta(days=4)
+            mes_fim = mes_fim - timedelta(days=mes_fim.day)
+            
+            receita_mes = db.session.query(
+                func.sum(Transaction.amount)
+            ).filter(
+                Transaction.type == 'taxa_sistema',
+                Transaction.created_at >= mes_inicio,
+                Transaction.created_at <= mes_fim
+            ).scalar() or 0.0
+            
+            receitas_mensais.append({
+                'mes': mes_inicio.strftime('%Y-%m'),
+                'mes_nome': mes_inicio.strftime('%B %Y'),
+                'receita': receita_mes
+            })
+        
+        receitas_mensais.reverse()  # Ordem cronológica
+        
+        # Top usuários por volume de taxas geradas
+        top_geradores_taxa = db.session.query(
+            Transaction.related_user_id,
+            User.nome,
+            User.email,
+            func.count(Transaction.id).label('transacoes_count'),
+            func.sum(Transaction.amount).label('total_taxas')
+        ).join(
+            User, Transaction.related_user_id == User.id
+        ).filter(
+            Transaction.type == 'taxa_sistema'
+        ).group_by(
+            Transaction.related_user_id, User.nome, User.email
+        ).order_by(
+            desc('total_taxas')
+        ).limit(10).all()
+        
+        # Previsão de receita (baseada na média dos últimos 3 meses)
+        receita_3_meses = sum(r['receita'] for r in receitas_mensais[-3:])
+        previsao_mensal = receita_3_meses / 3 if receita_3_meses > 0 else 0
+        previsao_anual = previsao_mensal * 12
+        
+        financial_data = {
+            'stats': stats,
+            'token_summary': token_summary,
+            'receitas_mensais': receitas_mensais,
+            'top_geradores_taxa': top_geradores_taxa,
+            'previsao_mensal': previsao_mensal,
+            'previsao_anual': previsao_anual,
+            'crescimento_mes': 0  # TODO: Calcular crescimento percentual
+        }
+        
+        return render_template('admin/financeiro_dashboard.html', data=financial_data)
+        
+    except Exception as e:
+        flash(f'Erro ao carregar dashboard financeiro: {str(e)}', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+@admin_bp.route('/financeiro/receitas')
+@admin_required
+def financeiro_receitas():
+    """Detalhamento de receitas e taxas"""
+    try:
+        # Filtros da URL
+        periodo = request.args.get('periodo', '30')  # dias
+        tipo_taxa = request.args.get('tipo', 'todas')
+        
+        # Calcular período
+        from datetime import datetime, timedelta
+        if periodo == '7':
+            data_inicio = datetime.utcnow() - timedelta(days=7)
+        elif periodo == '30':
+            data_inicio = datetime.utcnow() - timedelta(days=30)
+        elif periodo == '90':
+            data_inicio = datetime.utcnow() - timedelta(days=90)
+        else:
+            data_inicio = datetime.utcnow() - timedelta(days=365)
+        
+        # Query base para transações de taxa
+        query = Transaction.query.filter(
+            Transaction.type == 'taxa_sistema',
+            Transaction.created_at >= data_inicio
+        )
+        
+        transacoes_taxa = query.order_by(desc(Transaction.created_at)).all()
+        
+        # Estatísticas do período
+        total_receita = sum(t.amount for t in transacoes_taxa)
+        total_transacoes = len(transacoes_taxa)
+        taxa_media = total_receita / total_transacoes if total_transacoes > 0 else 0
+        
+        # Receita por dia
+        receita_diaria = {}
+        for transacao in transacoes_taxa:
+            dia = transacao.created_at.strftime('%Y-%m-%d')
+            if dia not in receita_diaria:
+                receita_diaria[dia] = 0
+            receita_diaria[dia] += transacao.amount
+        
+        receitas_data = {
+            'transacoes': transacoes_taxa,
+            'total_receita': total_receita,
+            'total_transacoes': total_transacoes,
+            'taxa_media': taxa_media,
+            'receita_diaria': receita_diaria,
+            'periodo': periodo,
+            'data_inicio': data_inicio
+        }
+        
+        return render_template('admin/financeiro_receitas.html', data=receitas_data)
+        
+    except Exception as e:
+        flash(f'Erro ao carregar receitas: {str(e)}', 'error')
+        return redirect(url_for('admin.financeiro_dashboard'))
+
+@admin_bp.route('/financeiro/taxas', methods=['GET', 'POST'])
+@admin_required
+def financeiro_taxas():
+    """Configuração de taxas do sistema"""
+    if request.method == 'POST':
+        try:
+            # Obter dados do formulário
+            taxa_sistema = float(request.form.get('taxa_sistema', 5.0))
+            taxa_saque = float(request.form.get('taxa_saque', 2.50))
+            taxa_deposito = float(request.form.get('taxa_deposito', 0.0))
+            valor_minimo_saque = float(request.form.get('valor_minimo_saque', 10.0))
+            
+            # Validações
+            if not (0 <= taxa_sistema <= 50):
+                flash('Taxa do sistema deve estar entre 0% e 50%', 'error')
+                return redirect(url_for('admin.financeiro_taxas'))
+            
+            # Salvar configurações
+            from services.config_service import ConfigService
+            configs = {
+                'taxa_sistema': taxa_sistema,
+                'taxa_saque': taxa_saque,
+                'taxa_deposito': taxa_deposito,
+                'valor_minimo_saque': valor_minimo_saque
+            }
+            
+            ConfigService.update_configs_batch(configs)
+            flash('Configurações de taxas atualizadas com sucesso!', 'success')
+            
+        except Exception as e:
+            flash(f'Erro ao salvar configurações: {str(e)}', 'error')
+        
+        return redirect(url_for('admin.financeiro_taxas'))
+    
+    # GET - Exibir formulário
+    try:
+        from services.config_service import ConfigService
+        configs = {
+            'taxa_sistema': ConfigService.get_config('taxa_sistema', 5.0),
+            'taxa_saque': ConfigService.get_config('taxa_saque', 2.50),
+            'taxa_deposito': ConfigService.get_config('taxa_deposito', 0.0),
+            'valor_minimo_saque': ConfigService.get_config('valor_minimo_saque', 10.0)
+        }
+        
+        return render_template('admin/financeiro_taxas.html', configs=configs)
+        
+    except Exception as e:
+        flash(f'Erro ao carregar configurações: {str(e)}', 'error')
+        return redirect(url_for('admin.financeiro_dashboard'))
+
+@admin_bp.route('/financeiro/previsoes')
+@admin_required
+def financeiro_previsoes():
+    """Previsões e análises financeiras"""
+    try:
+        from datetime import datetime, timedelta
+        from sqlalchemy import func
+        
+        # Dados dos últimos 12 meses para análise
+        meses_dados = []
+        for i in range(12):
+            mes_inicio = datetime.utcnow().replace(day=1) - timedelta(days=30*i)
+            mes_fim = mes_inicio.replace(day=28) + timedelta(days=4)
+            mes_fim = mes_fim - timedelta(days=mes_fim.day)
+            
+            # Receita do mês
+            receita = db.session.query(
+                func.sum(Transaction.amount)
+            ).filter(
+                Transaction.type == 'taxa_sistema',
+                Transaction.created_at >= mes_inicio,
+                Transaction.created_at <= mes_fim
+            ).scalar() or 0.0
+            
+            # Número de transações
+            transacoes = Transaction.query.filter(
+                Transaction.type == 'taxa_sistema',
+                Transaction.created_at >= mes_inicio,
+                Transaction.created_at <= mes_fim
+            ).count()
+            
+            # Usuários ativos
+            usuarios_ativos = db.session.query(
+                func.count(func.distinct(Transaction.user_id))
+            ).filter(
+                Transaction.created_at >= mes_inicio,
+                Transaction.created_at <= mes_fim
+            ).scalar() or 0
+            
+            meses_dados.append({
+                'mes': mes_inicio.strftime('%Y-%m'),
+                'mes_nome': mes_inicio.strftime('%B %Y'),
+                'receita': receita,
+                'transacoes': transacoes,
+                'usuarios_ativos': usuarios_ativos
+            })
+        
+        meses_dados.reverse()  # Ordem cronológica
+        
+        # Cálculos de previsão
+        receitas_recentes = [m['receita'] for m in meses_dados[-6:]]  # Últimos 6 meses
+        media_mensal = sum(receitas_recentes) / len(receitas_recentes) if receitas_recentes else 0
+        
+        # Tendência (simples: comparar últimos 3 meses com 3 anteriores)
+        ultimos_3 = sum(receitas_recentes[-3:]) / 3 if len(receitas_recentes) >= 3 else 0
+        anteriores_3 = sum(receitas_recentes[-6:-3]) / 3 if len(receitas_recentes) >= 6 else 0
+        crescimento = ((ultimos_3 - anteriores_3) / anteriores_3 * 100) if anteriores_3 > 0 else 0
+        
+        # Previsões
+        previsao_proximo_mes = media_mensal * (1 + crescimento/100)
+        previsao_trimestre = previsao_proximo_mes * 3
+        previsao_ano = media_mensal * 12 * (1 + crescimento/100)
+        
+        previsoes_data = {
+            'meses_dados': meses_dados,
+            'media_mensal': media_mensal,
+            'crescimento_percentual': crescimento,
+            'previsao_proximo_mes': previsao_proximo_mes,
+            'previsao_trimestre': previsao_trimestre,
+            'previsao_ano': previsao_ano,
+            'tendencia': 'crescimento' if crescimento > 0 else 'declinio' if crescimento < 0 else 'estavel'
+        }
+        
+        return render_template('admin/financeiro_previsoes.html', data=previsoes_data)
+        
+    except Exception as e:
+        flash(f'Erro ao gerar previsões: {str(e)}', 'error')
+        return redirect(url_for('admin.financeiro_dashboard'))
+
+@admin_bp.route('/financeiro/relatorios')
+@admin_required
+def financeiro_relatorios():
+    """Relatórios financeiros detalhados"""
+    try:
+        # Relatório consolidado financeiro
+        from datetime import datetime, timedelta
+        
+        # Período padrão: último mês
+        data_inicio = datetime.utcnow().replace(day=1)
+        data_fim = datetime.utcnow()
+        
+        # Filtros da URL
+        if request.args.get('inicio'):
+            data_inicio = datetime.strptime(request.args.get('inicio'), '%Y-%m-%d')
+        if request.args.get('fim'):
+            data_fim = datetime.strptime(request.args.get('fim'), '%Y-%m-%d')
+        
+        # Usar ReportService para dados financeiros
+        financial_data = ReportService.get_financial_report_data(data_inicio, data_fim)
+        
+        # Dados adicionais específicos para admin
+        from services.wallet_service import WalletService
+        token_summary = WalletService.get_system_token_summary()
+        
+        # Análise de lucratividade
+        receita_total = financial_data['receita_taxas']
+        volume_total = financial_data['volume_total']
+        margem_lucro = (receita_total / volume_total * 100) if volume_total > 0 else 0
+        
+        relatorio_data = {
+            'financial_data': financial_data,
+            'token_summary': token_summary,
+            'margem_lucro': margem_lucro,
+            'periodo': {
+                'inicio': data_inicio,
+                'fim': data_fim
+            }
+        }
+        
+        return render_template('admin/financeiro_relatorios.html', data=relatorio_data)
+        
+    except Exception as e:
+        flash(f'Erro ao gerar relatórios: {str(e)}', 'error')
+        return redirect(url_for('admin.financeiro_dashboard'))

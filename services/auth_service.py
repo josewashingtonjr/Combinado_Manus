@@ -52,6 +52,22 @@ class AuthService:
     def logout():
         """Realiza logout (admin ou usuário)"""
         session.clear()
+    
+    @staticmethod
+    def authenticate_admin(email, password):
+        """Autentica um administrador"""
+        admin = AdminUser.query.filter_by(email=email).first()
+        if admin and admin.check_password(password):
+            return admin
+        return None
+    
+    @staticmethod
+    def authenticate_user(email, password):
+        """Autentica um usuário"""
+        user = User.query.filter_by(email=email, active=True).first()
+        if user and user.check_password(password):
+            return user
+        return None
 
 # ==============================================================================
 #  DECORADORES DE AUTORIZAÇÃO

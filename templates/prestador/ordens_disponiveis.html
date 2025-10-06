@@ -1,0 +1,295 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Ordens Disponíveis - Prestador{% endblock %}
+
+{% block prestador_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-search text-primary me-2"></i>Ordens Disponíveis</h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="refreshOrders()">
+                    <i class="fas fa-sync-alt me-1"></i>Atualizar
+                </button>
+                <a href="{{ url_for('prestador.ordens') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-clipboard-list me-1"></i>Minhas Ordens
+                </a>
+            </div>
+        </div>
+
+        <!-- Filtros e Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <h4 class="text-primary mb-0">{{ orders.total if orders else 0 }}</h4>
+                                <small class="text-muted">Disponíveis</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-success mb-0">0</h4>
+                                <small class="text-muted">Aceitas Hoje</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-info mb-0">0</h4>
+                                <small class="text-muted">Em Andamento</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-warning mb-0">0</h4>
+                                <small class="text-muted">Aguardando</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="text-primary mb-1">
+                            <i class="fas fa-wallet me-2"></i>Saldo Disponível
+                        </h5>
+                        <h4 class="text-primary mb-0">{{ wallet.balance|format_currency if wallet else "R$ 0,00" }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Ordens Disponíveis -->
+        {% if orders and orders.items %}
+            <div class="row">
+                {% for order in orders.items %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100 border-primary">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{{ order.title }}</h6>
+                            <span class="badge bg-light text-primary">{{ order.value|format_currency }}</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ order.description[:150] }}{% if order.description|length > 150 %}...{% endif %}</p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Cliente:</strong><br>
+                                    <span class="text-muted">{{ order.client.nome }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Publicada:</strong><br>
+                                    <small class="text-muted">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Indicadores de Urgência -->
+                            {% set hours_since_created = (moment().utc() - order.created_at).total_seconds() / 3600 %}
+                            {% if hours_since_created < 2 %}
+                                <div class="alert alert-success py-2 mb-3">
+                                    <i class="fas fa-clock me-1"></i>
+                                    <strong>Nova!</strong> Publicada há {{ "%.0f"|format(hours_since_created) }} hora(s)
+                                </div>
+                            {% elif hours_since_created > 24 %}
+                                <div class="alert alert-warning py-2 mb-3">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    <strong>Urgente!</strong> Sem prestador há {{ "%.0f"|format(hours_since_created/24) }} dia(s)
+                                </div>
+                            {% endif %}
+
+                            <!-- Informações do Cliente -->
+                            <div class="mb-3">
+                                <h6 class="text-primary">Sobre o Cliente:</h6>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">Membro desde: {{ order.client.created_at.strftime('%m/%Y') }}</small>
+                                    <small class="text-success">
+                                        <i class="fas fa-star me-1"></i>4.8 (12 avaliações)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-primary" 
+                                        onclick="showOrderDetails({{ order.id }})">
+                                    <i class="fas fa-eye me-1"></i>Ver Detalhes Completos
+                                </button>
+                                <button type="button" class="btn btn-success" 
+                                        onclick="acceptOrder({{ order.id }}, '{{ order.title }}', {{ order.value }})">
+                                    <i class="fas fa-handshake me-1"></i>Aceitar Ordem
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginação -->
+            {% if orders.pages > 1 %}
+            <nav aria-label="Paginação de ordens">
+                <ul class="pagination justify-content-center">
+                    {% if orders.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('prestador.ordens_disponiveis', page=orders.prev_num) }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in orders.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != orders.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('prestador.ordens_disponiveis', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('prestador.ordens_disponiveis', page=orders.next_num) }}">Próxima</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Estado Vazio -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-search text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="text-muted mb-3">Nenhuma ordem disponível no momento</h4>
+                <p class="text-muted mb-4">
+                    Não há ordens disponíveis para aceitar agora. Novas oportunidades aparecem regularmente!
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-primary" onclick="refreshOrders()">
+                        <i class="fas fa-sync-alt me-2"></i>Verificar Novamente
+                    </button>
+                    <a href="{{ url_for('prestador.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-tachometer-alt me-2"></i>Voltar ao Dashboard
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Detalhes da Ordem -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes da Ordem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <!-- Conteúdo carregado via JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-success" id="acceptFromModal">
+                    <i class="fas fa-handshake me-1"></i>Aceitar Ordem
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Aceitação -->
+<div class="modal fade" id="acceptOrderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Aceitação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Importante:</strong> Ao aceitar esta ordem, você se compromete a executar o serviço conforme descrito.
+                </div>
+                
+                <h6>Resumo da Ordem:</h6>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 id="confirmOrderTitle" class="card-title"></h6>
+                        <p><strong>Valor:</strong> <span id="confirmOrderValue" class="text-success"></span></p>
+                        <p class="text-muted mb-0">
+                            O valor será liberado após a conclusão e confirmação do cliente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="acceptOrderForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-handshake me-1"></i>Confirmar Aceitação
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentOrderId = null;
+
+function refreshOrders() {
+    window.location.reload();
+}
+
+function showOrderDetails(orderId) {
+    // TODO: Implementar carregamento de detalhes via AJAX
+    document.getElementById('orderDetailsContent').innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+            <p>Carregando detalhes da ordem...</p>
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+    modal.show();
+    
+    // Simular carregamento
+    setTimeout(() => {
+        document.getElementById('orderDetailsContent').innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Funcionalidade de detalhes será implementada em breve.
+            </div>
+        `;
+    }, 1000);
+}
+
+function acceptOrder(orderId, orderTitle, orderValue) {
+    currentOrderId = orderId;
+    
+    // Preencher dados no modal de confirmação
+    document.getElementById('confirmOrderTitle').textContent = orderTitle;
+    document.getElementById('confirmOrderValue').textContent = 'R$ ' + orderValue.toFixed(2).replace('.', ',');
+    
+    // Configurar formulário
+    const form = document.getElementById('acceptOrderForm');
+    form.action = `/prestador/ordens/${orderId}/aceitar`;
+    
+    // Mostrar modal de confirmação
+    const modal = new bootstrap.Modal(document.getElementById('acceptOrderModal'));
+    modal.show();
+}
+
+// Auto-refresh a cada 30 segundos
+setInterval(function() {
+    // Verificar se há novas ordens sem recarregar a página
+    // TODO: Implementar verificação via AJAX
+}, 30000);
+</script>
+{% endblock %}

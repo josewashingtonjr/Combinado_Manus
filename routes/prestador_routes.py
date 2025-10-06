@@ -4,6 +4,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request
 from services.auth_service import login_required, prestador_required, AuthService
 from services.prestador_service import PrestadorService
+from services.invite_service import InviteService
+from datetime import datetime
 
 prestador_bp = Blueprint('prestador', __name__, url_prefix='/prestador')
 
@@ -237,3 +239,183 @@ def processar_saque():
         flash(f'Erro ao processar saque: {str(e)}', 'error')
     
     return redirect(url_for('prestador.dashboard'))
+
+# ==============================================================================
+#  SISTEMA DE CONVITES
+# ==============================================================================
+
+@prestador_bp.route('/convites')
+@login_required
+def convites():
+    """Listar convites recebidos pelo prestador"""
+    user = AuthService.get_current_user()
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    # Obter convites recebidos
+    received_invites = InviteService.get_invites_for_email(user.email)
+    
+    return render_template('prestador/convites.html', 
+                         user=user, 
+                         invites=received_invites)
+
+@prestador_bp.route('/convites/<token>')
+@login_required
+def ver_convite(token):
+    """Ver detalhes de um convite específico"""
+    user = AuthService.get_current_user()
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        invite = InviteService.get_invite_by_token(token)
+        
+        # Verificar se o convite é para este prestador
+        if invite.invited_email != user.email:
+            flash('Convite não encontrado.', 'error')
+            return redirect(url_for('prestador.convites'))
+        
+        return render_template('prestador/ver_convite.html', 
+                             user=user, 
+                             invite=invite,
+                             contestation_fee=InviteService.CONTESTATION_FEE)
+        
+    except ValueError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('prestador.convites'))
+    except Exception as e:
+        flash(f'Erro ao carregar convite: {str(e)}', 'error')
+        return redirect(url_for('prestador.convites'))
+
+@prestador_bp.route('/convites/<token>/aceitar', methods=['POST'])
+@login_required
+def aceitar_convite(token):
+    """Aceitar um convite com possibilidade de alteração de termos"""
+    user = AuthService.get_current_user()
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        # Obter dados do formulário
+        final_value = request.form.get('final_value')
+        new_delivery_date_str = request.form.get('new_delivery_date')
+        
+        # Converter valores se fornecidos
+        final_value = float(final_value) if final_value else None
+        new_delivery_date = None
+        
+        if new_delivery_date_str:
+            try:
+                new_delivery_date = datetime.strptime(new_delivery_date_str, '%Y-%m-%d')
+                if new_delivery_date <= datetime.now():
+                    flash('Nova data de entrega deve ser futura.', 'error')
+                    return redirect(url_for('prestador.ver_convite', token=token))
+            except ValueError:
+                flash('Data de entrega inválida.', 'error')
+                return redirect(url_for('prestador.ver_convite', token=token))
+        
+        # Aceitar o convite
+        result = InviteService.accept_invite(
+            token=token,
+            provider_id=user.id,
+            final_value=final_value,
+            new_delivery_date=new_delivery_date
+        )
+        
+        flash('Convite aceito com sucesso! O cliente será notificado.', 'success')
+        return redirect(url_for('prestador.convites'))
+        
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        flash(f'Erro ao aceitar convite: {str(e)}', 'error')
+    
+    return redirect(url_for('prestador.ver_convite', token=token))
+
+@prestador_bp.route('/convites/<token>/recusar', methods=['POST'])
+@login_required
+def recusar_convite(token):
+    """Recusar um convite"""
+    user = AuthService.get_current_user()
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        reason = request.form.get('reason', '')
+        
+        # Recusar o convite
+        result = InviteService.reject_invite(
+            token=token,
+            provider_id=user.id,
+            reason=reason
+        )
+        
+        flash('Convite recusado. O cliente será notificado automaticamente.', 'info')
+        return redirect(url_for('prestador.convites'))
+        
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        flash(f'Erro ao recusar convite: {str(e)}', 'error')
+    
+    return redirect(url_for('prestador.ver_convite', token=token))
+
+@prestador_bp.route('/convites/<token>/alterar-termos', methods=['POST'])
+@login_required
+def alterar_termos_convite(token):
+    """Propor alterações nos termos do convite"""
+    user = AuthService.get_current_user()
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        # Obter dados do formulário
+        new_value = request.form.get('new_value')
+        new_delivery_date_str = request.form.get('new_delivery_date')
+        
+        # Converter valores
+        new_value = float(new_value) if new_value else None
+        new_delivery_date = None
+        
+        if new_delivery_date_str:
+            try:
+                new_delivery_date = datetime.strptime(new_delivery_date_str, '%Y-%m-%d')
+                if new_delivery_date <= datetime.now():
+                    flash('Nova data de entrega deve ser futura.', 'error')
+                    return redirect(url_for('prestador.ver_convite', token=token))
+            except ValueError:
+                flash('Data de entrega inválida.', 'error')
+                return redirect(url_for('prestador.ver_convite', token=token))
+        
+        # Validar se pelo menos um campo foi alterado
+        if new_value is None and new_delivery_date is None:
+            flash('Você deve alterar pelo menos o valor ou a data de entrega.', 'error')
+            return redirect(url_for('prestador.ver_convite', token=token))
+        
+        # Alterar termos
+        result = InviteService.update_invite_terms(
+            token=token,
+            provider_id=user.id,
+            new_value=new_value,
+            new_delivery_date=new_delivery_date
+        )
+        
+        flash('Termos alterados com sucesso! O cliente será notificado das mudanças.', 'success')
+        return redirect(url_for('prestador.ver_convite', token=token))
+        
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        flash(f'Erro ao alterar termos: {str(e)}', 'error')
+    
+    return redirect(url_for('prestador.ver_convite', token=token))

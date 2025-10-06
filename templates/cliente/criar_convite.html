@@ -1,0 +1,225 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Criar Convite - Sistema Combinado{% endblock %}
+
+{% block cliente_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Criar Convite</h1>
+    <a href="{{ url_for('cliente.convites') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar aos Convites
+    </a>
+</div>
+
+<!-- Informações do Saldo -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ wallet.balance|format_currency }}</h4>
+                        <p class="mb-0">Saldo Disponível</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-wallet fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ contestation_fee|format_currency }}</h4>
+                        <p class="mb-0">Taxa de Contestação</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shield-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulário de Criação -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Dados do Convite</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('cliente.processar_criar_convite') }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="invited_email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Email do Prestador *
+                        </label>
+                        <input type="email" class="form-control" id="invited_email" name="invited_email" 
+                               placeholder="prestador@exemplo.com" required>
+                        <div class="form-text">Email do prestador que você deseja convidar</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="delivery_date" class="form-label">
+                            <i class="fas fa-calendar me-1"></i>Data de Entrega *
+                        </label>
+                        <input type="date" class="form-control" id="delivery_date" name="delivery_date" required>
+                        <div class="form-text">Quando você precisa que o serviço seja concluído</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="service_title" class="form-label">
+                    <i class="fas fa-tag me-1"></i>Título do Serviço *
+                </label>
+                <input type="text" class="form-control" id="service_title" name="service_title" 
+                       placeholder="Ex: Limpeza Residencial, Consultoria, Desenvolvimento..." 
+                       maxlength="200" required>
+                <div class="form-text">Título claro e objetivo do serviço solicitado</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="service_description" class="form-label">
+                    <i class="fas fa-align-left me-1"></i>Descrição Detalhada *
+                </label>
+                <textarea class="form-control" id="service_description" name="service_description" 
+                          rows="4" placeholder="Descreva detalhadamente o que você precisa..." required></textarea>
+                <div class="form-text">Seja específico sobre o que você espera do serviço</div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="original_value" class="form-label">
+                            <i class="fas fa-dollar-sign me-1"></i>Valor Proposto *
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" id="original_value" name="original_value" 
+                                   min="1" step="0.01" placeholder="0,00" required>
+                        </div>
+                        <div class="form-text">Valor que você está disposto a pagar pelo serviço</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-calculator me-1"></i>Valor Total Necessário
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="text" class="form-control" id="total_required" readonly>
+                        </div>
+                        <div class="form-text">Valor do serviço + taxa de contestação</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alerta de Saldo -->
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Importante:</strong> Você precisa ter saldo suficiente para cobrir o valor do serviço 
+                mais a taxa de contestação ({{ contestation_fee|format_currency }}). 
+                O valor será reservado até que o convite seja aceito e convertido em ordem.
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{{ url_for('cliente.convites') }}" class="btn btn-secondary me-md-2">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-success" id="submit-btn">
+                    <i class="fas fa-paper-plane me-2"></i>Enviar Convite
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Dicas para Criar Convites -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Dicas para um Bom Convite</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-bullseye text-success me-2"></i>Seja Específico</h6>
+                        <p class="small">Descreva claramente o que você precisa, incluindo detalhes técnicos e expectativas.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-balance-scale text-warning me-2"></i>Valor Justo</h6>
+                        <p class="small">Proponha um valor justo baseado na complexidade e tempo necessário para o serviço.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-clock text-info me-2"></i>Prazo Realista</h6>
+                        <p class="small">Defina um prazo que permita ao prestador executar o serviço com qualidade.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const originalValueInput = document.getElementById('original_value');
+    const totalRequiredInput = document.getElementById('total_required');
+    const submitBtn = document.getElementById('submit-btn');
+    const contestationFee = {{ contestation_fee }};
+    const availableBalance = {{ wallet.balance }};
+    
+    // Calcular valor total necessário
+    function calculateTotal() {
+        const serviceValue = parseFloat(originalValueInput.value) || 0;
+        const totalRequired = serviceValue + contestationFee;
+        
+        totalRequiredInput.value = totalRequired.toFixed(2);
+        
+        // Verificar se tem saldo suficiente
+        if (totalRequired > availableBalance) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Saldo Insuficiente';
+            submitBtn.className = 'btn btn-danger';
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Convite';
+            submitBtn.className = 'btn btn-success';
+        }
+    }
+    
+    // Atualizar cálculo quando valor mudar
+    originalValueInput.addEventListener('input', calculateTotal);
+    
+    // Calcular inicial
+    calculateTotal();
+    
+    // Definir data mínima como amanhã
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.getElementById('delivery_date').min = tomorrow.toISOString().split('T')[0];
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const serviceValue = parseFloat(originalValueInput.value) || 0;
+        const totalRequired = serviceValue + contestationFee;
+        
+        if (totalRequired > availableBalance) {
+            e.preventDefault();
+            alert('Saldo insuficiente! Você precisa de ' + totalRequired.toFixed(2) + ' mas tem apenas ' + availableBalance.toFixed(2));
+            return false;
+        }
+        
+        return confirm('Deseja enviar este convite? O prestador receberá uma notificação por email.');
+    });
+});
+</script>
+{% endblock %}

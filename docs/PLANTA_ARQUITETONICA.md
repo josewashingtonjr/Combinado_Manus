@@ -322,21 +322,133 @@ O sistema segue princípios modernos de UI/UX para garantir usabilidade e efici�
 - `/docs/MELHORIAS_MENU_LATERAL.md` - Documentação do menu
 - `/docs/PLANTA_ARQUITETONICA.md` - Esta atualização
 
-### 8.3. Próximas Implementações
+### 8.3. Sistema de Convites (Atualização 06/10/2025)
+
+**Funcionalidades Implementadas:**
+
+**Criação de Convites por Clientes:**
+- Cliente pode convidar prestadores específicos por email
+- Especificação de serviço, valor, data e descrição detalhada
+- Validação de saldo: cliente deve ter valor do serviço + taxa de contestação
+- Geração de token único para acesso seguro ao convite
+
+**Gestão de Convites por Prestadores:**
+- Visualização de convites recebidos com detalhes completos
+- Possibilidade de aceitar, recusar ou propor alterações
+- Alteração de valor e data de entrega antes da aceitação
+- Validação de saldo: prestador deve ter taxa de contestação
+
+**Fluxo de Conversão:**
+- Convite aceito automaticamente vira ordem de serviço
+- Convite recusado expira e notifica o cliente
+- Sistema de notificações automáticas para todas as ações
+
+**Cadastro via Convite:**
+- Usuários não cadastrados podem se registrar via link do convite
+- Usuários existentes fazem login direto pelo convite
+- Redirecionamento automático para análise do convite
+
+### 8.4. Sistema de Segurança Administrativo (Atualização 06/10/2025)
+
+**Funcionalidades de Segurança Implementadas:**
+
+**Troca de Senha para Administradores:**
+- Interface segura para alteração de senha administrativa
+- Validação de senha atual obrigatória
+- Validação de força da nova senha (mínimo 6 caracteres)
+- Confirmação de senha com validação em tempo real
+- Logs de auditoria para mudanças de senha
+- Acesso via dropdown do usuário e menu lateral de configurações
+
+**Recursos de Segurança:**
+- Validação dupla de senha (atual + nova)
+- Feedback visual em tempo real para confirmação de senha
+- Prevenção de senhas fracas
+- Confirmação obrigatória antes da alteração
+- Redirecionamento seguro após alteração bem-sucedida
+
+**Interface de Segurança:**
+- Template responsivo com design consistente
+- Dicas de segurança integradas
+- Validação JavaScript para melhor UX
+- Tratamento de erros robusto
+
+### 8.5. Correções de Sistema (Atualização 06/10/2025)
+
+**Problemas Corrigidos:**
+
+**Erro 500 na Criação de Usuários:**
+- Criados templates faltantes: `criar_usuario.html` e `editar_usuario.html`
+- Implementada criação automática de carteira para novos usuários
+- Adicionado tratamento de erro robusto na criação de carteiras
+- Validações de formulário com máscaras para CPF e telefone
+- Interface responsiva com feedback visual em tempo real
+
+**Templates de Gestão de Usuários:**
+- Template de criação com validações completas
+- Template de edição com informações do usuário
+- Máscaras automáticas para CPF e telefone
+- Validação de senhas em tempo real
+- Ações perigosas com confirmação obrigatória
+
+**Melhorias de UX:**
+- Breadcrumbs para navegação
+- Cards informativos com dicas
+- Feedback visual para ações do usuário
+- Validação JavaScript para melhor experiência
+
+### 8.6. Sistema de Copyright e Versionamento (Atualização 06/10/2025)
+
+**Funcionalidades Implementadas:**
+
+**Sistema de Versionamento:**
+- Arquivo `version.py` centralizado com informações de versão
+- Versão atual: 1.2.1 (Sistema Combinado)
+- Build number automático com data
+- Contexto global de templates para informações de versão
+
+**Informações de Copyright:**
+- Copyright: © 2025 W-jr (89) 98137-5841
+- Informações de contato integradas
+- Footer atualizado em todos os templates
+- Página "Sobre" com informações completas do desenvolvedor
+
+**Implementação Técnica:**
+- Context processor para injeção automática de variáveis
+- Template base atualizado com footer informativo
+- Rota `/sobre` funcional com informações detalhadas
+- Integração com página inicial (link no menu)
+
+**Informações Exibidas:**
+- Nome do sistema e versão
+- Data e número do build
+- Informações de copyright e desenvolvedor
+- Telefone de contato: (89) 98137-5841
+- Link para WhatsApp integrado
+
+### 8.5. Próximas Implementações
 
 **Banco de Dados:**
+- [x] Modelo `Invite` com campos completos (implementado)
 - [ ] Modelo `Contestacao` com campos completos
 - [ ] Modelo `Contrato` com status e histórico
 - [ ] Modelo `ConfiguracaoSistema` para persistência
 - [ ] Modelo `HistoricoContestacao` para auditoria
 
 **Lógica de Negócio:**
+- [x] Sistema de convites completo (implementado)
 - [ ] Implementar decisões de contestação
 - [ ] Sistema de notificações em tempo real
 - [ ] Cálculo automático de multas
 - [ ] Bloqueio/liberação de valores em escrow
 
 **Relatórios:**
+- [x] Relatório de contratos/ordens com dados reais (implementado)
+- [x] Relatório de usuários com estatísticas de carteira (implementado)
+- [x] Relatório financeiro com transações e receitas (implementado)
+- [x] Relatório de convites com taxas de conversão (implementado)
+- [x] Sistema de filtros por data, status e tipo (implementado)
+- [x] Exportação para Excel e PDF (implementado)
 - [ ] Relatório de contestações por período
 - [ ] Taxa de resolução favorável
 - [ ] Tempo médio de análise
@@ -344,6 +456,283 @@ O sistema segue princípios modernos de UI/UX para garantir usabilidade e efici�
 
 ---
 
-**Última Atualização:** 05 de Outubro de 2025  
-**Versão do Sistema:** 1.1.0  
-**Status:** Em Desenvolvimento Ativo
+## 9. Padrões de Templates e Interface
+
+### 9.1. Estrutura Hierárquica de Templates
+
+O sistema segue uma estrutura hierárquica rigorosa para garantir consistência visual e funcional:
+
+**Template Base (`templates/base.html`):**
+- Estrutura HTML5 com Bootstrap 5.1.3 e Font Awesome 6.0.0
+- Sistema de mensagens flash padronizado
+- Blocos principais: `title`, `navbar`, `content`, `footer`, `extra_css`, `extra_js`
+
+**Templates Base por Papel:**
+- **Admin** (`base_admin.html`): Cor azul, terminologia "tokens", sidebar expansível
+- **Cliente** (`base_cliente.html`): Cor verde, terminologia "R$", sidebar simples
+- **Prestador** (`base_prestador.html`): Cor amarelo, terminologia "R$", cards de oportunidades
+
+### 9.2. Padrões de Design por Papel
+
+| Papel | Cor Principal | Ícone | Terminologia | Layout |
+|-------|---------------|-------|--------------|--------|
+| Admin | Azul (`bg-primary`) | `fas fa-cog` | "Tokens" | Sidebar expansível + subcategorias |
+| Cliente | Verde (`bg-success`) | `fas fa-user-tie` | "Saldo em R$" | Sidebar + cards informativos |
+| Prestador | Amarelo (`bg-warning`) | `fas fa-user-cog` | "Saldo em R$" | Sidebar + cards de oportunidades |
+
+### 9.3. Cores Semânticas Padronizadas
+
+| Contexto | Cor | Classe Bootstrap | Uso Específico |
+|----------|-----|------------------|----------------|
+| Admin/Informação | Azul | `bg-primary` | Navegação admin, cards informativos |
+| Cliente/Sucesso | Verde | `bg-success` | Navegação cliente, status positivo |
+| Prestador/Atenção | Amarelo | `bg-warning` | Navegação prestador, alertas |
+| Erro/Urgente | Vermelho | `bg-danger` | Contestações, erros críticos |
+| Informação Complementar | Azul claro | `bg-info` | Dados secundários |
+| Neutro/Configurações | Cinza | `bg-secondary` | Configurações, logs |
+
+### 9.4. Ícones Padronizados (Font Awesome)
+
+**Funcionalidades Principais:**
+- Dashboard: `fas fa-tachometer-alt`
+- Usuários: `fas fa-users`
+- Carteira/Saldo: `fas fa-wallet`
+- Tokens (Admin): `fas fa-coins`
+- Ordens: `fas fa-clipboard-list`
+- Contestações: `fas fa-exclamation-triangle`
+- Configurações: `fas fa-cogs`
+- Relatórios: `fas fa-chart-bar`
+- Convites: `fas fa-envelope-open-text`
+- Notificações: `fas fa-bell`
+
+### 9.5. Componentes Reutilizáveis
+
+**Cards de Métricas (Padrão):**
+```html
+<div class="col-md-3 mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="card-title text-muted mb-1">TÍTULO</h6>
+                    <h3 class="mb-0 text-CONTEXTO">VALOR</h3>
+                </div>
+                <div class="text-CONTEXTO">
+                    <i class="fas fa-ICONE fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+**Formulários Padronizados:**
+```html
+<div class="mb-3">
+    <label for="campo" class="form-label">Label</label>
+    <input type="text" class="form-control" id="campo" name="campo" required>
+    <div class="form-text">Texto de ajuda (opcional)</div>
+</div>
+```
+
+### 9.6. Terminologia Diferenciada por Papel
+
+**Implementação Obrigatória:**
+- **Administradores:** Veem "1000 tokens", "Tokenomics", métricas técnicas
+- **Usuários (Cliente/Prestador):** Veem "R$ 1.000,00", "Saldo", interface simplificada
+- **Filtro Obrigatório:** `|format_currency` para conversão automática
+
+**Exemplo de Uso:**
+```html
+<!-- Admin -->
+<span>{{ valor }} tokens</span>
+
+<!-- Cliente/Prestador -->
+<span>{{ valor|format_currency }}</span>
+```
+
+### 9.7. Layout Responsivo
+
+**Desktop (≥768px):**
+- Sidebar visível (2/12 colunas)
+- Conteúdo principal (10/12 colunas)
+- Menu lateral expansível (admin)
+
+**Mobile (<768px):**
+- Sidebar oculta
+- Navbar superior com menu hambúrguer
+- Conteúdo em largura total
+- Cards empilhados verticalmente
+
+### 9.8. Padrões de Acessibilidade
+
+**Obrigatórios em Todos os Templates:**
+- `alt` em todas as imagens
+- `aria-label` em botões sem texto
+- `role` em elementos interativos
+- Contraste adequado (WCAG 2.1)
+- Navegação por teclado funcional
+- Estrutura semântica (h1, h2, etc.)
+
+### 9.9. Estrutura de Arquivos de Templates
+
+```
+templates/
+├── base.html                    # Template base principal
+├── admin/
+│   ├── base_admin.html         # Base para admin (azul, tokens)
+│   ├── dashboard.html          # Dashboard com cards coloridos
+│   ├── convites.html           # Gestão de convites (admin)
+│   └── ...                     # Outras páginas admin
+├── cliente/
+│   ├── base_cliente.html       # Base para cliente (verde, R$)
+│   ├── dashboard.html          # Dashboard com saldo
+│   ├── convites.html           # Criar/gerenciar convites
+│   └── ...                     # Outras páginas cliente
+├── prestador/
+│   ├── base_prestador.html     # Base para prestador (amarelo, R$)
+│   ├── dashboard.html          # Dashboard com oportunidades
+│   ├── convites.html           # Responder convites
+│   └── ...                     # Outras páginas prestador
+├── auth/
+│   ├── admin_login.html        # Login admin
+│   ├── user_login.html         # Login usuário
+│   └── convite_cadastro.html   # Cadastro via convite
+├── errors/
+│   ├── 404.html               # Página não encontrada
+│   ├── 500.html               # Erro interno
+│   └── ...                    # Outros erros
+└── shared/
+    ├── convite_detalhes.html  # Componente de detalhes do convite
+    └── ...                    # Outros componentes compartilhados
+```
+
+### 9.10. Convenções de Nomenclatura
+
+**Arquivos de Template:**
+- Snake_case: `base_admin.html`, `criar_convite.html`
+- Descritivo e agrupado por funcionalidade
+- Prefixo por papel quando necessário
+
+**Classes CSS Customizadas:**
+- Prefixo `sc-` para classes do Sistema Combinado
+- BEM methodology para componentes complexos
+- Bootstrap padrão sempre que possível
+
+### 9.11. Validação e Checklist de Templates
+
+**Checklist Obrigatório para Novos Templates:**
+- [ ] Herda do template base correto (admin/cliente/prestador)
+- [ ] Usa terminologia apropriada ao papel
+- [ ] Implementa responsividade (desktop/mobile)
+- [ ] Segue padrões de cores definidos
+- [ ] Inclui ícones padronizados Font Awesome
+- [ ] Atende critérios de acessibilidade WCAG 2.1
+- [ ] Funciona em Chrome, Firefox, Safari
+- [ ] Validação HTML5 sem erros
+- [ ] Navegação por teclado funcional
+
+### 9.12. Sistema de Convites - Padrões Específicos
+
+**Templates Específicos para Convites:**
+- `cliente/criar_convite.html`: Formulário de criação
+- `cliente/meus_convites.html`: Lista de convites enviados
+- `prestador/convites_recebidos.html`: Lista de convites recebidos
+- `prestador/responder_convite.html`: Interface de resposta
+- `auth/convite_cadastro.html`: Cadastro via token de convite
+- `shared/convite_card.html`: Componente reutilizável de convite
+
+**Padrões de Interface para Convites:**
+- Cards com status colorido (pendente: amarelo, aceito: verde, recusado: vermelho)
+- Ícone padrão: `fas fa-envelope-open-text`
+- Terminologia: "Convite de Serviço", "Proposta", "Solicitação"
+- Valores sempre em R$ para usuários (cliente/prestador)
+
+---
+
+## 10. Dashboard Financeiro Avançado (Implementado em 06/10/2025)
+
+### 10.1. Funcionalidades Implementadas
+
+**Cards de Taxas Recebidas no Dashboard Principal:**
+- Card "Taxas Totais" - Receita histórica completa em tokens
+- Card "Receita do Mês" - Receita mensal com número de transações
+- Card "Taxa Média" - Taxa média por transação mensal
+- Card "% do Volume" - Percentual de taxas sobre volume total de transações
+
+**Seção Financeira Completa no Menu Admin:**
+- **Dashboard Financeiro** (`/admin/financeiro/dashboard`)
+  - Gráfico de evolução das receitas (6 meses)
+  - Top 10 usuários geradores de taxa
+  - Previsões baseadas em tendências históricas
+  - Resumo completo de tokens e distribuição
+- **Receitas** (`/admin/financeiro/receitas`)
+  - Detalhamento de todas as transações de taxa
+  - Filtros por período (7, 30, 90, 365 dias)
+  - Estatísticas de receita diária
+- **Configuração de Taxas** (`/admin/financeiro/taxas`)
+  - Interface para configurar taxa do sistema (%)
+  - Configuração de taxas de saque e depósito
+  - Simulador de impacto em tempo real
+  - Validações de segurança para alterações
+- **Previsões** (`/admin/financeiro/previsoes`)
+  - Análise de tendências baseada em 12 meses
+  - Cálculo de crescimento percentual
+  - Previsões mensais, trimestrais e anuais
+- **Relatórios Financeiros** (`/admin/financeiro/relatorios`)
+  - Relatórios consolidados por período
+  - Análise de lucratividade e margem
+  - Integração com ReportService existente
+
+**Card de Distribuição de Tokens:**
+- Visualização detalhada de tokens disponíveis vs em escrow
+- Percentuais de distribuição em tempo real
+- Barra de progresso visual da distribuição
+- Métricas de circulação avançadas
+
+### 10.2. Arquivos Implementados
+
+**Backend:**
+- `services/admin_service.py` - Métricas financeiras expandidas
+- `routes/admin_routes.py` - 5 novas rotas financeiras
+
+**Frontend:**
+- `templates/admin/dashboard.html` - Cards de taxas e distribuição
+- `templates/admin/base_admin.html` - Menu financeiro expandido
+- `templates/admin/financeiro_dashboard.html` - Dashboard financeiro completo
+- `templates/admin/financeiro_taxas.html` - Configuração de taxas
+
+**Funcionalidades Técnicas:**
+- Integração com Chart.js para gráficos interativos
+- Simulador de impacto de taxas em tempo real
+- Cálculos de previsão baseados em tendências
+- Terminologia técnica "tokens" para administradores
+- Tratamento de erros robusto com fallbacks
+
+### 10.3. Correções Críticas Implementadas
+
+**Erro de Template Corrigido:**
+- **Problema:** `url_for('sobre')` causando erro 500 na página inicial
+- **Solução:** Corrigido para `url_for('home.about')` 
+- **Impacto:** Sistema agora funciona sem erros críticos
+
+### 10.4. Métricas Adicionadas ao AdminService
+
+**Novas Estatísticas Financeiras:**
+- `taxas_totais` - Total histórico de taxas arrecadadas
+- `transacoes_com_taxa_mes` - Número de transações que geraram taxa no mês
+- `taxa_media_mes` - Taxa média por transação mensal
+- `tokens_em_escrow` - Tokens bloqueados em transações
+- `tokens_disponiveis_usuarios` - Tokens livres com usuários
+- `percentual_escrow` - Percentual de tokens em escrow
+
+**Integração com WalletService:**
+- Cálculos baseados em dados reais do sistema de tokenomics
+- Validações de integridade matemática
+- Fallbacks para casos de erro nos cálculos
+
+---
+
+**Última Atualização:** 06 de Outubro de 2025  
+**Versão do Sistema:** 1.2.1  
+**Status:** Dashboard Financeiro Avançado Implementado

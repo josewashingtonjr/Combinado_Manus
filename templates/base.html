@@ -39,9 +39,37 @@
     
     <!-- Rodapé -->
     {% block footer %}
-    <footer class="bg-dark text-light text-center py-3 mt-5">
+    <footer class="bg-dark text-light py-4 mt-5">
         <div class="container">
-            <p>&copy; 2024 Sistema Combinado. Todos os direitos reservados.</p>
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <h6 class="text-light mb-2">{{ version_name }}</h6>
+                    <p class="mb-1">{{ copyright_text }}</p>
+                    <small class="text-muted">{{ build_info }}</small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="mb-1">
+                        <i class="fas fa-code me-1"></i>
+                        Versão {{ version }}
+                    </p>
+                    <p class="mb-1">
+                        <i class="fas fa-phone me-1"></i>
+                        Contato: {{ contact_phone }}
+                    </p>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>
+                        Build: {{ build_date }}
+                    </small>
+                </div>
+            </div>
+            <hr class="my-3 border-secondary">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <small class="text-muted">
+                        Sistema de gestão de serviços com tokenomics interno
+                    </small>
+                </div>
+            </div>
         </div>
     </footer>
     {% endblock %}

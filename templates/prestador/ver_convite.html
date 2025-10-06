@@ -1,0 +1,333 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Convite: {{ invite.service_title }} - Sistema Combinado{% endblock %}
+
+{% block prestador_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Detalhes do Convite</h1>
+    <a href="{{ url_for('prestador.convites') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar aos Convites
+    </a>
+</div>
+
+<!-- Status do Convite -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert {% if invite.status == 'pendente' and not invite.is_expired %}alert-warning{% elif invite.status == 'aceito' %}alert-success{% elif invite.status == 'recusado' %}alert-danger{% else %}alert-secondary{% endif %}" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    {% if invite.status == 'pendente' and not invite.is_expired %}
+                        <i class="fas fa-clock fa-2x"></i>
+                    {% elif invite.status == 'aceito' %}
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    {% elif invite.status == 'recusado' %}
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    {% elif invite.status == 'expirado' or invite.is_expired %}
+                        <i class="fas fa-calendar-times fa-2x"></i>
+                    {% elif invite.status == 'convertido' %}
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h5 class="mb-1">
+                        {% if invite.status == 'pendente' and not invite.is_expired %}
+                            Convite Pendente
+                        {% elif invite.status == 'aceito' %}
+                            Convite Aceito
+                        {% elif invite.status == 'recusado' %}
+                            Convite Recusado
+                        {% elif invite.status == 'expirado' or invite.is_expired %}
+                            Convite Expirado
+                        {% elif invite.status == 'convertido' %}
+                            Convite Convertido em Ordem
+                        {% endif %}
+                    </h5>
+                    <p class="mb-0">
+                        {% if invite.status == 'pendente' and not invite.is_expired %}
+                            Este convite está aguardando sua resposta. Expira em {{ invite.expires_at.strftime('%d/%m/%Y') }}.
+                        {% elif invite.status == 'aceito' %}
+                            Você aceitou este convite em {{ invite.responded_at.strftime('%d/%m/%Y %H:%M') }}.
+                        {% elif invite.status == 'recusado' %}
+                            Você recusou este convite em {{ invite.responded_at.strftime('%d/%m/%Y %H:%M') }}.
+                        {% elif invite.status == 'expirado' or invite.is_expired %}
+                            Este convite expirou e não pode mais ser respondido.
+                        {% elif invite.status == 'convertido' %}
+                            Este convite foi convertido em uma ordem de serviço ativa.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detalhes do Convite -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Serviço</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="text-primary mb-3">{{ invite.service_title }}</h4>
+                
+                <div class="mb-4">
+                    <h6><i class="fas fa-align-left me-2"></i>Descrição:</h6>
+                    <p class="text-muted">{{ invite.service_description }}</p>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user me-2"></i>Cliente:</h6>
+                        <p>{{ invite.client.nome }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-envelope me-2"></i>Email do Cliente:</h6>
+                        <p>{{ invite.client.email }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calendar me-2"></i>Data de Entrega:</h6>
+                        <p class="text-primary">{{ invite.delivery_date.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-clock me-2"></i>Prazo:</h6>
+                        <p class="text-primary">
+                            {{ invite.delivery_date.strftime('%d/%m/%Y') }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calendar-plus me-2"></i>Convite Criado:</h6>
+                        <p>{{ invite.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calendar-times me-2"></i>Expira em:</h6>
+                        <p class="text-danger">{{ invite.expires_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Informações Financeiras -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Valores</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Valor Original:</label>
+                    <div class="h4 text-success">{{ invite.original_value|format_currency }}</div>
+                </div>
+                
+                {% if invite.final_value and invite.final_value != invite.original_value %}
+                <div class="mb-3">
+                    <label class="form-label">Valor Negociado:</label>
+                    <div class="h4 text-primary">{{ invite.final_value|format_currency }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label class="form-label">Taxa de Contestação:</label>
+                    <div class="text-warning">{{ contestation_fee|format_currency }}</div>
+                    <small class="text-muted">Necessária para aceitar</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seu Saldo -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-wallet me-2"></i>Seu Saldo</h6>
+            </div>
+            <div class="card-body">
+                {% if user.wallet %}
+                    <div class="h5 text-success">{{ user.wallet.balance|format_currency }}</div>
+                    {% if user.wallet.balance >= contestation_fee %}
+                        <small class="text-success">
+                            <i class="fas fa-check me-1"></i>Saldo suficiente para aceitar
+                        </small>
+                    {% else %}
+                        <small class="text-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Saldo insuficiente
+                        </small>
+                    {% endif %}
+                {% else %}
+                    <div class="text-muted">Carteira não encontrada</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Ações -->
+        {% if invite.can_be_accepted %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Ações</h6>
+            </div>
+            <div class="card-body">
+                <!-- Aceitar Convite -->
+                <button type="button" class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                    <i class="fas fa-check me-2"></i>Aceitar Convite
+                </button>
+                
+                <!-- Propor Alterações -->
+                <button type="button" class="btn btn-warning w-100 mb-2" data-bs-toggle="modal" data-bs-target="#negotiateModal">
+                    <i class="fas fa-edit me-2"></i>Propor Alterações
+                </button>
+                
+                <!-- Recusar Convite -->
+                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="fas fa-times me-2"></i>Recusar Convite
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal: Aceitar Convite -->
+<div class="modal fade" id="acceptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check me-2"></i>Aceitar Convite</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('prestador.aceitar_convite', token=invite.token) }}">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Ao aceitar este convite, {{ contestation_fee|format_currency }} será reservado como taxa de contestação.
+                    </div>
+                    
+                    <p>Você está prestes a aceitar o convite para:</p>
+                    <ul>
+                        <li><strong>Serviço:</strong> {{ invite.service_title }}</li>
+                        <li><strong>Valor:</strong> {{ invite.original_value|format_currency }}</li>
+                        <li><strong>Prazo:</strong> {{ invite.delivery_date.strftime('%d/%m/%Y') }}</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Confirmar Aceitação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Propor Alterações -->
+<div class="modal fade" id="negotiateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Propor Alterações</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('prestador.alterar_termos_convite', token=invite.token) }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        O cliente será notificado das alterações propostas.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_value" class="form-label">Novo Valor (opcional):</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" id="new_value" name="new_value" 
+                                   min="1" step="0.01" placeholder="{{ invite.original_value }}">
+                        </div>
+                        <div class="form-text">Deixe em branco para manter o valor original</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_delivery_date" class="form-label">Nova Data de Entrega (opcional):</label>
+                        <input type="date" class="form-control" id="new_delivery_date" name="new_delivery_date" 
+                               value="{{ invite.delivery_date.strftime('%Y-%m-%d') }}">
+                        <div class="form-text">Deixe como está para manter a data original</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Propor Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Recusar Convite -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-times me-2"></i>Recusar Convite</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('prestador.recusar_convite', token=invite.token) }}">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Esta ação não pode ser desfeita. O cliente será notificado da recusa.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Motivo da Recusa (opcional):</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" 
+                                  placeholder="Explique brevemente o motivo da recusa..."></textarea>
+                        <div class="form-text">Ajude o cliente a entender sua decisão</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Confirmar Recusa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validação do formulário de alterações
+    document.getElementById('negotiateModal').querySelector('form').addEventListener('submit', function(e) {
+        const newValue = document.getElementById('new_value').value;
+        const newDate = document.getElementById('new_delivery_date').value;
+        const originalDate = '{{ invite.delivery_date.strftime("%Y-%m-%d") }}';
+        
+        if (!newValue && newDate === originalDate) {
+            e.preventDefault();
+            alert('Você deve alterar pelo menos o valor ou a data de entrega.');
+            return false;
+        }
+        
+        return confirm('Deseja propor estas alterações? O cliente será notificado.');
+    });
+    
+    // Confirmação de aceitação
+    document.getElementById('acceptModal').querySelector('form').addEventListener('submit', function(e) {
+        return confirm('Tem certeza que deseja aceitar este convite?');
+    });
+    
+    // Confirmação de recusa
+    document.getElementById('rejectModal').querySelector('form').addEventListener('submit', function(e) {
+        return confirm('Tem certeza que deseja recusar este convite? Esta ação não pode ser desfeita.');
+    });
+});
+</script>
+{% endblock %}

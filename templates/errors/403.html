@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Acesso Negado - Sistema Combinado{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-6 text-center">
+            <!-- Ícone de erro -->
+            <div class="mb-4">
+                <i class="fas fa-lock text-warning" style="font-size: 4rem;"></i>
+            </div>
+            
+            <!-- Código do erro -->
+            <h1 class="display-1 text-warning mb-3" style="font-weight: bold;">403</h1>
+            
+            <!-- Título do erro -->
+            <h2 class="h3 text-dark mb-3">Acesso Negado</h2>
+            
+            <!-- Mensagem personalizada por tipo de usuário -->
+            {% if is_admin_user %}
+                <p class="text-muted mb-4">
+                    Você não tem permissão para acessar este recurso administrativo. 
+                    Verifique suas credenciais ou entre em contato com outro administrador.
+                </p>
+            {% else %}
+                <p class="text-muted mb-4">
+                    Você não tem permissão para acessar esta página. 
+                    Faça login com uma conta autorizada ou entre em contato com o suporte.
+                </p>
+            {% endif %}
+            
+            <!-- Botões de ação -->
+            <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                {% if is_admin_user %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard Administrativo
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Sair e Fazer Login Novamente
+                    </a>
+                {% elif current_user_id %}
+                    <!-- Usuário logado - mostrar opções baseadas no papel -->
+                    {% if user_roles and 'cliente' in user_roles %}
+                        <a href="{{ url_for('cliente.dashboard') }}" class="btn btn-success">
+                            <i class="fas fa-user-tie me-2"></i>
+                            Meu Dashboard
+                        </a>
+                    {% endif %}
+                    {% if user_roles and 'prestador' in user_roles %}
+                        <a href="{{ url_for('prestador.dashboard') }}" class="btn btn-warning">
+                            <i class="fas fa-user-cog me-2"></i>
+                            Dashboard Prestador
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Sair e Fazer Login Novamente
+                    </a>
+                {% else %}
+                    <!-- Usuário não logado -->
+                    <a href="{{ url_for('auth.user_login') }}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Fazer Login
+                    </a>
+                    <a href="{{ url_for('auth.admin_login') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-shield me-2"></i>
+                        Login Administrativo
+                    </a>
+                    <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>
+                        Página Inicial
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Informações adicionais -->
+            <div class="mt-5 pt-4 border-top">
+                <small class="text-muted">
+                    Se você acredita que deveria ter acesso a esta página, entre em contato com o administrador do sistema.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .display-1 {
+        font-size: 6rem;
+        line-height: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .display-1 {
+            font-size: 4rem;
+        }
+        
+        .fas.fa-lock {
+            font-size: 3rem !important;
+        }
+    }
+</style>
+{% endblock %}

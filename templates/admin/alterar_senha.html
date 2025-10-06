@@ -1,0 +1,178 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Alterar Senha - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-key me-2 text-primary"></i>Alterar Senha</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Alterar Senha</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Segurança da Conta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> Por segurança, você precisará inserir sua senha atual para confirmar a alteração.
+                    </div>
+
+                    <form method="POST" id="alterarSenhaForm">
+                        <div class="mb-3">
+                            <label for="senha_atual" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Senha Atual
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="senha_atual" 
+                                   name="senha_atual" 
+                                   required
+                                   placeholder="Digite sua senha atual">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nova_senha" class="form-label">
+                                <i class="fas fa-key me-1"></i>Nova Senha
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="nova_senha" 
+                                   name="nova_senha" 
+                                   required
+                                   minlength="6"
+                                   placeholder="Digite a nova senha (mínimo 6 caracteres)">
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                A senha deve ter pelo menos 6 caracteres.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confirmar_senha" class="form-label">
+                                <i class="fas fa-check-circle me-1"></i>Confirmar Nova Senha
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="confirmar_senha" 
+                                   name="confirmar_senha" 
+                                   required
+                                   minlength="6"
+                                   placeholder="Digite novamente a nova senha">
+                            <div id="senha-match-feedback" class="form-text"></div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="btnSalvar">
+                                <i class="fas fa-save me-1"></i>Alterar Senha
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card de Dicas de Segurança -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Dicas de Segurança
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Use uma senha forte com pelo menos 8 caracteres
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Combine letras maiúsculas, minúsculas, números e símbolos
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Não use informações pessoais na senha
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Altere sua senha regularmente
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const novaSenha = document.getElementById('nova_senha');
+    const confirmarSenha = document.getElementById('confirmar_senha');
+    const feedback = document.getElementById('senha-match-feedback');
+    const btnSalvar = document.getElementById('btnSalvar');
+    
+    function verificarSenhas() {
+        if (confirmarSenha.value === '') {
+            feedback.textContent = '';
+            feedback.className = 'form-text';
+            return;
+        }
+        
+        if (novaSenha.value === confirmarSenha.value) {
+            feedback.textContent = '✓ As senhas coincidem';
+            feedback.className = 'form-text text-success';
+            btnSalvar.disabled = false;
+        } else {
+            feedback.textContent = '✗ As senhas não coincidem';
+            feedback.className = 'form-text text-danger';
+            btnSalvar.disabled = true;
+        }
+    }
+    
+    novaSenha.addEventListener('input', verificarSenhas);
+    confirmarSenha.addEventListener('input', verificarSenhas);
+    
+    // Validação do formulário
+    document.getElementById('alterarSenhaForm').addEventListener('submit', function(e) {
+        if (novaSenha.value !== confirmarSenha.value) {
+            e.preventDefault();
+            alert('As senhas não coincidem!');
+            return false;
+        }
+        
+        if (novaSenha.value.length < 6) {
+            e.preventDefault();
+            alert('A nova senha deve ter pelo menos 6 caracteres!');
+            return false;
+        }
+        
+        // Confirmar alteração
+        if (!confirm('Tem certeza que deseja alterar sua senha?')) {
+            e.preventDefault();
+            return false;
+        }
+        
+        btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Alterando...';
+        btnSalvar.disabled = true;
+    });
+});
+</script>
+{% endblock %}

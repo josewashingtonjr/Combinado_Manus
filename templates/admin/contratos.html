@@ -1,0 +1,355 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Contratos - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-file-contract me-2 text-info"></i>Gestão de Contratos</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Contratos</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">TOTAL</h6>
+                            <h3 class="mb-0 text-primary">{{ stats.total }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="fas fa-file-contract fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">DISPONÍVEL</h6>
+                            <h3 class="mb-0 text-secondary">{{ stats.disponivel }}</h3>
+                        </div>
+                        <div class="text-secondary">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">EM ANDAMENTO</h6>
+                            <h3 class="mb-0 text-warning">{{ stats.em_andamento }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-hourglass-half fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">CONCLUÍDO</h6>
+                            <h3 class="mb-0 text-success">{{ stats.concluida }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">CANCELADO</h6>
+                            <h3 class="mb-0 text-muted">{{ stats.cancelada }}</h3>
+                        </div>
+                        <div class="text-muted">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-muted mb-1">DISPUTADO</h6>
+                            <h3 class="mb-0 text-danger">{{ stats.disputada }}</h3>
+                        </div>
+                        <div class="text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>Filtros
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="">Todos os status</option>
+                                <option value="disponivel" {% if status_filter == 'disponivel' %}selected{% endif %}>Disponível</option>
+                                <option value="aceita" {% if status_filter == 'aceita' %}selected{% endif %}>Aceita</option>
+                                <option value="em_andamento" {% if status_filter == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
+                                <option value="concluida" {% if status_filter == 'concluida' %}selected{% endif %}>Concluída</option>
+                                <option value="cancelada" {% if status_filter == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                                <option value="disputada" {% if status_filter == 'disputada' %}selected{% endif %}>Disputada</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>Filtrar
+                            </button>
+                            <a href="{{ url_for('admin.contratos') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Limpar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Contratos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Lista de Contratos
+                        {% if status_filter %}
+                            - Status: {{ status_filter|title }}
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if orders.items %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Título</th>
+                                        <th>Cliente</th>
+                                        <th>Prestador</th>
+                                        <th>Valor</th>
+                                        <th>Status</th>
+                                        <th>Criado em</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for order in orders.items %}
+                                    <tr>
+                                        <td>
+                                            <strong>#{{ order.id }}</strong>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">{{ order.title }}</div>
+                                            <small class="text-muted">{{ order.description[:50] }}{% if order.description|length > 50 %}...{% endif %}</small>
+                                        </td>
+                                        <td>
+                                            {% if order.client %}
+                                                <div>{{ order.client.nome }}</div>
+                                                <small class="text-muted">{{ order.client.email }}</small>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if order.provider %}
+                                                <div>{{ order.provider.nome }}</div>
+                                                <small class="text-muted">{{ order.provider.email }}</small>
+                                            {% else %}
+                                                <span class="text-muted">Não atribuído</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ order.value }} tokens</strong>
+                                        </td>
+                                        <td>
+                                            {% if order.status == 'disponivel' %}
+                                                <span class="badge bg-secondary">Disponível</span>
+                                            {% elif order.status == 'aceita' %}
+                                                <span class="badge bg-primary">Aceita</span>
+                                            {% elif order.status == 'em_andamento' %}
+                                                <span class="badge bg-warning">Em Andamento</span>
+                                            {% elif order.status == 'concluida' %}
+                                                <span class="badge bg-success">Concluída</span>
+                                            {% elif order.status == 'cancelada' %}
+                                                <span class="badge bg-secondary">Cancelada</span>
+                                            {% elif order.status == 'disputada' %}
+                                                <span class="badge bg-danger">Disputada</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">{{ order.status|title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'N/A' }}</div>
+                                            <small class="text-muted">{{ order.created_at.strftime('%H:%M') if order.created_at else '' }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('admin.ver_contrato', contrato_id=order.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary" title="Ver detalhes">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if order.status == 'disputada' %}
+                                                <a href="{{ url_for('admin.analisar_contestacao', contestacao_id=order.id) }}" 
+                                                   class="btn btn-sm btn-outline-danger" title="Analisar disputa">
+                                                    <i class="fas fa-gavel"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginação -->
+                        {% if orders.pages > 1 %}
+                        <div class="card-footer">
+                            <nav aria-label="Navegação de contratos">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if orders.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin.contratos', page=orders.prev_num, status=status_filter) }}">
+                                                <i class="fas fa-chevron-left"></i> Anterior
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in orders.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != orders.page %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('admin.contratos', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if orders.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin.contratos', page=orders.next_num, status=status_filter) }}">
+                                                Próximo <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-contract fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Nenhum contrato encontrado</h5>
+                            <p class="text-muted">
+                                {% if status_filter %}
+                                    Não há contratos com o status "{{ status_filter }}" no momento.
+                                {% else %}
+                                    Não há contratos cadastrados no sistema ainda.
+                                {% endif %}
+                            </p>
+                            {% if status_filter %}
+                                <a href="{{ url_for('admin.contratos') }}" class="btn btn-primary">
+                                    <i class="fas fa-list me-1"></i>Ver Todos os Contratos
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+    margin-right: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
+{% endblock %}

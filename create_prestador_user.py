@@ -3,6 +3,7 @@
 
 from app import app, db
 from models import User
+from services.wallet_service import WalletService
 
 def create_prestador_user():
     """Criar usuário de teste para a área do prestador"""
@@ -27,10 +28,16 @@ def create_prestador_user():
         db.session.add(user)
         db.session.commit()
         
-        print("✅ Usuário prestador criado:")
-        print("   Email: prestador@teste.com")
-        print("   Senha: 123456")
-        print("   Papel: prestador")
+        # Criar carteira automaticamente
+        try:
+            wallet = WalletService.ensure_user_has_wallet(user.id)
+            print("✅ Usuário prestador criado:")
+            print("   Email: prestador@teste.com")
+            print("   Senha: 123456")
+            print("   Papel: prestador")
+            print(f"   Carteira criada com ID: {wallet.id}")
+        except Exception as e:
+            print(f"❌ Erro ao criar carteira: {e}")
 
 def create_dual_user():
     """Criar usuário que é cliente E prestador"""
@@ -55,10 +62,16 @@ def create_dual_user():
         db.session.add(user)
         db.session.commit()
         
-        print("✅ Usuário dual criado:")
-        print("   Email: dual@teste.com")
-        print("   Senha: 123456")
-        print("   Papéis: cliente e prestador")
+        # Criar carteira automaticamente
+        try:
+            wallet = WalletService.ensure_user_has_wallet(user.id)
+            print("✅ Usuário dual criado:")
+            print("   Email: dual@teste.com")
+            print("   Senha: 123456")
+            print("   Papéis: cliente e prestador")
+            print(f"   Carteira criada com ID: {wallet.id}")
+        except Exception as e:
+            print(f"❌ Erro ao criar carteira: {e}")
 
 if __name__ == '__main__':
     create_prestador_user()

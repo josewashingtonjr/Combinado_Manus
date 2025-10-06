@@ -46,12 +46,24 @@
             </ul>
             
             <ul class="navbar-nav">
-                <!-- Troca de Papel -->
-                {% if 'cliente' in session.user_roles %}
-                <li class="nav-item">
-                    <a class="nav-link btn btn-outline-light btn-sm me-2" href="{{ url_for('prestador.trocar_para_cliente') }}">
-                        <i class="fas fa-exchange-alt me-1"></i>Área Cliente
+                <!-- Troca de Papel para Usuários Dual -->
+                {% if can_switch_roles %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle btn btn-outline-light btn-sm me-2" href="#" id="roleDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="{{ role_icon }} me-1"></i>{{ active_role|title }}
                     </a>
+                    <ul class="dropdown-menu">
+                        {% for role_code, role_name in available_roles %}
+                            {% if role_code != active_role %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('role.set_role', role=role_code) }}">
+                                    <i class="fas fa-{{ 'user-tie' if role_code == 'cliente' else 'user-cog' }} me-2"></i>
+                                    Trocar para {{ role_name }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
                 </li>
                 {% endif %}
                 
