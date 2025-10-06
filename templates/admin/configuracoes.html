@@ -111,27 +111,199 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Segurança</h5>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Tamanho Mínimo de Senha</label>
-                    <input type="number" class="form-control" value="8" min="6" max="20">
-                    <small class="form-text text-muted">Número mínimo de caracteres para senhas</small>
-                </div>
+                <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="tipo" value="seguranca">
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Tamanho Mínimo de Senha</strong></label>
+                        <input type="number" name="senha_tamanho_minimo" class="form-control" 
+                               value="{{ config.seguranca.senha_tamanho_minimo.value if config.seguranca and config.seguranca.senha_tamanho_minimo else 8 }}" 
+                               min="6" max="20" required>
+                        <small class="form-text text-muted">Número mínimo de caracteres para senhas</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Máximo de Tentativas de Login</strong></label>
+                        <input type="number" name="max_tentativas_login" class="form-control" 
+                               value="{{ config.seguranca.max_tentativas_login.value if config.seguranca and config.seguranca.max_tentativas_login else 5 }}" 
+                               min="3" max="10" required>
+                        <small class="form-text text-muted">Número máximo de tentativas antes do bloqueio</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Timeout de Bloqueio (minutos)</strong></label>
+                        <input type="number" name="timeout_bloqueio_login" class="form-control" 
+                               value="{{ config.seguranca.timeout_bloqueio_login.value if config.seguranca and config.seguranca.timeout_bloqueio_login else 30 }}" 
+                               min="5" max="120" required>
+                        <small class="form-text text-muted">Tempo de bloqueio após exceder tentativas</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Timeout de Sessão (minutos)</strong></label>
+                        <input type="number" name="timeout_sessao" class="form-control" 
+                               value="{{ config.seguranca.timeout_sessao.value if config.seguranca and config.seguranca.timeout_sessao else 120 }}" 
+                               min="30" max="480" required>
+                        <small class="form-text text-muted">Tempo limite para sessões inativas</small>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="require_2fa" id="require2fa" 
+                               {% if config.seguranca and config.seguranca.require_2fa and config.seguranca.require_2fa.value %}checked{% endif %}>
+                        <label class="form-check-label" for="require2fa">
+                            <strong>Exigir autenticação de dois fatores (2FA)</strong>
+                        </label>
+                        <small class="form-text text-muted d-block">Ativar 2FA obrigatório para todos os usuários</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Segurança
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-database me-2"></i>Backup Automático</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="tipo" value="backup">
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="backup_automatico" id="backupAutomatico" 
+                               {% if config.backup and config.backup.backup_automatico and config.backup.backup_automatico.value %}checked{% endif %}>
+                        <label class="form-check-label" for="backupAutomatico">
+                            <strong>Ativar Backup Automático</strong>
+                        </label>
+                        <small class="form-text text-muted d-block">Realizar backups automáticos dos dados críticos</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Intervalo entre Backups (horas)</strong></label>
+                        <input type="number" name="backup_intervalo_horas" class="form-control" 
+                               value="{{ config.backup.backup_intervalo_horas.value if config.backup and config.backup.backup_intervalo_horas else 24 }}" 
+                               min="1" max="168" required>
+                        <small class="form-text text-muted">Frequência dos backups automáticos</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Retenção de Backups (dias)</strong></label>
+                        <input type="number" name="backup_retencao_dias" class="form-control" 
+                               value="{{ config.backup.backup_retencao_dias.value if config.backup and config.backup.backup_retencao_dias else 30 }}" 
+                               min="7" max="365" required>
+                        <small class="form-text text-muted">Tempo de retenção dos backups antigos</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Diretório de Backup</strong></label>
+                        <input type="text" name="backup_path" class="form-control" 
+                               value="{{ config.backup.backup_path.value if config.backup and config.backup.backup_path else './backups' }}" 
+                               required>
+                        <small class="form-text text-muted">Caminho para armazenar os arquivos de backup</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Configurações de Backup
+                    </button>
+                </form>
                 
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="require2fa" checked>
-                    <label class="form-check-label" for="require2fa">
-                        Exigir autenticação de dois fatores (2FA)
-                    </label>
-                </div>
+                <hr class="my-4">
                 
-                <button type="button" class="btn btn-primary">
-                    <i class="fas fa-save me-1"></i>Salvar Segurança
-                </button>
+                <h6><i class="fas fa-play-circle me-2"></i>Ações de Backup</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-success btn-sm w-100 mb-2" onclick="criarBackup('full')">
+                            <i class="fas fa-database me-1"></i>Backup Completo
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-info btn-sm w-100 mb-2" onclick="criarBackup('wallets')">
+                            <i class="fas fa-wallet me-1"></i>Backup de Carteiras
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-warning btn-sm w-100 mb-2" onclick="criarBackup('transactions')">
+                            <i class="fas fa-exchange-alt me-1"></i>Backup de Transações
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-secondary btn-sm w-100 mb-2" onclick="criarBackup('incremental')">
+                            <i class="fas fa-clock me-1"></i>Backup Incremental
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Monitoramento de Integridade</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="tipo" value="monitoramento">
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="monitoramento_integridade" id="monitoramentoIntegridade" 
+                               {% if config.monitoramento and config.monitoramento.monitoramento_integridade and config.monitoramento.monitoramento_integridade.value %}checked{% endif %}>
+                        <label class="form-check-label" for="monitoramentoIntegridade">
+                            <strong>Ativar Monitoramento de Integridade</strong>
+                        </label>
+                        <small class="form-text text-muted d-block">Verificação automática da integridade dos dados</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Intervalo de Verificação (horas)</strong></label>
+                        <input type="number" name="intervalo_verificacao_integridade" class="form-control" 
+                               value="{{ config.monitoramento.intervalo_verificacao_integridade.value if config.monitoramento and config.monitoramento.intervalo_verificacao_integridade else 6 }}" 
+                               min="1" max="24" required>
+                        <small class="form-text text-muted">Frequência das verificações de integridade</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Alerta de Saldo Baixo (R$)</strong></label>
+                        <input type="number" name="alerta_saldo_baixo" class="form-control" 
+                               value="{{ config.monitoramento.alerta_saldo_baixo.value if config.monitoramento and config.monitoramento.alerta_saldo_baixo else 100 }}" 
+                               step="0.01" min="0" required>
+                        <small class="form-text text-muted">Limite para alertas de saldo baixo</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Alerta de Transação de Alto Valor (R$)</strong></label>
+                        <input type="number" name="alerta_transacao_alto_valor" class="form-control" 
+                               value="{{ config.monitoramento.alerta_transacao_alto_valor.value if config.monitoramento and config.monitoramento.alerta_transacao_alto_valor else 10000 }}" 
+                               step="0.01" min="0" required>
+                        <small class="form-text text-muted">Limite para alertas de transações de alto valor</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Monitoramento
+                    </button>
+                </form>
+                
+                <hr class="my-4">
+                
+                <h6><i class="fas fa-search me-2"></i>Verificações Manuais</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-info btn-sm w-100 mb-2" onclick="verificarIntegridade()">
+                            <i class="fas fa-check-circle me-1"></i>Verificar Integridade
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-warning btn-sm w-100 mb-2" onclick="verificarSaudeSystem()">
+                            <i class="fas fa-heartbeat me-1"></i>Verificar Saúde do Sistema
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -167,4 +339,173 @@
         </div>
     </div>
 </div>
+
+<script>
+// Funções para backup
+function criarBackup(tipo) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar loading
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Criando...';
+    button.disabled = true;
+    
+    fetch('/admin/backup/criar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: tipo
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            // Atualizar status de backup se necessário
+            atualizarStatusBackup();
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erro ao criar backup: ' + error.message);
+    })
+    .finally(() => {
+        // Restaurar botão
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Função para verificar integridade
+function verificarIntegridade() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar loading
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verificando...';
+    button.disabled = true;
+    
+    fetch('/admin/sistema/verificar-integridade-manual', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const integrity = data.integrity_check;
+            let message = 'Verificação de integridade concluída:\n';
+            message += `- Integridade do sistema: ${integrity.system_integrity ? 'OK' : 'ERRO'}\n`;
+            message += `- Integridade do admin: ${integrity.admin_integrity?.is_valid ? 'OK' : 'ERRO'}\n`;
+            message += `- Total de tokens criados: ${integrity.token_summary?.total_tokens_created || 0}\n`;
+            message += `- Tokens em circulação: ${integrity.token_summary?.tokens_in_circulation || 0}`;
+            
+            showAlert(integrity.system_integrity ? 'success' : 'danger', message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erro ao verificar integridade: ' + error.message);
+    })
+    .finally(() => {
+        // Restaurar botão
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Função para verificar saúde do sistema
+function verificarSaudeSystem() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Mostrar loading
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Verificando...';
+    button.disabled = true;
+    
+    fetch('/admin/sistema/saude', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const health = data.health;
+            let message = 'Verificação de saúde do sistema:\n';
+            message += `- Status geral: ${health.health?.overall_status || 'desconhecido'}\n`;
+            
+            if (health.backup?.last_backup) {
+                const lastBackup = new Date(health.backup.last_backup.created_at);
+                message += `- Último backup: ${lastBackup.toLocaleString('pt-BR')}\n`;
+            } else {
+                message += '- Último backup: Nenhum encontrado\n';
+            }
+            
+            message += `- Tentativas de login (24h): ${health.security?.total_attempts_24h || 0}`;
+            
+            const alertType = health.health?.overall_status === 'healthy' ? 'success' : 
+                             health.health?.overall_status === 'warning' ? 'warning' : 'danger';
+            
+            showAlert(alertType, message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Erro ao verificar saúde do sistema: ' + error.message);
+    })
+    .finally(() => {
+        // Restaurar botão
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Função para atualizar status de backup
+function atualizarStatusBackup() {
+    fetch('/admin/backup/status')
+    .then(response => response.json())
+    .then(data => {
+        // Atualizar informações de backup na interface se necessário
+        console.log('Status do backup:', data);
+    })
+    .catch(error => {
+        console.error('Erro ao obter status do backup:', error);
+    });
+}
+
+// Função para mostrar alertas
+function showAlert(type, message) {
+    // Criar elemento de alerta
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <pre style="margin: 0; white-space: pre-wrap;">${message}</pre>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Inserir no topo da página
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-remover após 10 segundos
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 10000);
+}
+
+// Carregar status inicial ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    atualizarStatusBackup();
+});
+</script>
 {% endblock %}

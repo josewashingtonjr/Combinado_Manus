@@ -95,8 +95,26 @@ def deletar_usuario(user_id):
 @admin_required
 def tokens():
     """Gestão de tokens do sistema"""
-    users = User.query.filter_by(active=True).all()
-    return render_template('admin/tokens.html', users=users)
+    try:
+        # Obter dados completos para gestão de tokens
+        token_data = AdminService.get_token_management_data()
+        
+        # Obter alertas de atividade suspeita
+        alerts = AdminService.get_suspicious_activity_alerts()
+        
+        # Validar integridade do sistema
+        integrity_check = AdminService.validate_system_integrity()
+        
+        return render_template('admin/tokens.html', 
+                             token_data=token_data,
+                             alerts=alerts,
+                             integrity_check=integrity_check)
+    except Exception as e:
+        flash(f'Erro ao carregar dados de tokens: {str(e)}', 'error')
+        return render_template('admin/tokens.html', 
+                             token_data=None,
+                             alerts=[],
+                             integrity_check=None)
 
 @admin_bp.route('/tokens/adicionar', methods=['GET', 'POST'])
 @admin_required
@@ -116,33 +134,64 @@ def adicionar_tokens():
     
     return render_template('admin/adicionar_tokens.html', form=form)
 
+@admin_bp.route('/tokens/criar', methods=['GET', 'POST'])
+@admin_required
+def criar_tokens():
+    """Criar novos tokens no sistema"""
+    if request.method == 'POST':
+        try:
+            amount = float(request.form.get('amount', 0))
+            description = request.form.get('description', 'Criação de tokens pelo admin')
+            
+            if amount <= 0:
+                flash('Quantidade deve ser maior que zero', 'error')
+                return redirect(url_for('admin.criar_tokens'))
+            
+            result = AdminService.create_tokens(amount, description)
+            flash(f'Criados {amount:,.0f} tokens com sucesso! Novo saldo admin: {result["new_admin_balance"]:,.0f} tokens', 'success')
+            return redirect(url_for('admin.tokens'))
+        except Exception as e:
+            flash(f'Erro ao criar tokens: {str(e)}', 'error')
+    
+    return render_template('admin/criar_tokens.html')
+
+@admin_bp.route('/tokens/integridade')
+@admin_required
+def verificar_integridade():
+    """Verificar integridade do sistema de tokens"""
+    try:
+        integrity_check = AdminService.validate_system_integrity()
+        return render_template('admin/integridade_tokens.html', integrity_check=integrity_check)
+    except Exception as e:
+        flash(f'Erro ao verificar integridade: {str(e)}', 'error')
+        return redirect(url_for('admin.tokens'))
+
+@admin_bp.route('/tokens/alertas')
+@admin_required
+def alertas_tokens():
+    """Ver alertas de atividade suspeita"""
+    try:
+        alerts = AdminService.get_suspicious_activity_alerts()
+        return render_template('admin/alertas_tokens.html', alerts=alerts)
+    except Exception as e:
+        flash(f'Erro ao carregar alertas: {str(e)}', 'error')
+        return redirect(url_for('admin.tokens'))
+
 # ==============================================================================
 #  CONFIGURAÇÕES DO SISTEMA
 # ==============================================================================
 
-@admin_bp.route('/configuracoes', methods=['GET', 'POST'])
+@admin_bp.route('/configuracoes', methods=['GET'])
 @admin_required
 def configuracoes():
     """Configurações do sistema"""
-    form = SystemConfigForm()
-    
-    if form.validate_on_submit():
-        try:
-            AdminService.update_system_config(form.data)
-            flash('Configurações atualizadas com sucesso!', 'success')
-        except Exception as e:
-            flash(f'Erro ao atualizar configurações: {str(e)}', 'error')
-    else:
+    try:
         # Carregar configurações atuais
         config = AdminService.get_system_config()
-        if config:
-            form.taxa_sistema.data = config.get('taxa_sistema', 5.0)
-            form.valor_token.data = config.get('valor_token', 1.0)
-            form.sistema_ativo.data = config.get('sistema_ativo', True)
-            form.manutencao.data = config.get('manutencao', False)
-            form.observacoes.data = config.get('observacoes', '')
-    
-    return render_template('admin/configuracoes.html', form=form)
+        return render_template('admin/configuracoes.html', config=config)
+    except Exception as e:
+        flash(f'Erro ao carregar configurações: {str(e)}', 'error')
+        return render_template('admin/configuracoes.html', config={})
 
 # ==============================================================================
 #  RELATÓRIOS E AUDITORIA
@@ -253,28 +302,201 @@ def ver_contrato(contrato_id):
 @admin_bp.route('/configuracoes/salvar', methods=['POST'])
 @admin_required
 def salvar_configuracoes():
-    """Salvar configurações de taxas e multas"""
+    """Salvar configurações de taxas, multas, segurança, backup e monitoramento"""
     tipo = request.form.get('tipo')
     
-    if tipo == 'taxas':
-        # TODO: Salvar no banco de dados
-        config_data = {
-            'taxa_transacao': request.form.get('taxa_transacao', type=float),
-            'taxa_saque': request.form.get('taxa_saque', type=float),
-            'taxa_deposito': request.form.get('taxa_deposito', type=float),
-            'valor_minimo_saque': request.form.get('valor_minimo_saque', type=float)
-        }
-        flash('Taxas atualizadas com sucesso!', 'success')
-        
-    elif tipo == 'multas':
-        # TODO: Salvar no banco de dados
-        config_data = {
-            'multa_cancelamento': request.form.get('multa_cancelamento', type=float),
-            'multa_atraso': request.form.get('multa_atraso', type=float),
-            'multa_atraso_maxima': request.form.get('multa_atraso_maxima', type=float),
-            'multa_contestacao_indevida': request.form.get('multa_contestacao_indevida', type=float),
-            'prazo_contestacao': request.form.get('prazo_contestacao', type=int)
-        }
-        flash('Multas e penalidades atualizadas com sucesso!', 'success')
+    try:
+        if tipo == 'taxas':
+            config_data = {
+                'taxa_transacao': request.form.get('taxa_transacao', type=float),
+                'taxa_saque': request.form.get('taxa_saque', type=float),
+                'taxa_deposito': request.form.get('taxa_deposito', type=float),
+                'valor_minimo_saque': request.form.get('valor_minimo_saque', type=float),
+                'valor_maximo_saque': request.form.get('valor_maximo_saque', type=float, default=50000.0)
+            }
+            AdminService.update_system_config(config_data)
+            flash('Taxas atualizadas com sucesso!', 'success')
+            
+        elif tipo == 'multas':
+            config_data = {
+                'multa_cancelamento': request.form.get('multa_cancelamento', type=float),
+                'multa_atraso': request.form.get('multa_atraso', type=float),
+                'multa_atraso_maxima': request.form.get('multa_atraso_maxima', type=float),
+                'multa_contestacao_indevida': request.form.get('multa_contestacao_indevida', type=float),
+                'prazo_contestacao': request.form.get('prazo_contestacao', type=int)
+            }
+            AdminService.update_system_config(config_data)
+            flash('Multas e penalidades atualizadas com sucesso!', 'success')
+            
+        elif tipo == 'seguranca':
+            config_data = {
+                'senha_tamanho_minimo': request.form.get('senha_tamanho_minimo', type=int),
+                'max_tentativas_login': request.form.get('max_tentativas_login', type=int),
+                'timeout_bloqueio_login': request.form.get('timeout_bloqueio_login', type=int),
+                'timeout_sessao': request.form.get('timeout_sessao', type=int),
+                'require_2fa': 'true' if request.form.get('require_2fa') else 'false'
+            }
+            AdminService.update_system_config(config_data)
+            flash('Configurações de segurança atualizadas com sucesso!', 'success')
+            
+        elif tipo == 'backup':
+            config_data = {
+                'backup_automatico': 'true' if request.form.get('backup_automatico') else 'false',
+                'backup_intervalo_horas': request.form.get('backup_intervalo_horas', type=int),
+                'backup_retencao_dias': request.form.get('backup_retencao_dias', type=int),
+                'backup_path': request.form.get('backup_path', type=str)
+            }
+            AdminService.update_system_config(config_data)
+            flash('Configurações de backup atualizadas com sucesso!', 'success')
+            
+        elif tipo == 'monitoramento':
+            config_data = {
+                'monitoramento_integridade': 'true' if request.form.get('monitoramento_integridade') else 'false',
+                'intervalo_verificacao_integridade': request.form.get('intervalo_verificacao_integridade', type=int),
+                'alerta_saldo_baixo': request.form.get('alerta_saldo_baixo', type=float),
+                'alerta_transacao_alto_valor': request.form.get('alerta_transacao_alto_valor', type=float)
+            }
+            AdminService.update_system_config(config_data)
+            flash('Configurações de monitoramento atualizadas com sucesso!', 'success')
+            
+        else:
+            flash('Tipo de configuração inválido!', 'error')
+            
+    except Exception as e:
+        flash(f'Erro ao salvar configurações: {str(e)}', 'error')
     
     return redirect(url_for('admin.configuracoes'))
+
+# ==============================================================================
+#  NOVAS ROTAS PARA FUNCIONALIDADES AVANÇADAS
+# ==============================================================================
+
+@admin_bp.route('/backup/criar', methods=['POST'])
+@admin_required
+def criar_backup():
+    """Criar backup manual do sistema"""
+    try:
+        backup_type = request.json.get('type', 'full')
+        backup = AdminService.create_backup(backup_type)
+        
+        if backup and backup.status == 'completed':
+            return {
+                'success': True,
+                'message': f'Backup {backup_type} criado com sucesso!',
+                'backup_id': backup.id,
+                'file_size': backup.file_size
+            }
+        elif backup and backup.status == 'failed':
+            return {
+                'success': False,
+                'message': f'Falha ao criar backup: {backup.error_message}'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'Erro desconhecido ao criar backup'
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Erro ao criar backup: {str(e)}'
+        }
+
+@admin_bp.route('/sistema/verificar-integridade-manual', methods=['POST'])
+@admin_required
+def verificar_integridade_manual():
+    """Verificar integridade do sistema manualmente"""
+    try:
+        integrity_check = AdminService.validate_system_integrity()
+        
+        return {
+            'success': True,
+            'integrity_check': integrity_check
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Erro ao verificar integridade: {str(e)}'
+        }
+
+@admin_bp.route('/sistema/saude', methods=['GET'])
+@admin_required
+def verificar_saude_sistema():
+    """Verificar saúde geral do sistema"""
+    try:
+        health_status = AdminService.get_system_health()
+        
+        return {
+            'success': True,
+            'health': health_status
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Erro ao verificar saúde do sistema: {str(e)}'
+        }
+
+@admin_bp.route('/alertas')
+@admin_required
+def alertas_sistema():
+    """Visualizar alertas do sistema"""
+    try:
+        alertas_nao_resolvidos = AdminService.get_system_alerts(resolved=False)
+        alertas_resolvidos = AdminService.get_system_alerts(resolved=True)
+        
+        return render_template('admin/alertas_sistema.html', 
+                             alertas_nao_resolvidos=alertas_nao_resolvidos,
+                             alertas_resolvidos=alertas_resolvidos)
+    except Exception as e:
+        flash(f'Erro ao carregar alertas: {str(e)}', 'error')
+        return redirect(url_for('admin.dashboard'))
+
+@admin_bp.route('/alertas/<int:alert_id>/resolver', methods=['POST'])
+@admin_required
+def resolver_alerta(alert_id):
+    """Marcar alerta como resolvido"""
+    try:
+        from services.config_service import MonitoringService
+        admin_id = session.get('admin_id', 1)  # TODO: Obter ID do admin da sessão
+        
+        success = MonitoringService.resolve_alert(alert_id, admin_id)
+        
+        if success:
+            flash('Alerta marcado como resolvido!', 'success')
+        else:
+            flash('Erro ao resolver alerta!', 'error')
+            
+    except Exception as e:
+        flash(f'Erro ao resolver alerta: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.alertas_sistema'))
+
+@admin_bp.route('/backup/status')
+@admin_required
+def status_backup():
+    """Obter status dos backups"""
+    try:
+        from services.config_service import BackupService
+        status = BackupService.get_backup_status()
+        return status
+    except Exception as e:
+        return {
+            'error': str(e),
+            'total_backups': 0,
+            'backup_enabled': False
+        }
+
+@admin_bp.route('/seguranca/estatisticas')
+@admin_required
+def estatisticas_seguranca():
+    """Obter estatísticas de segurança"""
+    try:
+        from services.config_service import SecurityService
+        stats = SecurityService.get_security_stats()
+        return stats
+    except Exception as e:
+        return {
+            'error': str(e),
+            'total_attempts_24h': 0,
+            'failed_attempts_24h': 0
+        }
