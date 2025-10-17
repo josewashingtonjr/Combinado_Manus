@@ -222,3 +222,39 @@ O Sistema Combinado é uma plataforma web desenvolvida em Flask que conecta clie
 3. QUANDO recusar convite ENTÃO cliente DEVE ser notificado da recusa
 4. QUANDO alterar termos ENTÃO cliente DEVE ser notificado das alterações propostas
 5. QUANDO expirar convite ENTÃO ambas as partes DEVEM ser notificadas da expiração
+
+### Requisito 20
+
+**User Story:** Como administrador, eu quero trocar minha senha com segurança, para que possa manter minha conta protegida.
+
+#### Critérios de Aceitação
+
+1. QUANDO acessar página de troca de senha ENTÃO DEVE carregar sem erro 500
+2. QUANDO inserir senha atual incorreta ENTÃO DEVE mostrar erro claro
+3. QUANDO inserir senhas que não coincidem ENTÃO DEVE validar antes de processar
+4. QUANDO trocar senha com sucesso ENTÃO DEVE confirmar e manter sessão ativa
+5. QUANDO ocorrer erro ENTÃO DEVE ser tratado graciosamente com log de auditoria
+
+### Requisito 21
+
+**User Story:** Como administrador, eu quero analisar contestações de ordens, para que possa resolver disputas entre usuários.
+
+#### Critérios de Aceitação
+
+1. QUANDO acessar lista de contestações ENTÃO DEVE mostrar disputas reais do sistema
+2. QUANDO clicar em contestação específica ENTÃO DEVE carregar detalhes sem erro 500
+3. QUANDO analisar disputa ENTÃO DEVE ver histórico completo da ordem
+4. QUANDO tomar decisão ENTÃO DEVE processar resolução e atualizar status
+5. QUANDO resolver disputa ENTÃO tokens DEVEM ser distribuídos conforme decisão
+
+### Requisito 22
+
+**User Story:** Como usuário, eu quero poder ser cliente E prestador simultaneamente, para que possa usar o sistema em ambos os papéis conforme necessário.
+
+#### Critérios de Aceitação
+
+1. QUANDO usuário tiver papéis "cliente,prestador" ENTÃO DEVE poder alternar entre eles
+2. QUANDO alternar papel ENTÃO interface DEVE mudar para contexto apropriado
+3. QUANDO receber convite como prestador ENTÃO DEVE poder aceitar mesmo sendo cliente
+4. QUANDO criar convite como cliente ENTÃO DEVE poder convidar outros prestadores
+5. QUANDO navegar pelo sistema ENTÃO DEVE manter papel ativo consistente em todas as páginas

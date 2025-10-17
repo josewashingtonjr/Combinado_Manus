@@ -335,22 +335,62 @@
     - Atualizar Planta Arquitetônica com métricas de circulação
     - _Requisitos: 10.1, 10.3, Arquitetura de Tokenomics_
 
-- [ ] 11. Finalizar e documentar o sistema completo seguindo PDR rigoroso
-  - [ ] 11.1 Realizar testes de ponta a ponta validando todas as correções
-    - Testar fluxo completo admin: login → troca senha → criação usuários → gestão tokens
-    - Testar menu de contratos e relatórios funcionando corretamente
-    - Validar dashboard financeiro com dados reais
-    - Verificar cards de taxas e circulação funcionando
-    - Confirmar copyright e versão em todas as páginas
-    - Testar cenários de erro corrigidos
-    - _Requisitos: 1.1, 1.2, 1.3, 1.4, Correções implementadas_
+- [ ] 11. Corrigir problemas críticos identificados no sistema
+  - [x] 11.1 Corrigir erro 500 na troca de senha do admin
+    - Consultar Requirements 20 e Design seção "Correções Críticas" para especificações
+    - Implementar AdminService.change_admin_password() com tratamento robusto de erros
+    - Atualizar rota alterar_senha() com try-catch adequado e validações rigorosas
+    - Adicionar logs de auditoria para mudanças de senha admin
+    - Garantir que sessão permaneça ativa após troca de senha bem-sucedida
+    - Testar cenários: senha atual incorreta, senhas não coincidem, erro de banco
+    - _Requisitos: 20.1, 20.2, 20.3, 20.4, 20.5_
 
-  - [ ] 11.2 Atualizar documentação completa com todas as correções
-    - Documentar todas as correções implementadas
-    - Atualizar guia do admin com novas funcionalidades
-    - Criar documentação da aba financeira
+  - [x] 11.2 Corrigir erro 500 na análise de contestações/disputas
+    - Consultar Requirements 21 e Design seção "Sistema de Contestações Real"
+    - Implementar AdminService.get_contestacoes() conectando com dados reais do banco
+    - Criar AdminService.get_contestacao_details() para buscar detalhes completos
+    - Atualizar rota analisar_contestacao() para usar ordens com status 'disputada'
+    - Implementar interface funcional para resolução de disputas
+    - Integrar com OrderService para distribuição de tokens conforme decisão
+    - Testar fluxo: listar contestações → analisar disputa → tomar decisão → resolver
+    - _Requisitos: 21.1, 21.2, 21.3, 21.4, 21.5_
+
+  - [-] 11.3 Implementar sistema de papéis duais funcionais
+    - Consultar Requirements 22 e Design seção "Interface de Papéis Duais"
+    - Implementar interface de alternância de papéis no dashboard de usuários
+    - Criar middleware @app.context_processor para injetar contexto de papel
+    - Adicionar rota /switch-role/<role> para alternância entre cliente/prestador
+    - Atualizar navegação para refletir papel ativo atual do usuário
+    - Garantir que convites funcionem independente do papel ativo
+    - Testar usuário dual: alternar papel → criar convite → receber convite → aceitar
+    - _Requisitos: 22.1, 22.2, 22.3, 22.4, 22.5_
+
+  - [ ] 11.4 Adicionar campos necessários ao modelo Order para disputas
+    - Consultar Design seção "Sistema de Contestações Real" para campos necessários
+    - Adicionar campos dispute_reason, dispute_opened_by, dispute_opened_at ao modelo Order
+    - Criar migração para adicionar novos campos de disputa
+    - Atualizar OrderService.open_dispute() para usar novos campos
+    - Implementar OrderService.resolve_dispute() com distribuição de tokens
+    - Testar integridade: criar ordem → disputar → resolver → verificar tokens
+    - _Requisitos: 21.3, 21.4, 21.5_
+
+- [ ] 12. Finalizar e documentar o sistema completo seguindo PDR rigoroso
+  - [ ] 12.1 Realizar testes de ponta a ponta validando todas as correções
+    - Testar fluxo completo admin: login → troca senha → criação usuários → gestão tokens
+    - Testar sistema de contestações: listar → analisar → resolver disputas
+    - Validar papéis duais: alternar papel → usar funcionalidades → manter contexto
+    - Verificar dashboard financeiro com dados reais
+    - Confirmar copyright e versão em todas as páginas
+    - Testar cenários de erro corrigidos (sem mais 500s)
+    - _Requisitos: 1.1, 1.2, 1.3, 1.4, 20.1-20.5, 21.1-21.5, 22.1-22.5_
+
+  - [ ] 12.2 Atualizar documentação completa com todas as correções
+    - Documentar todas as correções críticas implementadas
+    - Atualizar guia do admin com funcionalidades de contestação
+    - Criar documentação do sistema de papéis duais
     - Atualizar STATUS_SISTEMA.md com problemas resolvidos
     - Documentar sistema de versionamento e copyright
+    - Criar relatório final de correções implementadas
     - _Requisitos: 11.1, 11.2, 11.4, PDR Etapas 6-7_
 
 - [-] 10. Implementar funcionalidades administrativas avançadas conforme Planta

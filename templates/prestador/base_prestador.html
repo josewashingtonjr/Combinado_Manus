@@ -118,11 +118,15 @@
                     </a>
                     
                     <!-- Troca de Papel -->
-                    {% if 'cliente' in session.user_roles %}
+                    {% if can_switch_roles %}
                     <hr class="my-2">
-                    <a href="{{ url_for('prestador.trocar_para_cliente') }}" class="list-group-item list-group-item-action bg-light">
-                        <i class="fas fa-exchange-alt me-2"></i>Área Cliente
-                    </a>
+                    {% for role_code, role_name in available_roles %}
+                        {% if role_code != active_role %}
+                        <a href="{{ url_for('role.set_role', role=role_code) }}" class="list-group-item list-group-item-action bg-light">
+                            <i class="fas fa-{{ 'user-tie' if role_code == 'cliente' else 'user-cog' }} me-2"></i>Área {{ role_name }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
                     {% endif %}
                 </div>
             </div>

@@ -142,6 +142,151 @@ class AdminService:
         return stats
     
     @staticmethod
+    def get_contestacoes(status=None):
+        """
+        Buscar contestações reais do sistema (ordens disputadas)
+        
+        Args:
+            status (str, optional): Filtrar por status específico
+            
+        Returns:
+            list: Lista de ordens disputadas
+        """
+        try:
+            # Buscar ordens com status 'disputada'
+            query = Order.query.filter_by(status='disputada')
+            
+            # Aplicar filtro de status se fornecido
+            if status:
+                # Para futuras implementações de sub-status de disputa
+                pass
+            
+            # Ordenar por data de criação (mais recentes primeiro)
+            contestacoes = query.order_by(Order.created_at.desc()).all()
+            
+            return contestacoes
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('app')
+            logger.error(f"Erro ao buscar contestações: {str(e)}")
+            return []
+    
+    @staticmethod
+    def get_contestacao_details(order_id):
+        """
+        Obter detalhes completos de uma contestação específica
+        
+        Args:
+            order_id (int): ID da ordem disputada
+            
+        Returns:
+            dict: Detalhes da contestação ou None se não encontrada
+        """
+        try:
+            # Buscar ordem
+            order = Order.query.get(order_id)
+            if not order:
+                return None
+            
+            # Verificar se é uma disputa
+            if order.status != 'disputada':
+                return None
+            
+            # Buscar usuários relacionados
+            client = User.query.get(order.client_id)
+            provider = User.query.get(order.provider_id) if order.provider_id else None
+            
+            # Buscar transações relacionadas à ordem
+            transactions = Transaction.query.filter_by(order_id=order_id).order_by(Transaction.created_at.desc()).all()
+            
+            # Buscar informações da carteira do cliente (escrow)
+            client_wallet = Wallet.query.filter_by(user_id=order.client_id).first()
+            
+            # Calcular valores em escrow para esta ordem
+            escrow_amount = order.value if client_wallet else 0.0
+            
+            return {
+                'order': order,
+                'client': client,
+                'provider': provider,
+                'transactions': transactions,
+                'escrow_amount': escrow_amount,
+                'client_wallet': client_wallet,
+                'dispute_opened_at': order.created_at,  # Por enquanto usar created_at
+                'can_resolve': True  # Admin sempre pode resolver
+            }
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('app')
+            logger.error(f"Erro ao buscar detalhes da contestação {order_id}: {str(e)}")
+            return None
+    
+    @staticmethod
+    def resolve_contestacao(admin_id, order_id, decision, admin_notes=""):
+        """
+        Resolver uma contestação com distribuição de tokens
+        
+        Args:
+            admin_id (int): ID do administrador
+            order_id (int): ID da ordem disputada
+            decision (str): 'favor_cliente' ou 'favor_prestador'
+            admin_notes (str): Notas do administrador
+            
+        Returns:
+            dict: Resultado da resolução
+        """
+        try:
+            # Verificar se admin existe
+            admin = AdminUser.query.get(admin_id)
+            if not admin:
+                return {'success': False, 'error': 'Administrador não encontrado'}
+            
+            # Buscar ordem
+            order = Order.query.get(order_id)
+            if not order:
+                return {'success': False, 'error': 'Ordem não encontrada'}
+            
+            if order.status != 'disputada':
+                return {'success': False, 'error': 'Ordem não está em disputa'}
+            
+            # Validar decisão
+            if decision not in ['favor_cliente', 'favor_prestador']:
+                return {'success': False, 'error': 'Decisão inválida'}
+            
+            # Usar OrderService para resolver a disputa
+            from services.order_service import OrderService
+            
+            result = OrderService.resolve_dispute(
+                admin_id=admin_id,
+                order_id=order_id,
+                decision=decision,
+                admin_notes=admin_notes
+            )
+            
+            if result['success']:
+                # Log de auditoria
+                import logging
+                logger = logging.getLogger('app')
+                logger.info(f"Contestação {order_id} resolvida por admin {admin.email} - Decisão: {decision}")
+                
+                return {
+                    'success': True,
+                    'message': f'Contestação resolvida a {decision.replace("_", " ")}',
+                    'decision': decision,
+                    'order_id': order_id
+                }
+            else:
+                return result
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('app')
+            logger.error(f"Erro ao resolver contestação {order_id}: {str(e)}")
+            return {'success': False, 'error': 'Erro interno do sistema'}
+    
+    @staticmethod
     def create_user(nome, email, cpf, phone, password, roles):
         """Cria um novo usuário"""
         # Verificar se email já existe
@@ -175,6 +320,72 @@ class AdminService:
             raise ValueError(f"Erro ao criar carteira para usuário: {str(e)}")
         
         return user
+    
+    @staticmethod
+    def change_admin_password(admin_id, current_password, new_password):
+        """
+        Trocar senha do admin com validações robustas e tratamento de erros
+        
+        Args:
+            admin_id (int): ID do administrador
+            current_password (str): Senha atual
+            new_password (str): Nova senha
+            
+        Returns:
+            dict: Resultado da operação com success, message ou error
+        """
+        try:
+            # Buscar admin no banco
+            admin = AdminUser.query.get(admin_id)
+            if not admin:
+                return {
+                    'success': False, 
+                    'error': 'Administrador não encontrado no sistema'
+                }
+            
+            # Verificar senha atual
+            if not admin.check_password(current_password):
+                return {
+                    'success': False, 
+                    'error': 'Senha atual incorreta'
+                }
+            
+            # Validar nova senha
+            if len(new_password) < 6:
+                return {
+                    'success': False, 
+                    'error': 'A nova senha deve ter pelo menos 6 caracteres'
+                }
+            
+            # Atualizar senha
+            admin.set_password(new_password)
+            db.session.commit()
+            
+            # Log de auditoria
+            from datetime import datetime
+            import logging
+            
+            logger = logging.getLogger('app')
+            logger.info(f"Senha alterada com sucesso para admin {admin.email} em {datetime.utcnow()}")
+            
+            return {
+                'success': True, 
+                'message': 'Senha alterada com sucesso'
+            }
+            
+        except Exception as e:
+            # Rollback em caso de erro
+            db.session.rollback()
+            
+            # Log do erro
+            import logging
+            logger = logging.getLogger('app')
+            logger.error(f"Erro ao alterar senha do admin {admin_id}: {str(e)}")
+            
+            return {
+                'success': False, 
+                'error': 'Erro interno do sistema. Tente novamente em alguns minutos.'
+            }
     
     @staticmethod
     def update_user(user, data):

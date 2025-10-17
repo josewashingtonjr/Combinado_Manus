@@ -42,10 +42,15 @@ class AuthService:
     
     @staticmethod
     def user_login(user, remember=False):
-        """Realiza login do usuário"""
+        """Realiza login do usuário com inicialização de papéis duais"""
         session['user_id'] = user.id
         session['user_email'] = user.email
         session['user_roles'] = user.roles
+        
+        # Inicializar contexto de papéis para usuários duais
+        from services.role_service import RoleService
+        RoleService.initialize_user_session(user.id)
+        
         # TODO: Implementar "lembrar-me" se necessário
     
     @staticmethod

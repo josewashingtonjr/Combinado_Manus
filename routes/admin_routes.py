@@ -30,14 +30,15 @@ def dashboard():
 @admin_bp.route('/alterar-senha', methods=['GET', 'POST'])
 @admin_required
 def alterar_senha():
-    """Alterar senha do administrador"""
+    """Alterar senha do administrador com tratamento robusto de erros"""
     if request.method == 'POST':
         try:
-            senha_atual = request.form.get('senha_atual')
-            nova_senha = request.form.get('nova_senha')
-            confirmar_senha = request.form.get('confirmar_senha')
+            # Obter dados do formulário
+            senha_atual = request.form.get('senha_atual', '').strip()
+            nova_senha = request.form.get('nova_senha', '').strip()
+            confirmar_senha = request.form.get('confirmar_senha', '').strip()
             
-            # Validações básicas
+            # Validações básicas de entrada
             if not senha_atual or not nova_senha or not confirmar_senha:
                 flash('Todos os campos são obrigatórios.', 'error')
                 return render_template('admin/alterar_senha.html')
@@ -46,38 +47,32 @@ def alterar_senha():
                 flash('A nova senha e a confirmação não coincidem.', 'error')
                 return render_template('admin/alterar_senha.html')
             
-            if len(nova_senha) < 6:
-                flash('A nova senha deve ter pelo menos 6 caracteres.', 'error')
-                return render_template('admin/alterar_senha.html')
-            
-            # Obter admin atual
-            from services.auth_service import AuthService
-            admin = AuthService.get_current_admin()
-            
-            if not admin:
-                flash('Erro: Administrador não encontrado.', 'error')
+            # Verificar sessão admin
+            admin_id = session.get('admin_id')
+            if not admin_id:
+                flash('Sessão expirada. Faça login novamente.', 'error')
                 return redirect(url_for('auth.admin_login'))
             
-            # Verificar senha atual
-            if not admin.check_password(senha_atual):
-                flash('Senha atual incorreta.', 'error')
+            # Usar AdminService para trocar senha com tratamento robusto
+            from services.admin_service import AdminService
+            result = AdminService.change_admin_password(admin_id, senha_atual, nova_senha)
+            
+            if result['success']:
+                flash(result['message'], 'success')
+                return redirect(url_for('admin.dashboard'))
+            else:
+                flash(result['error'], 'error')
                 return render_template('admin/alterar_senha.html')
             
-            # Atualizar senha
-            admin.set_password(nova_senha)
-            db.commit()
-            
-            # Log de auditoria
-            from datetime import datetime
-            import logging
-            logging.info(f'Admin {admin.email} alterou senha em {datetime.utcnow()}')
-            
-            flash('Senha alterada com sucesso!', 'success')
-            return redirect(url_for('admin.dashboard'))
-            
         except Exception as e:
-            db.rollback()
-            flash(f'Erro ao alterar senha: {str(e)}', 'error')
+            # Log do erro crítico
+            import logging
+            logger = logging.getLogger('app')
+            logger.error(f"Erro crítico na troca de senha admin: {str(e)}")
+            
+            # Mensagem genérica para o usuário
+            flash('Erro interno do servidor. O erro foi registrado automaticamente nos logs para análise técnica. Verifique os logs do sistema ou tente novamente em alguns minutos.', 'error')
+            return render_template('admin/alterar_senha.html')
     
     return render_template('admin/alterar_senha.html')
 
@@ -381,66 +376,117 @@ def logs():
 @admin_bp.route('/contestacoes')
 @admin_required
 def contestacoes():
-    """Lista todas as contestações de contratos"""
-    status_filter = request.args.get('status', '')
-    tipo_filter = request.args.get('tipo', '')
-    contrato_id = request.args.get('contrato_id', '')
-    
-    # TODO: Implementar filtros quando tivermos o modelo de Contestacao
-    contestacoes = []  # AdminService.get_contestacoes(status=status_filter, tipo=tipo_filter)
-    contestacoes_pendentes = 0  # len([c for c in contestacoes if c.status == 'pendente'])
-    
-    stats = {
-        'pendentes': 0,
-        'em_analise': 0,
-        'resolvidas': 0,
-        'rejeitadas': 0
-    }
-    
-    return render_template('admin/contestacoes.html', 
-                         contestacoes=contestacoes,
-                         contestacoes_pendentes=contestacoes_pendentes,
-                         stats=stats)
+    """Lista todas as contestações de contratos com dados reais"""
+    try:
+        status_filter = request.args.get('status', '')
+        
+        # Buscar contestações reais do sistema
+        from services.admin_service import AdminService
+        contestacoes = AdminService.get_contestacoes(status=status_filter)
+        
+        # Calcular estatísticas
+        contestacoes_pendentes = len(contestacoes)  # Todas são pendentes (status 'disputada')
+        
+        stats = {
+            'pendentes': contestacoes_pendentes,
+            'em_analise': 0,
+            'resolvidas': 0,
+            'rejeitadas': 0
+        }
+        
+        return render_template('admin/contestacoes.html', 
+                             contestacoes=contestacoes,
+                             contestacoes_pendentes=contestacoes_pendentes,
+                             stats=stats)
+                             
+    except Exception as e:
+        # Log do erro
+        import logging
+        logger = logging.getLogger('app')
+        logger.error(f"Erro ao carregar contestações: {str(e)}")
+        
+        # Retornar página com erro tratado
+        flash('Erro ao carregar contestações. Verifique os logs do sistema.', 'error')
+        return render_template('admin/contestacoes.html', 
+                             contestacoes=[],
+                             contestacoes_pendentes=0,
+                             stats={'pendentes': 0, 'em_analise': 0, 'resolvidas': 0, 'rejeitadas': 0})
 
 @admin_bp.route('/contestacoes/<int:contestacao_id>')
 @admin_required
 def analisar_contestacao(contestacao_id):
-    """Analisar uma contestação específica"""
-    # TODO: Buscar contestação do banco
-    contestacao = {
-        'id': contestacao_id,
-        'contrato_id': 1,
-        'usuario_nome': 'Cliente Teste',
-        'usuario_tipo': 'cliente',
-        'tipo': 'Serviço não entregue',
-        'status': 'pendente',
-        'motivo': 'O prestador não entregou o serviço no prazo acordado.',
-        'valor': 150.00,
-        'valor_contrato': 150.00,
-        'cliente_nome': 'Cliente Teste',
-        'prestador_nome': 'Prestador Teste',
-        'created_at': None,
-        'contrato_data': None,
-        'prioridade': 'alta',
-        'evidencias': [],
-        'historico': []
-    }
-    
-    return render_template('admin/analisar_contestacao.html', contestacao=contestacao)
+    """Analisar uma contestação específica com dados reais"""
+    try:
+        # Buscar detalhes reais da contestação
+        from services.admin_service import AdminService
+        contestacao_details = AdminService.get_contestacao_details(contestacao_id)
+        
+        if not contestacao_details:
+            flash('Contestação não encontrada ou não está em disputa.', 'error')
+            return redirect(url_for('admin.contestacoes'))
+        
+        return render_template('admin/analisar_contestacao.html', 
+                             contestacao=contestacao_details)
+                             
+    except Exception as e:
+        # Log do erro
+        import logging
+        logger = logging.getLogger('app')
+        logger.error(f"Erro ao analisar contestação {contestacao_id}: {str(e)}")
+        
+        # Mensagem de erro para o usuário
+        flash('Erro interno do servidor ao carregar contestação. O erro foi registrado automaticamente nos logs para análise técnica.', 'error')
+        return redirect(url_for('admin.contestacoes'))
 
 @admin_bp.route('/contestacoes/<int:contestacao_id>/decidir', methods=['POST'])
 @admin_required
 def decidir_contestacao(contestacao_id):
-    """Tomar decisão sobre uma contestação"""
-    decisao = request.form.get('decisao')
-    justificativa = request.form.get('justificativa')
-    percentual_cliente = request.form.get('percentual_cliente', type=float)
-    
-    # TODO: Implementar lógica de decisão
-    # AdminService.decidir_contestacao(contestacao_id, decisao, justificativa, percentual_cliente)
-    
-    flash('Decisão registrada com sucesso!', 'success')
-    return redirect(url_for('admin.contestacoes'))
+    """Tomar decisão sobre uma contestação com processamento real"""
+    try:
+        # Obter dados do formulário
+        decisao = request.form.get('decisao')
+        justificativa = request.form.get('justificativa', '').strip()
+        
+        # Validações básicas
+        if not decisao or decisao not in ['favor_cliente', 'favor_prestador']:
+            flash('Decisão inválida. Selecione uma opção válida.', 'error')
+            return redirect(url_for('admin.analisar_contestacao', contestacao_id=contestacao_id))
+        
+        if not justificativa:
+            flash('Justificativa é obrigatória para resolver a contestação.', 'error')
+            return redirect(url_for('admin.analisar_contestacao', contestacao_id=contestacao_id))
+        
+        # Obter admin atual
+        admin_id = session.get('admin_id')
+        if not admin_id:
+            flash('Sessão expirada. Faça login novamente.', 'error')
+            return redirect(url_for('auth.admin_login'))
+        
+        # Resolver contestação usando AdminService
+        from services.admin_service import AdminService
+        result = AdminService.resolve_contestacao(
+            admin_id=admin_id,
+            order_id=contestacao_id,
+            decision=decisao,
+            admin_notes=justificativa
+        )
+        
+        if result['success']:
+            flash(result['message'], 'success')
+            return redirect(url_for('admin.contestacoes'))
+        else:
+            flash(result['error'], 'error')
+            return redirect(url_for('admin.analisar_contestacao', contestacao_id=contestacao_id))
+            
+    except Exception as e:
+        # Log do erro
+        import logging
+        logger = logging.getLogger('app')
+        logger.error(f"Erro ao decidir contestação {contestacao_id}: {str(e)}")
+        
+        # Mensagem de erro para o usuário
+        flash('Erro interno do servidor ao processar decisão. O erro foi registrado automaticamente nos logs para análise técnica.', 'error')
+        return redirect(url_for('admin.analisar_contestacao', contestacao_id=contestacao_id))
 
 @admin_bp.route('/contestacoes/<int:contestacao_id>/marcar-em-analise', methods=['POST'])
 @admin_required

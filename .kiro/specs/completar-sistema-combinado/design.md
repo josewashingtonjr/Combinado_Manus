@@ -303,6 +303,132 @@ Order → bloqueia → Wallet.escrow_balance
 - Contexto de template diferenciado por papel
 - Validação de não vazamento de terminologia técnica
 
+## Correções Críticas Identificadas
+
+### 1. Sistema de Troca de Senha do Admin
+**Problema**: Erro 500 ao tentar trocar senha do administrador
+**Causa**: Tratamento inadequado de erros e validações
+**Solução**:
+- Implementar try-catch robusto na rota `alterar_senha()`
+- Adicionar validações de entrada mais rigorosas
+- Melhorar logs de auditoria para mudanças de senha
+- Garantir que sessão permaneça ativa após troca de senha
+
+### 2. Sistema de Contestações/Disputas
+**Problema**: Erro 500 na rota `/admin/contestacoes/6` ao analisar disputa
+**Causa**: Funcionalidade não implementada completamente, dados mockados
+**Solução**:
+- Conectar rotas de contestação com dados reais do OrderService
+- Implementar busca de ordens com status 'disputada'
+- Criar interface funcional para resolução de disputas
+- Integrar com sistema de escrow para distribuição de tokens
+
+### 3. Sistema de Papéis Duais
+**Problema**: Usuários não conseguem alternar entre cliente e prestador
+**Causa**: Interface não implementada para alternância de papéis
+**Solução**:
+- Implementar interface de alternância no dashboard
+- Criar middleware para detectar papel ativo
+- Atualizar navegação para refletir papel atual
+- Garantir que convites funcionem independente do papel ativo
+
+## Arquitetura das Correções
+
+### Correção 1: AdminService - Troca de Senha
+```python
+class AdminService:
+    @staticmethod
+    def change_admin_password(admin_id, current_password, new_password):
+        """Trocar senha do admin com validações robustas"""
+        try:
+            admin = AdminUser.query.get(admin_id)
+            if not admin:
+                return {'success': False, 'error': 'Admin não encontrado'}
+            
+            if not admin.check_password(current_password):
+                return {'success': False, 'error': 'Senha atual incorreta'}
+            
+            admin.set_password(new_password)
+            db.session.commit()
+            
+            # Log de auditoria
+            logger.info(f"Senha alterada para admin {admin.email}")
+            
+            return {'success': True, 'message': 'Senha alterada com sucesso'}
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao alterar senha: {str(e)}")
+            return {'success': False, 'error': 'Erro interno do sistema'}
+```
+
+### Correção 2: Sistema de Contestações Real
+```python
+class AdminService:
+    @staticmethod
+    def get_contestacoes(status=None):
+        """Buscar contestações reais do sistema"""
+        query = Order.query.filter_by(status='disputada')
+        if status:
+            query = query.filter_by(dispute_status=status)
+        return query.all()
+    
+    @staticmethod
+    def get_contestacao_details(order_id):
+        """Obter detalhes completos da contestação"""
+        order = Order.query.get(order_id)
+        if not order or order.status != 'disputada':
+            return None
+        
+        return {
+            'order': order,
+            'client': order.client,
+            'provider': User.query.get(order.provider_id),
+            'transactions': Transaction.query.filter_by(order_id=order_id).all(),
+            'dispute_history': order.dispute_history  # Novo campo
+        }
+```
+
+### Correção 3: Interface de Papéis Duais
+```python
+# Middleware para contexto de papel
+@app.context_processor
+def inject_role_context():
+    if 'user_id' in session:
+        return RoleService.get_context_for_templates()
+    return {}
+
+# Rota para alternância
+@app.route('/switch-role/<role>')
+@login_required
+def switch_role(role):
+    if RoleService.set_active_role(role):
+        flash(f'Papel alterado para {role.title()}', 'success')
+        return redirect(url_for(RoleService.get_role_dashboard_url(role)))
+    else:
+        flash('Papel não disponível', 'error')
+        return redirect(url_for('home.index'))
+```
+
+## Fluxo de Implementação das Correções
+
+### Fase 1: Correção da Troca de Senha (Crítico)
+1. Atualizar rota `alterar_senha()` com tratamento robusto
+2. Implementar `AdminService.change_admin_password()`
+3. Adicionar logs de auditoria
+4. Testar cenários de erro e sucesso
+
+### Fase 2: Sistema de Contestações Funcional (Crítico)
+1. Conectar rotas com dados reais do banco
+2. Implementar `AdminService.get_contestacoes()`
+3. Criar interface de resolução de disputas
+4. Integrar com sistema de distribuição de tokens
+
+### Fase 3: Interface de Papéis Duais (Crítico)
+1. Implementar seletor de papel no dashboard
+2. Atualizar middleware de contexto
+3. Criar rotas de alternância
+4. Testar fluxos de convites com papéis duais
+
 ## Métricas e Monitoramento
 
 ### Métricas de Negócio
@@ -310,15 +436,18 @@ Order → bloqueia → Wallet.escrow_balance
 - Volume de transações
 - Ordens criadas/concluídas
 - Taxa de conclusão de ordens
+- Contestações resolvidas vs pendentes
 
 ### Métricas Técnicas
 - Tempo de resposta das páginas
-- Erros por endpoint
+- Erros por endpoint (especialmente 500s)
 - Uso de recursos do servidor
 - Integridade do banco de dados
+- Taxa de sucesso em trocas de senha
 
 ### Alertas
 - Saldo baixo para usuários
 - Ordens disponíveis para prestadores
 - Contestações pendentes para admin
 - Erros críticos do sistema
+- Falhas em autenticação admin
