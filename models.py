@@ -97,6 +97,13 @@ class Order(db.Model):
     completed_at = db.Column(db.DateTime, nullable=True)
     invite_id = db.Column(db.Integer, db.ForeignKey('invites.id'), nullable=True)  # Relacionamento com convite
     
+    # Campos para sistema de disputas/contestações
+    dispute_reason = db.Column(db.Text, nullable=True)  # Motivo da disputa
+    dispute_opened_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Quem abriu a disputa
+    dispute_opened_at = db.Column(db.DateTime, nullable=True)  # Quando a disputa foi aberta
+    dispute_resolved_at = db.Column(db.DateTime, nullable=True)  # Quando a disputa foi resolvida
+    dispute_resolution = db.Column(db.Text, nullable=True)  # Decisão/resolução da disputa
+    
     client = db.relationship('User', foreign_keys=[client_id], backref='created_orders')
     provider = db.relationship('User', foreign_keys=[provider_id], backref='accepted_orders')
     transactions = db.relationship('Transaction', backref='order')

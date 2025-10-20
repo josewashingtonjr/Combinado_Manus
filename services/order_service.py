@@ -310,21 +310,14 @@ class OrderService:
             raise ValueError("Motivo da disputa deve ter pelo menos 10 caracteres")
 
         try:
-            # Marcar ordem como disputada
+            # Marcar ordem como disputada e registrar detalhes
             old_status = order.status
             order.status = 'disputada'
+            order.dispute_reason = reason
+            order.dispute_opened_by = user_id
+            order.dispute_opened_at = datetime.utcnow()
             
             db.session.commit()
-
-            # TODO: Implementar modelo Dispute para registrar detalhes
-            # dispute = Dispute(
-            #     order_id=order_id,
-            #     opened_by=user_id,
-            #     reason=reason,
-            #     status='pendente',
-            #     created_at=datetime.utcnow()
-            # )
-            # db.session.add(dispute)
             
             # TODO: Implementar notificações
             # NotificationService.notify_dispute_opened(order.client_id, order.provider_id, order_id, reason)
@@ -420,17 +413,11 @@ class OrderService:
                     'admin_fee': 0
                 }
 
-            # Marcar ordem como resolvida
+            # Marcar ordem como resolvida e registrar decisão
             order.status = 'resolvida'
+            order.dispute_resolved_at = datetime.utcnow()
+            order.dispute_resolution = f"Decisão: {decision}. Notas: {admin_notes}"
             db.session.commit()
-
-            # TODO: Implementar atualização do registro de disputa
-            # dispute = Dispute.query.filter_by(order_id=order_id).first()
-            # dispute.status = 'resolvida'
-            # dispute.decision = decision
-            # dispute.admin_notes = admin_notes
-            # dispute.resolved_at = datetime.utcnow()
-            # dispute.resolved_by = admin_id
 
             # TODO: Implementar notificações
             # NotificationService.notify_dispute_resolved(order.client_id, order.provider_id, order_id, decision)
