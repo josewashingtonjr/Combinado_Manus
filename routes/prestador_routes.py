@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request
-from services.auth_service import login_required, prestador_required, AuthService
+from services.auth_service import login_required, prestador_required, AuthService, user_loader_required
 from services.prestador_service import PrestadorService
 from services.invite_service import InviteService
 from datetime import datetime
@@ -14,10 +14,9 @@ prestador_bp = Blueprint('prestador', __name__, url_prefix='/prestador')
 # ==============================================================================
 
 @prestador_bp.route('/dashboard')
-@login_required
-def dashboard():
+@user_loader_required
+def dashboard(user):
     """Dashboard principal do prestador"""
-    user = AuthService.get_current_user()
     
     # Verificar se o usuário tem papel de prestador
     if 'prestador' not in user.roles:
@@ -36,10 +35,9 @@ def dashboard():
 # ==============================================================================
 
 @prestador_bp.route('/carteira')
-@login_required
-def carteira():
+@user_loader_required
+def carteira(user):
     """Visualizar carteira e ganhos"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -56,10 +54,9 @@ def carteira():
 # ==============================================================================
 
 @prestador_bp.route('/ordens')
-@login_required
-def ordens():
+@user_loader_required
+def ordens(user):
     """Ordens de serviço disponíveis e do prestador"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -76,10 +73,9 @@ def ordens():
                          status_filter=status_filter)
 
 @prestador_bp.route('/ordens/disponiveis')
-@login_required
-def ordens_disponiveis():
+@user_loader_required
+def ordens_disponiveis(user):
     """Ordens disponíveis para aceitar"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -97,10 +93,9 @@ def ordens_disponiveis():
 # ==============================================================================
 
 @prestador_bp.route('/ganhos')
-@login_required
-def ganhos():
+@user_loader_required
+def ganhos(user):
     """Histórico de ganhos do prestador"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -121,10 +116,9 @@ def ganhos():
 # ==============================================================================
 
 @prestador_bp.route('/perfil')
-@login_required
-def perfil():
+@user_loader_required
+def perfil(user):
     """Perfil do prestador"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -141,10 +135,9 @@ def perfil():
 # ==============================================================================
 
 @prestador_bp.route('/trocar-para-cliente')
-@login_required
-def trocar_para_cliente():
+@user_loader_required
+def trocar_para_cliente(user):
     """Trocar para a área do cliente"""
-    user = AuthService.get_current_user()
     
     # Verificar se o usuário também é cliente
     if 'cliente' not in user.roles:
@@ -153,17 +146,16 @@ def trocar_para_cliente():
     
     # Redirecionar para o dashboard do cliente
     flash('Bem-vindo à área do cliente!', 'info')
-    return redirect(url_for('cliente.dashboard'))
+    return redirect(url_for('app.home'))
 
 # ==============================================================================
 #  AÇÕES EM ORDENS
 # ==============================================================================
 
 @prestador_bp.route('/ordens/<int:order_id>/aceitar', methods=['POST'])
-@login_required
-def aceitar_ordem(order_id):
+@user_loader_required
+def aceitar_ordem(user, order_id):
     """Aceitar uma ordem de serviço"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -178,10 +170,9 @@ def aceitar_ordem(order_id):
     return redirect(url_for('prestador.ordens'))
 
 @prestador_bp.route('/ordens/<int:order_id>/concluir', methods=['POST'])
-@login_required
-def concluir_ordem(order_id):
+@user_loader_required
+def concluir_ordem(user, order_id):
     """Marcar ordem como concluída"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -200,10 +191,9 @@ def concluir_ordem(order_id):
 # ==============================================================================
 
 @prestador_bp.route('/saque')
-@login_required
-def saque():
+@user_loader_required
+def saque(user):
     """Solicitar saque de saldo"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -212,10 +202,9 @@ def saque():
     return render_template('prestador/saque.html', user=user)
 
 @prestador_bp.route('/saque', methods=['POST'])
-@login_required
-def processar_saque():
+@user_loader_required
+def processar_saque(user):
     """Processar solicitação de saque"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -245,10 +234,9 @@ def processar_saque():
 # ==============================================================================
 
 @prestador_bp.route('/convites')
-@login_required
-def convites():
+@user_loader_required
+def convites(user):
     """Listar convites recebidos pelo prestador"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -262,10 +250,9 @@ def convites():
                          invites=received_invites)
 
 @prestador_bp.route('/convites/<token>')
-@login_required
-def ver_convite(token):
+@user_loader_required
+def ver_convite(user, token):
     """Ver detalhes de um convite específico"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
@@ -292,10 +279,9 @@ def ver_convite(token):
         return redirect(url_for('prestador.convites'))
 
 @prestador_bp.route('/convites/<token>/aceitar', methods=['POST'])
-@login_required
-def aceitar_convite(token):
+@user_loader_required
+def aceitar_convite(user, token):
     """Aceitar um convite com possibilidade de alteração de termos"""
-    user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')

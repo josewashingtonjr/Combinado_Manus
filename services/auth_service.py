@@ -98,6 +98,20 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def user_loader_required(f):
+    """Decorador que exige login de usuário e carrega o objeto User"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not AuthService.is_user_logged_in():
+            flash('Acesso negado. Login necessário.', 'error')
+            return redirect(url_for('auth.user_login'))
+        user = AuthService.get_current_user()
+        if not user:
+            flash('Sessão de usuário inválida. Faça login novamente.', 'error')
+            return redirect(url_for('auth.user_login'))
+        return f(user=user, *args, **kwargs)
+    return decorated_function
+
 def cliente_required(f):
     """Decorador que exige usuário com papel de cliente"""
     @wraps(f)
