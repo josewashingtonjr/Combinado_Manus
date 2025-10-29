@@ -15,8 +15,19 @@ from datetime import datetime
 #  CONFIGURAÇÃO DA APLICAÇÃO
 # ==============================================================================
 
-app = Flask(__name__)
-app.config.from_object('config.Config')
+def create_app(config_class=None):
+    """Factory function para criar a aplicação Flask"""
+    app = Flask(__name__)
+    
+    if config_class:
+        app.config.from_object(config_class)
+    else:
+        app.config.from_object('config.Config')
+    
+    return app
+
+
+app = create_app()
 
 # Configurar CORS
 CORS(app, supports_credentials=True)
