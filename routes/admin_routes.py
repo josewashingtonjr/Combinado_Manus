@@ -487,9 +487,4 @@ def test_404():
 
 
 
-@admin_bp.route('/contestacoes')
-@admin_required
-def contestacoes():
-    """Página de contestações"""
-    return render_template('admin/contestacoes.html')
-acoes.html')
+# Rota de contestações já definida na linha 319
