@@ -82,7 +82,8 @@ class OrderService:
         - Validar disponibilidade do prestador
         - Atualizar status e registrar prestador responsável
         """
-        order = Order.query.get(order_id)
+        # Usar SELECT FOR UPDATE para bloquear a ordem durante a validação
+        order = Order.query.filter_by(id=order_id).with_for_update().first()
         if not order:
             raise ValueError("Ordem não encontrada")
 

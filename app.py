@@ -65,7 +65,7 @@ error_logger.addHandler(error_handler)
 from models import db
 db.init_app(app)
 migrate = Migrate(app, db)
-# csrf = CSRFProtect(app)  # Desabilitado para APIs AJAX
+csrf = CSRFProtect(app)  # Proteção CSRF habilitada
 
 # ==============================================================================
 #  IMPORTAÇÃO DE MODELOS (necessário para migrations)

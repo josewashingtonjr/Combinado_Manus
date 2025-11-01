@@ -61,8 +61,8 @@ class Wallet(db.Model):
     __tablename__ = 'wallets'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    balance = db.Column(db.Float, nullable=False, default=0.0)
-    escrow_balance = db.Column(db.Float, nullable=False, default=0.0)
+    balance = db.Column(db.Numeric(18, 2), nullable=False, default=0.0)
+    escrow_balance = db.Column(db.Numeric(18, 2), nullable=False, default=0.0)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     user = db.relationship('User', backref=db.backref('wallet', uselist=False, cascade="all, delete-orphan"))
@@ -73,7 +73,7 @@ class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     type = db.Column(db.String(50), nullable=False)  # ex: 'deposito', 'saque', 'pagamento', 'recebimento', 'taxa'
-    amount = db.Column(db.Float, nullable=False)
+    amount = db.Column(db.Numeric(18, 2), nullable=False)
     description = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
@@ -90,7 +90,7 @@ class Order(db.Model):
     provider_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    value = db.Column(db.Float, nullable=False)
+    value = db.Column(db.Numeric(18, 2), nullable=False)
     status = db.Column(db.String(50), nullable=False, default='disponivel') # disponivel, aceita, em_andamento, concluida, cancelada, disputada
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     accepted_at = db.Column(db.DateTime, nullable=True)

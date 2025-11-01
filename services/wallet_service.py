@@ -314,25 +314,30 @@ class WalletService:
         if amount <= 0:
             raise ValueError("Valor do crédito deve ser positivo")
         
-        wallet = Wallet.query.filter_by(user_id=user_id).first()
+        # Usar SELECT FOR UPDATE para bloquear a carteira durante a transação
+        wallet = Wallet.query.filter_by(user_id=user_id).with_for_update().first()
         if not wallet:
             raise ValueError("Carteira não encontrada")
         
         try:
-            # Atualizar saldo
-            wallet.balance += amount
-            wallet.updated_at = datetime.utcnow()
+            # Iniciar transação atômica
+            with db.session.begin_nested():
+                # Atualizar saldo
+                wallet.balance += amount
+                wallet.updated_at = datetime.utcnow()
+                
+                # Registrar transação
+                transaction = Transaction(
+                    user_id=user_id,
+                    type=transaction_type,
+                    amount=amount,
+                    description=description,
+                    order_id=order_id,
+                    related_user_id=related_user_id
+                )
+                db.session.add(transaction)
             
-            # Registrar transação
-            transaction = Transaction(
-                user_id=user_id,
-                type=transaction_type,
-                amount=amount,
-                description=description,
-                order_id=order_id,
-                related_user_id=related_user_id
-            )
-            db.session.add(transaction)
+            # Commit da transação principal
             db.session.commit()
             
             return {
@@ -350,7 +355,8 @@ class WalletService:
         if amount <= 0:
             raise ValueError("Valor do débito deve ser positivo")
         
-        wallet = Wallet.query.filter_by(user_id=user_id).first()
+        # Usar SELECT FOR UPDATE para bloquear a carteira durante a transação
+        wallet = Wallet.query.filter_by(user_id=user_id).with_for_update().first()
         if not wallet:
             raise ValueError("Carteira não encontrada")
         
@@ -359,20 +365,24 @@ class WalletService:
             raise ValueError(f"Saldo insuficiente. Saldo atual: {wallet.balance}, valor solicitado: {amount}")
         
         try:
-            # Atualizar saldo
-            wallet.balance -= amount
-            wallet.updated_at = datetime.utcnow()
+            # Iniciar transação atômica
+            with db.session.begin_nested():
+                # Atualizar saldo
+                wallet.balance -= amount
+                wallet.updated_at = datetime.utcnow()
+                
+                # Registrar transação (valor negativo para débito)
+                transaction = Transaction(
+                    user_id=user_id,
+                    type=transaction_type,
+                    amount=-amount,
+                    description=description,
+                    order_id=order_id,
+                    related_user_id=related_user_id
+                )
+                db.session.add(transaction)
             
-            # Registrar transação (valor negativo para débito)
-            transaction = Transaction(
-                user_id=user_id,
-                type=transaction_type,
-                amount=-amount,
-                description=description,
-                order_id=order_id,
-                related_user_id=related_user_id
-            )
-            db.session.add(transaction)
+            # Commit da transação principal
             db.session.commit()
             
             return {
@@ -723,50 +733,54 @@ class WalletService:
             raise ValueError(f"Saldo em escrow insuficiente. Necessário: {order.value}, disponível: {client_wallet.escrow_balance}")
         
         try:
-            # 1. Liberar do escrow do cliente
-            client_wallet.escrow_balance -= order.value
-            client_wallet.updated_at = datetime.utcnow()
+            # Iniciar transação atômica para garantir consistência
+            with db.session.begin_nested():
+                # 1. Liberar do escrow do cliente
+                client_wallet.escrow_balance -= order.value
+                client_wallet.updated_at = datetime.utcnow()
+                
+                # 2. Pagar o prestador (valor - taxa)
+                provider_wallet.balance += provider_amount
+                provider_wallet.updated_at = datetime.utcnow()
+                
+                # 3. Pagar a taxa do sistema para o admin
+                admin_wallet.balance += system_fee
+                admin_wallet.updated_at = datetime.utcnow()
+                
+                # Registrar transações para auditoria completa
+                # 1. Liberação do escrow do cliente
+                t1 = Transaction(
+                    user_id=order.client_id,
+                    type="escrow_liberacao",
+                    amount=-order.value,
+                    description=f"Liberação de escrow para ordem #{order_id}",
+                    order_id=order_id,
+                    related_user_id=order.provider_id
+                )
+                
+                # 2. Pagamento ao prestador
+                t2 = Transaction(
+                    user_id=order.provider_id,
+                    type="recebimento",
+                    amount=provider_amount,
+                    description=f"Pagamento pela ordem #{order_id} (valor: {order.value:.2f} - taxa: {system_fee:.2f})",
+                    order_id=order_id,
+                    related_user_id=order.client_id
+                )
+                
+                # 3. Taxa do sistema para admin
+                t3 = Transaction(
+                    user_id=WalletService.ADMIN_USER_ID,
+                    type="taxa_sistema",
+                    amount=system_fee,
+                    description=f"Taxa do sistema ({system_fee_percent*100:.1f}%) da ordem #{order_id}",
+                    order_id=order_id,
+                    related_user_id=order.provider_id
+                )
+                
+                db.session.add_all([t1, t2, t3])
             
-            # 2. Pagar o prestador (valor - taxa)
-            provider_wallet.balance += provider_amount
-            provider_wallet.updated_at = datetime.utcnow()
-            
-            # 3. Pagar a taxa do sistema para o admin
-            admin_wallet.balance += system_fee
-            admin_wallet.updated_at = datetime.utcnow()
-            
-            # Registrar transações para auditoria completa
-            # 1. Liberação do escrow do cliente
-            t1 = Transaction(
-                user_id=order.client_id,
-                type="escrow_liberacao",
-                amount=-order.value,
-                description=f"Liberação de escrow para ordem #{order_id}",
-                order_id=order_id,
-                related_user_id=order.provider_id
-            )
-            
-            # 2. Pagamento ao prestador
-            t2 = Transaction(
-                user_id=order.provider_id,
-                type="recebimento",
-                amount=provider_amount,
-                description=f"Pagamento pela ordem #{order_id} (valor: {order.value:.2f} - taxa: {system_fee:.2f})",
-                order_id=order_id,
-                related_user_id=order.client_id
-            )
-            
-            # 3. Taxa do sistema para admin
-            t3 = Transaction(
-                user_id=WalletService.ADMIN_USER_ID,
-                type="taxa_sistema",
-                amount=system_fee,
-                description=f"Taxa do sistema ({system_fee_percent*100:.1f}%) da ordem #{order_id}",
-                order_id=order_id,
-                related_user_id=order.provider_id
-            )
-            
-            db.session.add_all([t1, t2, t3])
+            # Commit da transação principal
             db.session.commit()
             
             return {
