@@ -25,6 +25,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     active = db.Column(db.Boolean, default=True)
     roles = db.Column(db.String(50), nullable=False, default=UserRole.CLIENTE.value)
+    deleted_at = db.Column(db.DateTime, nullable=True)  # Soft delete
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -103,6 +104,7 @@ class Order(db.Model):
     dispute_opened_at = db.Column(db.DateTime, nullable=True)  # Quando a disputa foi aberta
     dispute_resolved_at = db.Column(db.DateTime, nullable=True)  # Quando a disputa foi resolvida
     dispute_resolution = db.Column(db.Text, nullable=True)  # Decisão/resolução da disputa
+    deleted_at = db.Column(db.DateTime, nullable=True)  # Soft delete
     
     client = db.relationship('User', foreign_keys=[client_id], backref='created_orders')
     provider = db.relationship('User', foreign_keys=[provider_id], backref='accepted_orders')
