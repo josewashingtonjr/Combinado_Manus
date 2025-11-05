@@ -16,8 +16,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '002'
-down_revision = '001'
+revision = 'b2c3d4e5f6a7'
+down_revision = 'a1b2c3d4e5f6'
 branch_labels = None
 depends_on = None
 
@@ -30,44 +30,39 @@ def upgrade():
     # ==============================================================================
     
     # Wallet.balance >= 0
-    op.create_check_constraint(
-        'wallet_balance_non_negative',
-        'wallet',
-        'balance >= 0'
-    )
-    
-    # Wallet.escrow_balance >= 0
-    op.create_check_constraint(
-        'wallet_escrow_balance_non_negative',
-        'wallet',
-        'escrow_balance >= 0'
-    )
+    with op.batch_alter_table('wallets', schema=None) as batch_op:
+        batch_op.create_check_constraint(
+            'wallet_balance_non_negative',
+            'balance >= 0'
+        )
+        batch_op.create_check_constraint(
+            'wallet_escrow_balance_non_negative',
+            'escrow_balance >= 0'
+        )
     
     # ==============================================================================
     # 2. UNIQUE CONSTRAINTS - Garantir unicidade de email e CPF
     # ==============================================================================
     
     # User.email - UNIQUE
-    # Nota: Verificar se já existe antes de criar
-    try:
-        op.create_unique_constraint(
-            'user_email_unique',
-            'user',
-            ['email']
-        )
-    except Exception as e:
-        print(f"Constraint user_email_unique já existe ou erro: {e}")
-    
-    # User.cpf - UNIQUE (apenas se não for NULL)
-    # Nota: PostgreSQL permite múltiplos NULLs em UNIQUE constraints
-    try:
-        op.create_unique_constraint(
-            'user_cpf_unique',
-            'user',
-            ['cpf']
-        )
-    except Exception as e:
-        print(f"Constraint user_cpf_unique já existe ou erro: {e}")
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        # Verificar se a constraint já existe
+        try:
+            batch_op.create_unique_constraint(
+                'user_email_unique',
+                ['email']
+            )
+        except:
+            pass  # Constraint já existe
+        
+        # User.cpf - UNIQUE (apenas se não for NULL)
+        try:
+            batch_op.create_unique_constraint(
+                'user_cpf_unique',
+                ['cpf']
+            )
+        except:
+            pass  # Constraint já existe
     
     # ==============================================================================
     # 3. ÍNDICES - Melhorar performance de queries
@@ -77,122 +72,118 @@ def upgrade():
     try:
         op.create_index(
             'idx_wallet_user_id',
-            'wallet',
+            'wallets',
             ['user_id']
         )
-    except Exception as e:
-        print(f"Índice idx_wallet_user_id já existe ou erro: {e}")
+    except:
+        pass  # Índice já existe
     
     # Índice em Transaction.user_id
     try:
         op.create_index(
             'idx_transaction_user_id',
-            'transaction',
+            'transactions',
             ['user_id']
         )
-    except Exception as e:
-        print(f"Índice idx_transaction_user_id já existe ou erro: {e}")
+    except:
+        pass
     
     # Índice em Transaction.created_at para queries temporais
     try:
         op.create_index(
             'idx_transaction_created_at',
-            'transaction',
+            'transactions',
             ['created_at']
         )
-    except Exception as e:
-        print(f"Índice idx_transaction_created_at já existe ou erro: {e}")
+    except:
+        pass
     
     # Índice em Order.status para filtros
     try:
         op.create_index(
             'idx_order_status',
-            'order',
+            'orders',
             ['status']
         )
-    except Exception as e:
-        print(f"Índice idx_order_status já existe ou erro: {e}")
+    except:
+        pass
     
     # Índice em Order.client_id
     try:
         op.create_index(
             'idx_order_client_id',
-            'order',
+            'orders',
             ['client_id']
         )
-    except Exception as e:
-        print(f"Índice idx_order_client_id já existe ou erro: {e}")
+    except:
+        pass
     
     # Índice em Order.provider_id
     try:
         op.create_index(
             'idx_order_provider_id',
-            'order',
+            'orders',
             ['provider_id']
         )
-    except Exception as e:
-        print(f"Índice idx_order_provider_id já existe ou erro: {e}")
-    
-    print("✅ Constraints e índices adicionados com sucesso!")
+    except:
+        pass
 
 
 def downgrade():
     """Remove database constraints"""
     
     # Remover índices
-    op.drop_index('idx_order_provider_id', table_name='order')
-    op.drop_index('idx_order_client_id', table_name='order')
-    op.drop_index('idx_order_status', table_name='order')
-    op.drop_index('idx_transaction_created_at', table_name='transaction')
-    op.drop_index('idx_transaction_user_id', table_name='transaction')
-    op.drop_index('idx_wallet_user_id', table_name='wallet')
+    try:
+        op.drop_index('idx_order_provider_id', table_name='orders')
+    except:
+        pass
+    
+    try:
+        op.drop_index('idx_order_client_id', table_name='orders')
+    except:
+        pass
+    
+    try:
+        op.drop_index('idx_order_status', table_name='orders')
+    except:
+        pass
+    
+    try:
+        op.drop_index('idx_transaction_created_at', table_name='transactions')
+    except:
+        pass
+    
+    try:
+        op.drop_index('idx_transaction_user_id', table_name='transactions')
+    except:
+        pass
+    
+    try:
+        op.drop_index('idx_wallet_user_id', table_name='wallets')
+    except:
+        pass
     
     # Remover UNIQUE constraints
-    op.drop_constraint('user_cpf_unique', 'user', type_='unique')
-    op.drop_constraint('user_email_unique', 'user', type_='unique')
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        try:
+            batch_op.drop_constraint('user_cpf_unique', type_='unique')
+        except:
+            pass
+        
+        try:
+            batch_op.drop_constraint('user_email_unique', type_='unique')
+        except:
+            pass
     
     # Remover CHECK constraints
-    op.drop_constraint('wallet_escrow_balance_non_negative', 'wallet', type_='check')
-    op.drop_constraint('wallet_balance_non_negative', 'wallet', type_='check')
-    
-    print("✅ Constraints e índices removidos com sucesso!")
-
-
-if __name__ == '__main__':
-    """
-    Script pode ser executado diretamente para aplicar migração
-    """
-    print("=" * 80)
-    print("MIGRAÇÃO 002: Adicionar Constraints de Banco de Dados")
-    print("=" * 80)
-    print()
-    print("⚠️  ATENÇÃO: Faça backup do banco de dados antes de continuar!")
-    print()
-    
-    response = input("Deseja continuar com a migração? (sim/não): ")
-    
-    if response.lower() in ['sim', 's', 'yes', 'y']:
-        from app import app, db
+    with op.batch_alter_table('wallets', schema=None) as batch_op:
+        try:
+            batch_op.drop_constraint('wallet_escrow_balance_non_negative', type_='check')
+        except:
+            pass
         
-        with app.app_context():
-            try:
-                upgrade()
-                print()
-                print("=" * 80)
-                print("✅ MIGRAÇÃO CONCLUÍDA COM SUCESSO!")
-                print("=" * 80)
-            except Exception as e:
-                print()
-                print("=" * 80)
-                print(f"❌ ERRO NA MIGRAÇÃO: {e}")
-                print("=" * 80)
-                print()
-                print("Executando rollback...")
-                try:
-                    downgrade()
-                    print("✅ Rollback concluído")
-                except Exception as rollback_error:
-                    print(f"❌ Erro no rollback: {rollback_error}")
-    else:
-        print("Migração cancelada pelo usuário.")
+        try:
+            batch_op.drop_constraint('wallet_balance_non_negative', type_='check')
+        except:
+            pass
 

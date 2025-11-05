@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '001_float_to_numeric'
-down_revision = None
+revision = 'a1b2c3d4e5f6'
+down_revision = '60679096b063'
 branch_labels = None
 depends_on = None
 
@@ -25,33 +25,33 @@ def upgrade():
     - wallets.escrow_balance
     - transactions.amount
     - orders.value
+    
+    Nota: SQLite não suporta ALTER COLUMN TYPE diretamente.
+    Usamos batch operations para recriar as tabelas.
     """
-    # Wallet: balance e escrow_balance
-    op.alter_column('wallets', 'balance',
-                    existing_type=sa.Float(),
-                    type_=sa.Numeric(precision=18, scale=2),
-                    existing_nullable=False,
-                    postgresql_using='balance::numeric(18,2)')
     
-    op.alter_column('wallets', 'escrow_balance',
-                    existing_type=sa.Float(),
-                    type_=sa.Numeric(precision=18, scale=2),
-                    existing_nullable=False,
-                    postgresql_using='escrow_balance::numeric(18,2)')
+    # Para SQLite, precisamos usar batch operations
+    with op.batch_alter_table('wallets', schema=None) as batch_op:
+        batch_op.alter_column('balance',
+                              existing_type=sa.Float(),
+                              type_=sa.Numeric(precision=18, scale=2),
+                              existing_nullable=False)
+        batch_op.alter_column('escrow_balance',
+                              existing_type=sa.Float(),
+                              type_=sa.Numeric(precision=18, scale=2),
+                              existing_nullable=False)
     
-    # Transaction: amount
-    op.alter_column('transactions', 'amount',
-                    existing_type=sa.Float(),
-                    type_=sa.Numeric(precision=18, scale=2),
-                    existing_nullable=False,
-                    postgresql_using='amount::numeric(18,2)')
+    with op.batch_alter_table('transactions', schema=None) as batch_op:
+        batch_op.alter_column('amount',
+                              existing_type=sa.Float(),
+                              type_=sa.Numeric(precision=18, scale=2),
+                              existing_nullable=False)
     
-    # Order: value
-    op.alter_column('orders', 'value',
-                    existing_type=sa.Float(),
-                    type_=sa.Numeric(precision=18, scale=2),
-                    existing_nullable=False,
-                    postgresql_using='value::numeric(18,2)')
+    with op.batch_alter_table('orders', schema=None) as batch_op:
+        batch_op.alter_column('value',
+                              existing_type=sa.Float(),
+                              type_=sa.Numeric(precision=18, scale=2),
+                              existing_nullable=False)
 
 
 def downgrade():
@@ -59,30 +59,25 @@ def downgrade():
     Reverte a migração de Numeric para Float.
     ATENÇÃO: Pode haver perda de precisão ao reverter.
     """
-    # Order: value
-    op.alter_column('orders', 'value',
-                    existing_type=sa.Numeric(precision=18, scale=2),
-                    type_=sa.Float(),
-                    existing_nullable=False,
-                    postgresql_using='value::float')
+    with op.batch_alter_table('orders', schema=None) as batch_op:
+        batch_op.alter_column('value',
+                              existing_type=sa.Numeric(precision=18, scale=2),
+                              type_=sa.Float(),
+                              existing_nullable=False)
     
-    # Transaction: amount
-    op.alter_column('transactions', 'amount',
-                    existing_type=sa.Numeric(precision=18, scale=2),
-                    type_=sa.Float(),
-                    existing_nullable=False,
-                    postgresql_using='amount::float')
+    with op.batch_alter_table('transactions', schema=None) as batch_op:
+        batch_op.alter_column('amount',
+                              existing_type=sa.Numeric(precision=18, scale=2),
+                              type_=sa.Float(),
+                              existing_nullable=False)
     
-    # Wallet: escrow_balance e balance
-    op.alter_column('wallets', 'escrow_balance',
-                    existing_type=sa.Numeric(precision=18, scale=2),
-                    type_=sa.Float(),
-                    existing_nullable=False,
-                    postgresql_using='escrow_balance::float')
-    
-    op.alter_column('wallets', 'balance',
-                    existing_type=sa.Numeric(precision=18, scale=2),
-                    type_=sa.Float(),
-                    existing_nullable=False,
-                    postgresql_using='balance::float')
+    with op.batch_alter_table('wallets', schema=None) as batch_op:
+        batch_op.alter_column('escrow_balance',
+                              existing_type=sa.Numeric(precision=18, scale=2),
+                              type_=sa.Float(),
+                              existing_nullable=False)
+        batch_op.alter_column('balance',
+                              existing_type=sa.Numeric(precision=18, scale=2),
+                              type_=sa.Float(),
+                              existing_nullable=False)
 
