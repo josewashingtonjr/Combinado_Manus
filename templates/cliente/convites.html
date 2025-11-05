@@ -120,7 +120,8 @@
                 <thead>
                     <tr>
                         <th>Serviço</th>
-                        <th>Prestador</th>
+                        <th>Categoria</th>
+                        <th>Prestador (Telefone)</th>
                         <th>Valor</th>
                         <th>Data de Entrega</th>
                         <th>Status</th>
@@ -135,7 +136,22 @@
                             <strong>{{ invite.service_title }}</strong><br>
                             <small class="text-muted">{{ invite.service_description[:50] }}{% if invite.service_description|length > 50 %}...{% endif %}</small>
                         </td>
-                        <td>{{ invite.invited_email }}</td>
+                        <td>
+                            {% if invite.service_category %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-tools me-1"></i>{{ invite.service_category|title }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Não especificada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if invite.invited_phone %}
+                                <i class="fas fa-phone me-1"></i>{{ invite.invited_phone }}
+                            {% else %}
+                                <i class="fas fa-envelope me-1"></i>{{ invite.invited_email }}
+                            {% endif %}
+                        </td>
                         <td>
                             {% if invite.final_value and invite.final_value != invite.original_value %}
                                 <span class="text-decoration-line-through text-muted">{{ invite.original_value|format_currency }}</span><br>

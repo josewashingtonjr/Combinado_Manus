@@ -113,9 +113,11 @@ class Invite(db.Model):
     __tablename__ = 'invites'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    invited_email = db.Column(db.String(120), nullable=False)
+    invited_email = db.Column(db.String(120), nullable=True)  # Mantido por compatibilidade
+    invited_phone = db.Column(db.String(20), nullable=True)  # Campo principal para WhatsApp/Telegram
     service_title = db.Column(db.String(200), nullable=False)
     service_description = db.Column(db.Text, nullable=False)
+    service_category = db.Column(db.String(100), nullable=True)  # Ex: pedreiro, encanador, eletricista
     original_value = db.Column(db.Numeric(10, 2), nullable=False)
     final_value = db.Column(db.Numeric(10, 2), nullable=True)
     delivery_date = db.Column(db.DateTime, nullable=False)

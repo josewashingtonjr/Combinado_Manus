@@ -54,12 +54,12 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label for="invited_email" class="form-label">
-                            <i class="fas fa-envelope me-1"></i>Email do Prestador *
+                        <label for="invited_phone" class="form-label">
+                            <i class="fas fa-phone me-1"></i>Telefone do Prestador *
                         </label>
-                        <input type="email" class="form-control" id="invited_email" name="invited_email" 
-                               placeholder="prestador@exemplo.com" required>
-                        <div class="form-text">Email do prestador que você deseja convidar</div>
+                        <input type="tel" class="form-control" id="invited_phone" name="invited_phone" 
+                               placeholder="(11) 99999-9999" required>
+                        <div class="form-text">Telefone para envio do convite via WhatsApp/Telegram</div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -73,14 +73,45 @@
                 </div>
             </div>
             
-            <div class="mb-3">
-                <label for="service_title" class="form-label">
-                    <i class="fas fa-tag me-1"></i>Título do Serviço *
-                </label>
-                <input type="text" class="form-control" id="service_title" name="service_title" 
-                       placeholder="Ex: Limpeza Residencial, Consultoria, Desenvolvimento..." 
-                       maxlength="200" required>
-                <div class="form-text">Título claro e objetivo do serviço solicitado</div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="service_title" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Título do Serviço *
+                        </label>
+                        <input type="text" class="form-control" id="service_title" name="service_title" 
+                               placeholder="Ex: Limpeza Residencial, Consultoria, Desenvolvimento..." 
+                               maxlength="200" required>
+                        <div class="form-text">Título claro e objetivo do serviço solicitado</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="service_category" class="form-label">
+                            <i class="fas fa-tools me-1"></i>Categoria do Serviço *
+                        </label>
+                        <select class="form-control" id="service_category" name="service_category" required>
+                            <option value="">Selecione a categoria</option>
+                            <option value="pedreiro">Pedreiro</option>
+                            <option value="encanador">Encanador</option>
+                            <option value="eletricista">Eletricista</option>
+                            <option value="pintor">Pintor</option>
+                            <option value="marceneiro">Marceneiro</option>
+                            <option value="jardineiro">Jardineiro</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="mecanico">Mecânico</option>
+                            <option value="informatica">Informática</option>
+                            <option value="design">Design</option>
+                            <option value="consultoria">Consultoria</option>
+                            <option value="educacao">Educação</option>
+                            <option value="saude">Saúde</option>
+                            <option value="beleza">Beleza</option>
+                            <option value="transporte">Transporte</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                        <div class="form-text">Categoria para facilitar buscas futuras</div>
+                    </div>
+                </div>
             </div>
             
             <div class="mb-3">

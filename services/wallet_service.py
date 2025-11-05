@@ -393,12 +393,7 @@ class WalletService:
         """Garante que o admin principal tenha uma carteira"""
         from models import AdminUser
         
-        # Buscar admin principal
-        admin = AdminUser.query.get(WalletService.ADMIN_USER_ID)
-        if not admin:
-            raise ValueError("Admin principal não encontrado")
-        
-        # Verificar se admin já tem carteira
+        # Verificar se admin já tem carteira (user_id=0 é especial para admin)
         admin_wallet = Wallet.query.filter_by(user_id=WalletService.ADMIN_USER_ID).first()
         if admin_wallet:
             return admin_wallet
@@ -606,10 +601,10 @@ class WalletService:
         user_wallets = Wallet.query.filter(Wallet.user_id.in_(user_ids)).all()
         tokens_in_circulation = sum(w.balance + w.escrow_balance for w in user_wallets)
         
-        # Tokens criados pelo admin
-        creation_transactions = Transaction.query.filter_by(
-            user_id=WalletService.ADMIN_USER_ID,
-            type="criacao_tokens"
+        # Tokens criados pelo admin (incluindo criação inicial)
+        creation_transactions = Transaction.query.filter(
+            Transaction.user_id == WalletService.ADMIN_USER_ID,
+            Transaction.type.in_(["criacao_tokens", "criacao_inicial"])
         ).all()
         total_tokens_created = sum(t.amount for t in creation_transactions)
         
