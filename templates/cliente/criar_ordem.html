@@ -1,0 +1,107 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Criar Nova Ordem - Cliente{% endblock %}
+
+{% block cliente_content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-plus-circle text-success me-2"></i>Criar Nova Ordem de Serviço</h2>
+            <a href="{{ url_for('cliente.ordens') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Voltar às Ordens
+            </a>
+        </div>
+
+        <!-- Card de Saldo Disponível -->
+        <div class="card mb-4 border-success">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title text-success mb-1">
+                            <i class="fas fa-wallet me-2"></i>Saldo Disponível
+                        </h5>
+                        <h3 class="text-success mb-0">{{ wallet.balance|format_currency }}</h3>
+                        <small class="text-muted">Disponível para criar ordens</small>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Importante:</strong> O valor da ordem será bloqueado em garantia até a conclusão do serviço.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Criação -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Detalhes da Ordem
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('cliente.processar_criar_ordem') }}" id="createOrderForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Título do Serviço -->
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label fw-bold") }}
+                        {{ form.title(class="form-control", placeholder="Ex: Desenvolvimento de site institucional") }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.title.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Descreva brevemente o serviço que você precisa (5-100 caracteres)</div>
+                    </div>
+
+                    <!-- Descrição Detalhada -->
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label fw-bold") }}
+                        {{ form.description(class="form-control", rows="5", placeholder="Descreva detalhadamente o que você precisa") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.description.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Seja específico para atrair os melhores prestadores (20-1000 caracteres)</div>
+                    </div>
+
+                    <!-- Valor da Ordem -->
+                    <div class="mb-4">
+                        {{ form.value.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            {{ form.value(class="form-control", placeholder="0,00", id="valueInput") }}
+                        </div>
+                        {% if form.value.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.value.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Valor mínimo: R$ 1,00 | Seu saldo: {{ wallet.balance|format_currency }}
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('cliente.ordens') }}" class="btn btn-outline-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancelar
+                        </a>
+                        {{ form.submit(class="btn btn-success", id="submitBtn") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

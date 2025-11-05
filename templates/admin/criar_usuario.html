@@ -1,0 +1,268 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Criar Usuário - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-plus me-2 text-success"></i>Criar Novo Usuário</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.usuarios') }}">Usuários</a></li>
+                        <li class="breadcrumb-item active">Criar Usuário</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>Dados do Novo Usuário
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="criarUsuarioForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.nome.label(class="form-label") }}
+                                    {{ form.nome(class="form-control") }}
+                                    {% if form.nome.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.nome.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control") }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.email.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.cpf.label(class="form-label") }}
+                                    {{ form.cpf(class="form-control", placeholder="000.000.000-00") }}
+                                    {% if form.cpf.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.cpf.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control", placeholder="(11) 99999-9999") }}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.phone.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.password.label(class="form-label") }}
+                                    {{ form.password(class="form-control") }}
+                                    {% if form.password.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.password.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Mínimo 6 caracteres, deve conter letras e números.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.confirm_password.label(class="form-label") }}
+                                    {{ form.confirm_password(class="form-control") }}
+                                    {% if form.confirm_password.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.confirm_password.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div id="senha-match-feedback" class="form-text"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    {{ form.roles.label(class="form-label") }}
+                                    {{ form.roles(class="form-select") }}
+                                    {% if form.roles.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.roles.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Define as permissões do usuário no sistema.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success" id="btnCriar">
+                                <i class="fas fa-user-plus me-1"></i>Criar Usuário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card de Informações -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações Importantes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Uma carteira será criada automaticamente para o usuário
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            O usuário receberá as credenciais por email (futuro)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            CPF e email devem ser únicos no sistema
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success me-2"></i>
+                            O usuário poderá alterar sua senha no primeiro login
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const senha = document.getElementById('password');
+    const confirmarSenha = document.getElementById('confirm_password');
+    const feedback = document.getElementById('senha-match-feedback');
+    const btnCriar = document.getElementById('btnCriar');
+    const cpfField = document.getElementById('cpf');
+    const phoneField = document.getElementById('phone');
+    
+    // Máscara para CPF
+    if (cpfField) {
+        cpfField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        });
+    }
+    
+    // Máscara para telefone
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 10) {
+                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            } else {
+                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    // Verificar senhas
+    function verificarSenhas() {
+        if (!confirmarSenha.value) {
+            feedback.textContent = '';
+            feedback.className = 'form-text';
+            return;
+        }
+        
+        if (senha.value === confirmarSenha.value) {
+            feedback.textContent = '✓ As senhas coincidem';
+            feedback.className = 'form-text text-success';
+        } else {
+            feedback.textContent = '✗ As senhas não coincidem';
+            feedback.className = 'form-text text-danger';
+        }
+    }
+    
+    if (senha && confirmarSenha) {
+        senha.addEventListener('input', verificarSenhas);
+        confirmarSenha.addEventListener('input', verificarSenhas);
+    }
+    
+    // Validação do formulário
+    document.getElementById('criarUsuarioForm').addEventListener('submit', function(e) {
+        if (senha.value !== confirmarSenha.value) {
+            e.preventDefault();
+            alert('As senhas não coincidem!');
+            return false;
+        }
+        
+        if (senha.value.length < 6) {
+            e.preventDefault();
+            alert('A senha deve ter pelo menos 6 caracteres!');
+            return false;
+        }
+        
+        btnCriar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Criando...';
+        btnCriar.disabled = true;
+    });
+});
+</script>
+{% endblock %}

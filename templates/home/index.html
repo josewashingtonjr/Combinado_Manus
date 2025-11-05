@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Combinado - Plataforma segura para conectar clientes e prestadores de serviços">
+    <title>Combinado - Conectando Clientes e Prestadores</title>
+    
+    <!-- Design Tokens -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" role="banner">
+        <nav class="nav container" role="navigation" aria-label="Navegação principal">
+            <div class="nav__brand">
+                <a href="#" class="nav__logo" aria-label="Combinado - Página inicial">
+                    <i class="fas fa-handshake" aria-hidden="true"></i>
+                    <span>Combinado</span>
+                </a>
+            </div>
+            
+            <ul class="nav__menu" role="menubar">
+                <li role="none"><a href="#inicio" class="nav__link" role="menuitem">Início</a></li>
+                <li role="none"><a href="#recursos" class="nav__link" role="menuitem">Recursos</a></li>
+                <li role="none"><a href="#precos" class="nav__link" role="menuitem">Preços</a></li>
+                <li role="none"><a href="{{ url_for('home.about') }}" class="nav__link" role="menuitem">Sobre</a></li>
+                <li role="none"><a href="#contato" class="nav__link" role="menuitem">Contato</a></li>
+            </ul>
+            
+            <div class="nav__actions">
+                <a href="{{ url_for('auth.user_login') }}" class="btn btn-outline" aria-label="Login de usuário">
+                    <i class="fas fa-user"></i> Entrar
+                </a>
+                <a href="{{ url_for('auth.admin_login') }}" class="btn btn-outline-secondary" aria-label="Login administrativo" style="margin-left: 8px;">
+                    <i class="fas fa-user-shield"></i> Admin
+                </a>
+                <button class="btn btn-primary" onclick="openModal('registerModal')" aria-label="Criar nova conta">
+                    Criar conta
+                </button>
+            </div>
+            
+            <!-- Menu mobile -->
+            <button class="nav__toggle" aria-label="Abrir menu de navegação" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="hero" role="main">
+        <div class="container">
+            <div class="hero__content">
+                <h1 class="hero__title">
+                    Conecte-se com os melhores prestadores de serviços
+                </h1>
+                <p class="hero__subtitle">
+                    Plataforma segura e transparente para encontrar profissionais qualificados 
+                    ou oferecer seus serviços com pagamentos protegidos por escrow.
+                </p>
+                <div class="hero__actions">
+                    <button class="btn btn-primary btn-lg" onclick="openModal('registerModal')">
+                        <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        Criar conta grátis
+                    </button>
+                    <a href="{{ url_for('auth.user_login') }}" class="btn btn-outline btn-lg">
+                        <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                        Já tenho conta
+                    </a>
+                </div>
+            </div>
+            <div class="hero__image">
+                <div class="hero__placeholder">
+                    <i class="fas fa-handshake" aria-hidden="true"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- O que a plataforma faz -->
+    <section id="recursos" class="features">
+        <div class="container">
+            <h2 class="section__title">O que oferecemos</h2>
+            <p class="section__subtitle">
+                Tudo que você precisa para contratar ou oferecer serviços com segurança
+            </p>
+            
+            <div class="features__grid">
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="feature-card__title">Pagamentos Seguros</h3>
+                    <p class="feature-card__description">
+                        Sistema de escrow protege seu dinheiro até a conclusão do serviço
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="feature-card__title">Encontre Profissionais</h3>
+                    <p class="feature-card__description">
+                        Busque prestadores qualificados por categoria, localização e avaliações
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="fas fa-chart-line" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="feature-card__title">Transparência Total</h3>
+                    <p class="feature-card__description">
+                        Todas as transações são auditáveis e rastreáveis em tempo real
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="fas fa-bolt" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="feature-card__title">Pagamentos Instantâneos</h3>
+                    <p class="feature-card__description">
+                        Receba seus pagamentos imediatamente após a conclusão do serviço
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="fas fa-users" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="feature-card__title">Comunidade Confiável</h3>
+                    <p class="feature-card__description">
+                        Sistema de avaliações e verificação de identidade dos usuários
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="fas fa-headset" aria-hidden="true"></i>
+                    </div>
+                    <h3 class="feature-card__title">Suporte 24/7</h3>
+                    <p class="feature-card__description">
+                        Equipe de suporte disponível para resolver qualquer problema
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Como funciona -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section__title">Como funciona</h2>
+            <p class="section__subtitle">
+                Processo simples e seguro em poucos passos
+            </p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step__number">1</div>
+                    <div class="step__content">
+                        <h3 class="step__title">Cadastre-se</h3>
+                        <p class="step__description">
+                            Crie sua conta gratuita e complete seu perfil
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step__number">2</div>
+                    <div class="step__content">
+                        <h3 class="step__title">Encontre ou Ofereça</h3>
+                        <p class="step__description">
+                            Busque serviços ou publique suas habilidades
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step__number">3</div>
+                    <div class="step__content">
+                        <h3 class="step__title">Negocie</h3>
+                        <p class="step__description">
+                            Converse, defina escopo e valor do serviço
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step__number">4</div>
+                    <div class="step__content">
+                        <h3 class="step__title">Pagamento Seguro</h3>
+                        <p class="step__description">
+                            Valor fica em escrow até a conclusão
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step__number">5</div>
+                    <div class="step__content">
+                        <h3 class="step__title">Avalie</h3>
+                        <p class="step__description">
+                            Avalie a experiência e receba seu pagamento
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Depoimentos -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section__title">O que nossos usuários dizem</h2>
+            
+            <div class="testimonials__grid">
+                <div class="testimonial">
+                    <div class="testimonial__content">
+                        <p class="testimonial__text">
+                            "Encontrei um eletricista excelente através da plataforma. 
+                            O pagamento seguro me deu total confiança."
+                        </p>
+                    </div>
+                    <div class="testimonial__author">
+                        <div class="testimonial__avatar">
+                            <i class="fas fa-user" aria-hidden="true"></i>
+                        </div>
+                        <div class="testimonial__info">
+                            <h4 class="testimonial__name">Maria Silva</h4>
+                            <p class="testimonial__role">Cliente</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial">
+                    <div class="testimonial__content">
+                        <p class="testimonial__text">
+                            "Como prestador, recebo meus pagamentos na hora. 
+                            A plataforma é transparente e confiável."
+                        </p>
+                    </div>
+                    <div class="testimonial__author">
+                        <div class="testimonial__avatar">
+                            <i class="fas fa-user" aria-hidden="true"></i>
+                        </div>
+                        <div class="testimonial__info">
+                            <h4 class="testimonial__name">João Santos</h4>
+                            <p class="testimonial__role">Prestador</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial">
+                    <div class="testimonial__content">
+                        <p class="testimonial__text">
+                            "Interface simples e processo claro. 
+                            Recomendo para quem busca segurança."
+                        </p>
+                    </div>
+                    <div class="testimonial__author">
+                        <div class="testimonial__avatar">
+                            <i class="fas fa-user" aria-hidden="true"></i>
+                        </div>
+                        <div class="testimonial__info">
+                            <h4 class="testimonial__name">Ana Costa</h4>
+                            <p class="testimonial__role">Cliente</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq">
+        <div class="container">
+            <h2 class="section__title">Perguntas Frequentes</h2>
+            
+            <div class="faq__list">
+                <div class="faq__item">
+                    <button class="faq__question" aria-expanded="false">
+                        <span>Como funciona o sistema de escrow?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq__answer">
+                        <p>O valor do serviço fica bloqueado em nossa plataforma até que o trabalho seja concluído e aprovado pelo cliente. Isso garante segurança para ambas as partes.</p>
+                    </div>
+                </div>
+                
+                <div class="faq__item">
+                    <button class="faq__question" aria-expanded="false">
+                        <span>Quais são as taxas da plataforma?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq__answer">
+                        <p>Cobramos uma taxa de 5% sobre o valor do serviço, que é automaticamente deduzida no momento do pagamento ao prestador.</p>
+                    </div>
+                </div>
+                
+                <div class="faq__item">
+                    <button class="faq__question" aria-expanded="false">
+                        <span>Como posso me tornar um prestador?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq__answer">
+                        <p>Basta criar sua conta e completar seu perfil com suas habilidades e experiências. Você pode ser cliente e prestador ao mesmo tempo.</p>
+                    </div>
+                </div>
+                
+                <div class="faq__item">
+                    <button class="faq__question" aria-expanded="false">
+                        <span>O que acontece em caso de disputa?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq__answer">
+                        <p>Nossa equipe de suporte analisa cada caso individualmente e toma uma decisão justa baseada nas evidências apresentadas por ambas as partes.</p>
+                    </div>
+                </div>
+                
+                <div class="faq__item">
+                    <button class="faq__question" aria-expanded="false">
+                        <span>Como adicionar saldo à minha conta?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq__answer">
+                        <p>Você pode adicionar saldo através de transferência bancária, PIX ou cartão de crédito. O saldo é convertido em tokens internos da plataforma (1 token = R$ 1,00).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal de Login removido - agora usa páginas dedicadas -->
+
+    <!-- Modal de Cadastro -->
+    <div id="registerModal" class="modal" role="dialog" aria-labelledby="registerTitle" aria-hidden="true">
+        <div class="modal__overlay" onclick="closeModal('registerModal')"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h2 id="registerTitle" class="modal__title">Criar sua conta</h2>
+                <button class="modal__close" onclick="closeModal('registerModal')" aria-label="Fechar modal">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            
+            <form class="form" id="registerForm" novalidate>
+                <div class="form__group">
+                    <label for="registerName" class="form__label">Nome completo</label>
+                    <input 
+                        type="text" 
+                        id="registerName" 
+                        name="name" 
+                        class="form__input" 
+                        required 
+                        aria-describedby="registerNameError"
+                    >
+                    <div id="registerNameError" class="form__error" role="alert"></div>
+                </div>
+                
+                <div class="form__group">
+                    <label for="registerEmail" class="form__label">E-mail</label>
+                    <input 
+                        type="email" 
+                        id="registerEmail" 
+                        name="email" 
+                        class="form__input" 
+                        required 
+                        aria-describedby="registerEmailError"
+                    >
+                    <div id="registerEmailError" class="form__error" role="alert"></div>
+                </div>
+                
+                <div class="form__group">
+                    <label for="registerPassword" class="form__label">Senha</label>
+                    <input 
+                        type="password" 
+                        id="registerPassword" 
+                        name="password" 
+                        class="form__input" 
+                        required 
+                        minlength="8"
+                        aria-describedby="registerPasswordError registerPasswordHelp"
+                    >
+                    <div id="registerPasswordHelp" class="form__help">
+                        Mínimo de 8 caracteres
+                    </div>
+                    <div id="registerPasswordError" class="form__error" role="alert"></div>
+                </div>
+                
+                <div class="form__group">
+                    <label class="form__checkbox">
+                        <input 
+                            type="checkbox" 
+                            id="registerTerms" 
+                            name="terms" 
+                            required 
+                            aria-describedby="registerTermsError"
+                        >
+                        <span class="form__checkbox-mark"></span>
+                        <span class="form__checkbox-text">
+                            Aceito os <a href="#" class="link">termos de uso</a> e 
+                            <a href="#" class="link">política de privacidade</a>
+                        </span>
+                    </label>
+                    <div id="registerTermsError" class="form__error" role="alert"></div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-full">
+                    Criar conta
+                </button>
+                
+                <p class="form__footer">
+                    Já tem conta? 
+                    <button type="button" class="link" onclick="switchModal('registerModal', 'loginModal')">
+                        Entre aqui
+                    </button>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer__content">
+                <div class="footer__brand">
+                    <div class="footer__logo">
+                        <i class="fas fa-handshake" aria-hidden="true"></i>
+                        <span>Combinado</span>
+                    </div>
+                    <p class="footer__description">
+                        Conectando clientes e prestadores com segurança e transparência.
+                    </p>
+                </div>
+                
+                <div class="footer__links">
+                    <div class="footer__column">
+                        <h3 class="footer__title">Plataforma</h3>
+                        <ul class="footer__list">
+                            <li><a href="#recursos" class="footer__link">Recursos</a></li>
+                            <li><a href="#precos" class="footer__link">Preços</a></li>
+                            <li><a href="#" class="footer__link">Como funciona</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer__column">
+                        <h3 class="footer__title">Suporte</h3>
+                        <ul class="footer__list">
+                            <li><a href="#contato" class="footer__link">Contato</a></li>
+                            <li><a href="#" class="footer__link">Central de ajuda</a></li>
+                            <li><a href="#" class="footer__link">Status</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer__column">
+                        <h3 class="footer__title">Legal</h3>
+                        <ul class="footer__list">
+                            <li><a href="#" class="footer__link">Termos de uso</a></li>
+                            <li><a href="#" class="footer__link">Privacidade</a></li>
+                            <li><a href="#" class="footer__link">Cookies</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer__bottom">
+                <p class="footer__copyright">
+                    {{ copyright_text }}
+                </p>
+                <p class="footer__version">
+                    {{ version_name }} - Versão {{ version }} | {{ build_info }}
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+</body>
+</html>

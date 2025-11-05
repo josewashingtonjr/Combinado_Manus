@@ -1,0 +1,363 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Dashboard Prestador - Sistema Combinado{% endblock %}
+
+{% block prestador_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard Prestador</h1>
+    <div class="text-muted">
+        <i class="fas fa-user-cog me-1"></i>
+        Bem-vindo, {{ user.nome }}!
+    </div>
+</div>
+
+<!-- Role Switcher for Dual Role Users -->
+{% include 'components/role_switcher.html' %}
+
+<!-- Alertas de Oportunidades e Sistema -->
+{% if data.alertas %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% for alerta in data.alertas %}
+        <div class="alert alert-{{ alerta.tipo }} alert-dismissible fade show" role="alert">
+            {% if alerta.tipo == 'info' %}
+                <i class="fas fa-bell me-2"></i>
+            {% elif alerta.tipo == 'success' %}
+                <i class="fas fa-money-bill-wave me-2"></i>
+            {% elif alerta.tipo == 'warning' %}
+                <i class="fas fa-exclamation-triangle me-2"></i>
+            {% else %}
+                <i class="fas fa-info-circle me-2"></i>
+            {% endif %}
+            {{ alerta.mensagem }}
+            {% if alerta.tipo == 'info' and 'oportunidades' in alerta.mensagem %}
+                <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-sm btn-outline-info ms-2">
+                    <i class="fas fa-search me-1"></i>Ver Oportunidades
+                </a>
+            {% elif alerta.tipo == 'success' and 'saque' in alerta.mensagem %}
+                <a href="{{ url_for('prestador.saque') }}" class="btn btn-sm btn-outline-success ms-2">
+                    <i class="fas fa-money-bill-wave me-1"></i>Solicitar Saque
+                </a>
+            {% endif %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ data.saldo_atual|format_value_by_user_type(user_type) }}</h4>
+                        <p class="mb-0">{{ terminology.balance_label }} Total</p>
+                        {% if data.saldo_bloqueado > 0 %}
+                        <small class="text-muted">+{{ data.saldo_bloqueado|format_value_by_user_type(user_type) }} em garantia</small>
+                        {% endif %}
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-wallet fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ data.ganhos_mes|format_value_by_user_type(user_type) }}</h4>
+                        <p class="mb-0">Ganhos (Mês)</p>
+                        <small class="text-light">{{ data.ganhos_total|format_value_by_user_type(user_type) }} total</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ data.ordens_ativas }}</h4>
+                        <p class="mb-0">Ordens Ativas</p>
+                        <small class="text-light">{{ "%.1f"|format(data.taxa_conclusao) }}% conclusão</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ data.ordens_concluidas_mes }}</h4>
+                        <p class="mb-0">Concluídas (Mês)</p>
+                        <small class="text-light">{{ data.clientes_atendidos }} clientes únicos</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-info w-100">
+                            <i class="fas fa-search me-2"></i>Buscar Ordens
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('prestador.carteira') }}" class="btn btn-warning w-100">
+                            <i class="fas fa-wallet me-2"></i>Ver Carteira
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('prestador.saque') }}" class="btn btn-success w-100">
+                            <i class="fas fa-money-bill-wave me-2"></i>Solicitar Saque
+                        </a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('prestador.convites') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-envelope-open-text me-2"></i>Convites Recebidos
+                        </a>
+                    </div>
+                    <div class="col-md-9 mb-2">
+                    <div class="col-md-3 mb-2">
+                        {% if can_switch_roles %}
+                            {% for role_code, role_name in available_roles %}
+                                {% if role_code != active_role %}
+                                <a href="{{ url_for('role.set_role', role=role_code) }}" class="btn btn-secondary w-100">
+                                    <i class="fas fa-{{ 'user-tie' if role_code == 'cliente' else 'user-cog' }} me-2"></i>Área {{ role_name }}
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                        <button class="btn btn-outline-secondary w-100" disabled>
+                            <i class="fas fa-user-plus me-2"></i>Tornar-se Cliente
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance e Atividades -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star me-2"></i>Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Avaliação Média:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-warning">
+                            {% for i in range(5) %}
+                                {% if i < data.media_avaliacao %}
+                                    <i class="fas fa-star"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            ({{ data.media_avaliacao }})
+                        </span>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Total de Avaliações:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ data.total_avaliacoes }}
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Ganhos Totais:</strong>
+                    </div>
+                    <div class="col-6 text-success">
+                        {{ data.ganhos_total|format_value_by_user_type(user_type) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Próximas Ordens</h5>
+            </div>
+            <div class="card-body">
+                {% if data.proximas_ordens %}
+                {% for ordem in data.proximas_ordens %}
+                <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                    <div class="me-3">
+                        <i class="fas fa-clipboard-list fa-2x text-info"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <strong>{{ ordem.titulo }}</strong><br>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>{{ ordem.data }}
+                            <i class="fas fa-clock ms-2 me-1"></i>{{ ordem.horario }}
+                        </small>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning">{{ ordem.valor|format_value_by_user_type(user_type) }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-calendar-check fa-3x mb-3"></i>
+                    <p>Nenhuma ordem agendada</p>
+                    <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-sm btn-info">
+                        <i class="fas fa-search me-1"></i>Buscar Ordens
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Oportunidades e Dicas -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Dicas para Prestadores</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-star text-warning me-2"></i>Qualidade</h6>
+                        <p class="small">Mantenha alta qualidade nos serviços para receber melhores avaliações e mais ordens.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-clock text-info me-2"></i>Pontualidade</h6>
+                        <p class="small">Seja pontual e cumpra os prazos acordados. Isso aumenta sua reputação na plataforma.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-shield-alt text-success me-2"></i>Segurança</h6>
+                        <p class="small">O sistema protege seus ganhos. O pagamento é garantido após a conclusão do serviço.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Card de Ordens Disponíveis -->
+{% if data.ordens_disponiveis > 0 %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    {{ data.ordens_disponiveis }} Ordens Disponíveis Agora!
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <p class="mb-3">Há ordens esperando por você. Não perca a oportunidade de aumentar seus ganhos!</p>
+                <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-info">
+                    <i class="fas fa-search me-2"></i>Ver Ordens Disponíveis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar dados do dashboard a cada 30 segundos
+setInterval(function() {
+    // TODO: Implementar atualização via AJAX quando tivermos API
+    console.log('Atualizando dados do dashboard prestador...');
+}, 30000);
+
+// Animação dos cards
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(function(card, index) {
+        setTimeout(function() {
+            card.classList.add('fade-in');
+        }, index * 100);
+    });
+});
+
+// Notificação de novas ordens (simulação)
+function checkNewOrders() {
+    // TODO: Implementar verificação real de novas ordens
+    const ordersCount = {{ data.ordens_disponiveis or 0 }};
+    if (ordersCount > 0) {
+        // Destacar o botão de ordens disponíveis
+        const ordersBtn = document.querySelector('a[href="{{ url_for("prestador.ordens_disponiveis") }}"]');
+        if (ordersBtn) {
+            ordersBtn.classList.add('btn-pulse');
+        }
+    }
+}
+
+// Verificar novas ordens a cada 60 segundos
+setInterval(checkNewOrders, 60000);
+checkNewOrders(); // Chamada inicial
+</script>
+
+<style>
+.btn-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(23, 162, 184, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(23, 162, 184, 0);
+    }
+}
+</style>
+{% endblock %}

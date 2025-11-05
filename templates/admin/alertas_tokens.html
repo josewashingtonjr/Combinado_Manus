@@ -1,0 +1,195 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Alertas de Segurança - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-exclamation-triangle me-2"></i>Alertas de Segurança</h2>
+    <div class="btn-group">
+        <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Voltar
+        </a>
+        <a href="{{ url_for('admin.alertas_tokens') }}" class="btn btn-primary">
+            <i class="fas fa-sync me-1"></i>Atualizar
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Resumo dos Alertas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h3>{{ alerts | selectattr('severity', 'equalto', 'high') | list | length }}</h3>
+                <p class="mb-0">Alta Prioridade</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3>{{ alerts | selectattr('severity', 'equalto', 'medium') | list | length }}</h3>
+                <p class="mb-0">Média Prioridade</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ alerts | selectattr('severity', 'equalto', 'low') | list | length }}</h3>
+                <p class="mb-0">Baixa Prioridade</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h3>{{ alerts | length }}</h3>
+                <p class="mb-0">Total de Alertas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Alertas -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Todos os Alertas</h5>
+    </div>
+    <div class="card-body">
+        {% if alerts %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Prioridade</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th>Usuário</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in alerts %}
+                    <tr class="{% if alert.severity == 'high' %}table-danger{% elif alert.severity == 'medium' %}table-warning{% elif alert.severity == 'low' %}table-info{% endif %}">
+                        <td>
+                            <span class="badge bg-{% if alert.severity == 'high' %}danger{% elif alert.severity == 'medium' %}warning{% elif alert.severity == 'low' %}info{% else %}secondary{% endif %}">
+                                {% if alert.severity == 'high' %}Alta{% elif alert.severity == 'medium' %}Média{% elif alert.severity == 'low' %}Baixa{% else %}{{ alert.severity }}{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                {% if alert.type == 'saldo_negativo' %}Saldo Negativo
+                                {% elif alert.type == 'transacao_alto_valor' %}Alto Valor
+                                {% elif alert.type == 'atividade_intensa' %}Atividade Intensa
+                                {% elif alert.type == 'erro_sistema' %}Erro Sistema
+                                {% else %}{{ alert.type.replace('_', ' ').title() }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>{{ alert.message }}</td>
+                        <td>
+                            {% if alert.user_id %}
+                            <a href="{{ url_for('admin.editar_usuario', user_id=alert.user_id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-user me-1"></i>Ver Usuário
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                {% if alert.transaction_id %}
+                                <button class="btn btn-outline-info" onclick="verTransacao({{ alert.transaction_id }})">
+                                    <i class="fas fa-search me-1"></i>Ver Transação
+                                </button>
+                                {% endif %}
+                                {% if alert.user_id %}
+                                <button class="btn btn-outline-warning" onclick="investigarUsuario({{ alert.user_id }})">
+                                    <i class="fas fa-search-plus me-1"></i>Investigar
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <h5>Nenhum Alerta Encontrado</h5>
+            <p class="text-muted">O sistema não detectou atividades suspeitas no momento.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Informações sobre os Alertas -->
+<div class="alert alert-info mt-4">
+    <h6><i class="fas fa-info-circle me-2"></i>Sobre os Alertas de Segurança</h6>
+    <div class="row">
+        <div class="col-md-6">
+            <ul class="mb-0">
+                <li><strong>Saldo Negativo:</strong> Usuários com saldo abaixo de zero (erro crítico)</li>
+                <li><strong>Alto Valor:</strong> Transações acima de 10.000 tokens nas últimas 24h</li>
+                <li><strong>Atividade Intensa:</strong> Mais de 50 transações por usuário em 24h</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <ul class="mb-0">
+                <li><strong>Alta Prioridade:</strong> Requer ação imediata</li>
+                <li><strong>Média Prioridade:</strong> Monitorar de perto</li>
+                <li><strong>Baixa Prioridade:</strong> Informativo, sem ação necessária</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Recomendações de Ação -->
+{% if alerts %}
+<div class="alert alert-warning mt-3">
+    <h6><i class="fas fa-lightbulb me-2"></i>Recomendações de Ação</h6>
+    <ul class="mb-0">
+        {% if alerts | selectattr('severity', 'equalto', 'high') | list | length > 0 %}
+        <li><strong>Alertas de Alta Prioridade:</strong> Investigue imediatamente e tome ação corretiva</li>
+        {% endif %}
+        {% if alerts | selectattr('type', 'equalto', 'saldo_negativo') | list | length > 0 %}
+        <li><strong>Saldos Negativos:</strong> Verifique a integridade do sistema e corrija inconsistências</li>
+        {% endif %}
+        {% if alerts | selectattr('type', 'equalto', 'transacao_alto_valor') | list | length > 0 %}
+        <li><strong>Transações de Alto Valor:</strong> Confirme se são legítimas e não fraudulentas</li>
+        {% endif %}
+        {% if alerts | selectattr('type', 'equalto', 'atividade_intensa') | list | length > 0 %}
+        <li><strong>Atividade Intensa:</strong> Monitore para detectar possível automação ou abuso</li>
+        {% endif %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function verTransacao(transactionId) {
+    // TODO: Implementar modal ou página para ver detalhes da transação
+    alert('Funcionalidade em desenvolvimento: Ver transação ' + transactionId);
+}
+
+function investigarUsuario(userId) {
+    // TODO: Implementar página de investigação detalhada do usuário
+    window.location.href = '/admin/usuarios/' + userId + '/editar';
+}
+</script>
+{% endblock %}

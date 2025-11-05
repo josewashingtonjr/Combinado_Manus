@@ -1,0 +1,265 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Integridade do Sistema - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-shield-alt me-2"></i>Verificação de Integridade</h2>
+    <div class="btn-group">
+        <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Voltar
+        </a>
+        <a href="{{ url_for('admin.verificar_integridade') }}" class="btn btn-primary">
+            <i class="fas fa-sync me-1"></i>Atualizar
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if integrity_check %}
+<!-- Status Geral do Sistema -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-{{ 'success' if integrity_check.system_integrity else 'danger' }}">
+            <div class="card-header bg-{{ 'success' if integrity_check.system_integrity else 'danger' }} text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-{{ 'check-circle' if integrity_check.system_integrity else 'exclamation-triangle' }} me-2"></i>
+                    Status Geral: {{ 'Sistema Íntegro' if integrity_check.system_integrity else 'Sistema com Inconsistências' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Tokens Criados</h6>
+                        <h4 class="text-primary">{{ "{:,.0f}"|format(integrity_check.total_created) }}</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Total Esperado</h6>
+                        <h4 class="text-info">{{ "{:,.0f}"|format(integrity_check.total_expected) }}</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Discrepância</h6>
+                        <h4 class="text-{{ 'success' if integrity_check.discrepancy == 0 else 'danger' }}">
+                            {{ "{:+,.2f}"|format(integrity_check.discrepancy) }}
+                        </h4>
+                    </div>
+                </div>
+                
+                {% if not integrity_check.system_integrity %}
+                <hr>
+                <div class="alert alert-danger mb-0">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Ação Necessária</h6>
+                    <p class="mb-0">
+                        O sistema detectou inconsistências na integridade dos tokens. 
+                        Verifique as validações individuais abaixo e entre em contato com o suporte técnico se necessário.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Validação da Carteira do Admin -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-{{ 'success' if integrity_check.admin_integrity.is_valid else 'danger' }}">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-shield me-2"></i>
+                    Integridade da Carteira do Admin
+                    <span class="badge bg-{{ 'success' if integrity_check.admin_integrity.is_valid else 'danger' }} ms-2">
+                        {{ 'Válida' if integrity_check.admin_integrity.is_valid else 'Inválida' }}
+                    </span>
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Saldo na Carteira:</strong><br>
+                        <span class="h5">{{ "{:,.2f}"|format(integrity_check.admin_integrity.wallet_balance) }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Saldo Calculado:</strong><br>
+                        <span class="h5">{{ "{:,.2f}"|format(integrity_check.admin_integrity.calculated_balance) }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Escrow na Carteira:</strong><br>
+                        <span class="h5">{{ "{:,.2f}"|format(integrity_check.admin_integrity.wallet_escrow) }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Escrow Calculado:</strong><br>
+                        <span class="h5">{{ "{:,.2f}"|format(integrity_check.admin_integrity.calculated_escrow) }}</span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Transações Analisadas:</strong> {{ integrity_check.admin_integrity.transactions_analyzed }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Transações de Escrow:</strong> {{ integrity_check.admin_integrity.escrow_transactions }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Validação dos Usuários -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-users me-2"></i>
+                    Integridade das Carteiras dos Usuários
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if integrity_check.user_validations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Saldo</th>
+                                <th>Escrow</th>
+                                <th>Detalhes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for validation in integrity_check.user_validations %}
+                            <tr class="{{ 'table-danger' if not validation.is_valid else '' }}">
+                                <td>{{ validation.user_id }}</td>
+                                <td>{{ validation.nome }}</td>
+                                <td>{{ validation.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if validation.is_valid else 'danger' }}">
+                                        {{ 'Válido' if validation.is_valid else 'Inválido' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if validation.balance_matches else 'danger' }}">
+                                        {{ 'OK' if validation.balance_matches else 'Erro' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if validation.escrow_matches else 'danger' }}">
+                                        {{ 'OK' if validation.escrow_matches else 'Erro' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if validation.error %}
+                                    <small class="text-danger">{{ validation.error }}</small>
+                                    {% else %}
+                                    <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Resumo das Validações -->
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h5 class="text-success">{{ integrity_check.user_validations | selectattr('is_valid') | list | length }}</h5>
+                            <small>Usuários Válidos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h5 class="text-danger">{{ integrity_check.user_validations | rejectattr('is_valid') | list | length }}</h5>
+                            <small>Usuários com Erro</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h5 class="text-info">{{ integrity_check.user_validations | length }}</h5>
+                            <small>Total Verificado</small>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-center text-muted">Nenhum usuário encontrado para validação.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo do Sistema de Tokens -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Resumo do Sistema de Tokens</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ "{:,.0f}"|format(integrity_check.token_summary.admin_balance) }}</h4>
+                            <small>Saldo Admin</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-success">{{ "{:,.0f}"|format(integrity_check.token_summary.tokens_in_circulation) }}</h4>
+                            <small>Em Circulação</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-info">{{ "{:,.0f}"|format(integrity_check.token_summary.total_tokens_created) }}</h4>
+                            <small>Total Criado</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-warning">{{ "{:.1f}%"|format(integrity_check.token_summary.circulation_percentage) }}</h4>
+                            <small>% Circulação</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning">
+    <h6><i class="fas fa-exclamation-triangle me-2"></i>Erro na Verificação</h6>
+    <p class="mb-0">Não foi possível realizar a verificação de integridade. Tente novamente ou entre em contato com o suporte técnico.</p>
+</div>
+{% endif %}
+
+<!-- Informações Técnicas -->
+<div class="alert alert-info mt-4">
+    <h6><i class="fas fa-info-circle me-2"></i>Como Funciona a Verificação</h6>
+    <ul class="mb-0">
+        <li><strong>Integridade do Sistema:</strong> Verifica se Total Criado = Saldo Admin + Tokens em Circulação</li>
+        <li><strong>Integridade Individual:</strong> Valida se o saldo de cada carteira bate com o histórico de transações</li>
+        <li><strong>Validação de Escrow:</strong> Confirma que tokens em escrow estão corretamente bloqueados</li>
+        <li><strong>Auditoria:</strong> Todas as transações são rastreáveis e imutáveis para compliance</li>
+    </ul>
+</div>
+{% endblock %}

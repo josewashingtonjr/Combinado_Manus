@@ -1,0 +1,242 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Minhas Ordens - Cliente{% endblock %}
+
+{% block cliente_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-clipboard-list text-success me-2"></i>Minhas Ordens de Serviço</h2>
+            <a href="{{ url_for('cliente.criar_ordem') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i>Nova Ordem
+            </a>
+        </div>
+
+        <!-- Filtros e Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <h4 class="text-primary mb-0">{{ orders.total if orders else 0 }}</h4>
+                                <small class="text-muted">Total</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-warning mb-0">0</h4>
+                                <small class="text-muted">Disponíveis</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-info mb-0">0</h4>
+                                <small class="text-muted">Em Andamento</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-success mb-0">0</h4>
+                                <small class="text-muted">Concluídas</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="text-success mb-1">
+                            <i class="fas fa-wallet me-2"></i>Saldo Disponível
+                        </h5>
+                        <h4 class="text-success mb-0">{{ wallet.balance|format_currency if wallet else "R$ 0,00" }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Ordens -->
+        {% if orders and orders.items %}
+            <div class="row">
+                {% for order in orders.items %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{{ order.title }}</h6>
+                            {% if order.status == 'disponivel' %}
+                                <span class="badge bg-warning">Disponível</span>
+                            {% elif order.status == 'aceita' %}
+                                <span class="badge bg-info">Aceita</span>
+                            {% elif order.status == 'em_andamento' %}
+                                <span class="badge bg-primary">Em Andamento</span>
+                            {% elif order.status == 'concluida' %}
+                                <span class="badge bg-success">Concluída</span>
+                            {% elif order.status == 'cancelada' %}
+                                <span class="badge bg-secondary">Cancelada</span>
+                            {% elif order.status == 'disputada' %}
+                                <span class="badge bg-danger">Em Disputa</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ order.description[:100] }}{% if order.description|length > 100 %}...{% endif %}</p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Valor:</strong><br>
+                                    <span class="text-success h5">{{ order.value|format_currency }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Criada em:</strong><br>
+                                    <small class="text-muted">{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                            </div>
+
+                            {% if order.provider_id %}
+                                <div class="mb-2">
+                                    <strong>Prestador:</strong> {{ order.provider.nome }}
+                                </div>
+                            {% endif %}
+
+                            {% if order.accepted_at %}
+                                <div class="mb-2">
+                                    <strong>Aceita em:</strong> {{ order.accepted_at.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                            {% endif %}
+
+                            {% if order.completed_at %}
+                                <div class="mb-2">
+                                    <strong>Concluída em:</strong> {{ order.completed_at.strftime('%d/%m/%Y %H:%M') }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                        onclick="viewOrderDetails({{ order.id }})">
+                                    <i class="fas fa-eye me-1"></i>Detalhes
+                                </button>
+                                
+                                {% if order.status == 'disponivel' %}
+                                    <button type="button" class="btn btn-outline-warning btn-sm"
+                                            onclick="editOrder({{ order.id }})">
+                                        <i class="fas fa-edit me-1"></i>Editar
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="cancelOrder({{ order.id }})">
+                                        <i class="fas fa-times me-1"></i>Cancelar
+                                    </button>
+                                {% elif order.status == 'aguardando_confirmacao' %}
+                                    <button type="button" class="btn btn-success btn-sm"
+                                            onclick="confirmCompletion({{ order.id }})">
+                                        <i class="fas fa-check me-1"></i>Confirmar Conclusão
+                                    </button>
+                                {% elif order.status in ['aceita', 'em_andamento'] %}
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="openDispute({{ order.id }})">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Contestar
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginação -->
+            {% if orders.pages > 1 %}
+            <nav aria-label="Paginação de ordens">
+                <ul class="pagination justify-content-center">
+                    {% if orders.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('cliente.ordens', page=orders.prev_num) }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in orders.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != orders.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('cliente.ordens', page=page_num) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('cliente.ordens', page=orders.next_num) }}">Próxima</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <!-- Estado Vazio -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-clipboard-list text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="text-muted mb-3">Nenhuma ordem criada ainda</h4>
+                <p class="text-muted mb-4">Crie sua primeira ordem de serviço para começar a encontrar prestadores qualificados.</p>
+                <a href="{{ url_for('cliente.criar_ordem') }}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>Criar Primeira Ordem
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal de Detalhes da Ordem -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes da Ordem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <!-- Conteúdo carregado via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewOrderDetails(orderId) {
+    // TODO: Implementar carregamento de detalhes via AJAX
+    alert('Funcionalidade de detalhes será implementada em breve');
+}
+
+function editOrder(orderId) {
+    // TODO: Implementar edição de ordem
+    alert('Funcionalidade de edição será implementada em breve');
+}
+
+function cancelOrder(orderId) {
+    if (confirm('Tem certeza que deseja cancelar esta ordem? O valor em garantia será devolvido ao seu saldo.')) {
+        // TODO: Implementar cancelamento via AJAX
+        alert('Funcionalidade de cancelamento será implementada em breve');
+    }
+}
+
+function confirmCompletion(orderId) {
+    if (confirm('Confirma que o serviço foi concluído satisfatoriamente? O pagamento será liberado para o prestador.')) {
+        // TODO: Implementar confirmação via AJAX
+        alert('Funcionalidade de confirmação será implementada em breve');
+    }
+}
+
+function openDispute(orderId) {
+    if (confirm('Deseja abrir uma contestação para esta ordem? Isso bloqueará o pagamento até resolução administrativa.')) {
+        // TODO: Implementar abertura de disputa
+        alert('Funcionalidade de contestação será implementada em breve');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-warning">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('prestador.dashboard') }}">
+            <i class="fas fa-user-cog me-2"></i>Prestador - Sistema Combinado
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('prestador.dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('prestador.carteira') }}">
+                        <i class="fas fa-wallet me-1"></i>Carteira
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('prestador.ordens') }}">
+                        <i class="fas fa-clipboard-list me-1"></i>Minhas Ordens
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('prestador.ordens_disponiveis') }}">
+                        <i class="fas fa-search me-1"></i>Ordens Disponíveis
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('prestador.ganhos') }}">
+                        <i class="fas fa-chart-line me-1"></i>Ganhos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('prestador.saque') }}">
+                        <i class="fas fa-money-bill-wave me-1"></i>Saque
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <!-- Troca de Papel para Usuários Dual -->
+                {% if can_switch_roles %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle btn btn-outline-light btn-sm me-2" href="#" id="roleDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="{{ role_icon }} me-1"></i>{{ active_role|title }}
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% for role_code, role_name in available_roles %}
+                            {% if role_code != active_role %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('role.set_role', role=role_code) }}">
+                                    <i class="fas fa-{{ 'user-tie' if role_code == 'cliente' else 'user-cog' }} me-2"></i>
+                                    Trocar para {{ role_name }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endif %}
+                
+                <!-- Menu do Usuário -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-1"></i>{{ session.user_email }}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('prestador.perfil') }}">
+                            <i class="fas fa-user-edit me-1"></i>Meu Perfil
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                            <i class="fas fa-sign-out-alt me-1"></i>Sair
+                        </a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar (opcional para telas maiores) -->
+        <div class="col-md-2 d-none d-md-block">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">Menu Prestador</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ url_for('prestador.dashboard') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('prestador.carteira') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-wallet me-2"></i>Carteira
+                    </a>
+                    <a href="{{ url_for('prestador.ordens') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-clipboard-list me-2"></i>Minhas Ordens
+                    </a>
+                    <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-search me-2"></i>Ordens Disponíveis
+                    </a>
+                    <a href="{{ url_for('prestador.convites') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-envelope-open-text me-2"></i>Convites Recebidos
+                    </a>
+                    <a href="{{ url_for('prestador.ganhos') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-chart-line me-2"></i>Ganhos
+                    </a>
+                    <a href="{{ url_for('prestador.saque') }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-money-bill-wave me-2"></i>Saque
+                    </a>
+                    
+                    <!-- Troca de Papel -->
+                    {% if can_switch_roles %}
+                    <hr class="my-2">
+                    {% for role_code, role_name in available_roles %}
+                        {% if role_code != active_role %}
+                        <a href="{{ url_for('role.set_role', role=role_code) }}" class="list-group-item list-group-item-action bg-light">
+                            <i class="fas fa-{{ 'user-tie' if role_code == 'cliente' else 'user-cog' }} me-2"></i>Área {{ role_name }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Card de Saldo Rápido -->
+            <div class="card mt-3">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">Saldo Atual</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="text-warning mb-0">
+                        <i class="fas fa-coins me-1"></i>
+                        {{ data.saldo_atual|format_currency if data else "R$ 0,00" }}
+                    </h4>
+                    <small class="text-muted">Saldo disponível</small>
+                    <hr>
+                    <a href="{{ url_for('prestador.saque') }}" class="btn btn-sm btn-warning w-100">
+                        <i class="fas fa-money-bill-wave me-1"></i>Sacar
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Card de Ordens Disponíveis -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">Oportunidades</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="text-info mb-0">
+                        <i class="fas fa-clipboard-list me-1"></i>
+                        {{ data.ordens_disponiveis if data else "0" }}
+                    </h4>
+                    <small class="text-muted">Ordens disponíveis</small>
+                    <hr>
+                    <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-sm btn-info w-100">
+                        <i class="fas fa-search me-1"></i>Ver Ordens
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo Principal -->
+        <div class="col-md-10">
+            {% block prestador_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.navbar-dark.bg-warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+}
+
+.card-header.bg-warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+}
+
+.list-group-item:hover {
+    background-color: #ffc107;
+    color: #212529;
+    transform: translateX(5px);
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: white;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(45deg, #e0a800, #ea6100);
+    color: #212529;
+}
+</style>
+{% endblock %}

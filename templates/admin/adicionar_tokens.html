@@ -1,0 +1,130 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Adicionar Tokens - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-plus me-2"></i>Adicionar Tokens para Usuário</h2>
+    <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-coins me-2"></i>Vender Tokens para Usuário</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.user_id.label(class="form-label") }}
+                        {{ form.user_id(class="form-select") }}
+                        {% if form.user_id.errors %}
+                            <div class="text-danger">
+                                {% for error in form.user_id.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Selecione o usuário que receberá os tokens. Os tokens serão transferidos da carteira do admin.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label") }}
+                        {{ form.amount(class="form-control", placeholder="Ex: 100") }}
+                        {% if form.amount.errors %}
+                            <div class="text-danger">
+                                {% for error in form.amount.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Quantidade de tokens a serem transferidos do saldo do admin para o usuário.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="3", placeholder="Motivo da transferência...") }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Descrição que aparecerá no histórico de transações para auditoria.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.tokens') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Como Funciona</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-primary me-2"></i>
+                        <strong>Transferência:</strong> Tokens saem da carteira do admin
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-success me-2"></i>
+                        <strong>Destino:</strong> Tokens vão para a carteira do usuário
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-info me-2"></i>
+                        <strong>Rastreabilidade:</strong> Transação registrada para ambos
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-arrow-right text-warning me-2"></i>
+                        <strong>Auditoria:</strong> Logs imutáveis para compliance
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Importante</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">
+                    <small>
+                        Esta operação transfere tokens da carteira do admin para o usuário selecionado. 
+                        Certifique-se de que o admin possui saldo suficiente antes de prosseguir.
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

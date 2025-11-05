@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Sobre - {{ version_name }}{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('home.index') }}">
+            <i class="fas fa-info-circle me-2"></i>{{ version_name }}
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('home.index') }}">
+                        <i class="fas fa-home me-1"></i>Início
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('sobre') }}">
+                        <i class="fas fa-info-circle me-1"></i>Sobre
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.admin_login') }}">
+                        <i class="fas fa-user-shield me-1"></i>Admin
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.user_login') }}">
+                        <i class="fas fa-sign-in-alt me-1"></i>Entrar
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header da Página -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 text-primary mb-3">
+                <i class="fas fa-info-circle me-3"></i>{{ version_name }}
+            </h1>
+            <p class="lead text-muted">Sistema de gestão de serviços com tokenomics interno</p>
+            <div class="badge bg-primary fs-6 px-3 py-2">
+                <i class="fas fa-code me-1"></i>Versão {{ version }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Sistema -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Informações do Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Nome:</strong></td>
+                            <td>{{ version_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Versão:</strong></td>
+                            <td>{{ version }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Build:</strong></td>
+                            <td>{{ build_number }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data do Build:</strong></td>
+                            <td>{{ build_date }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ano:</strong></td>
+                            <td>{{ copyright_year }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-tie me-2"></i>Desenvolvedor
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="fas fa-user-cog"></i>
+                        </div>
+                    </div>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Desenvolvedor:</strong></td>
+                            <td>{{ copyright_holder }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Contato:</strong></td>
+                            <td>
+                                <a href="tel:{{ contact_phone }}" class="text-decoration-none">
+                                    <i class="fas fa-phone me-1"></i>{{ contact_phone }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>WhatsApp:</strong></td>
+                            <td>
+                                <a href="https://wa.me/5589981375841" target="_blank" class="text-success text-decoration-none">
+                                    <i class="fab fa-whatsapp me-1"></i>{{ contact_phone }}
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Funcionalidades do Sistema -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-check me-2"></i>Funcionalidades Principais
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-users me-2"></i>Gestão de Usuários
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Sistema de autenticação seguro
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Papéis diferenciados (Cliente/Prestador)
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Painel administrativo completo
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Gestão de perfis e permissões
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning mb-3">
+                                <i class="fas fa-coins me-2"></i>Sistema de Tokenomics
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Tokens internos (1 token = 1 real)
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Sistema de escrow para segurança
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Rastreabilidade total de transações
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Auditoria e integridade matemática
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6 class="text-danger mb-3">
+                                <i class="fas fa-handshake me-2"></i>Gestão de Serviços
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Criação e gestão de ordens de serviço
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Sistema de convites personalizados
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Controle de status e prazos
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Sistema de contestações
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-secondary mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>Relatórios e Análises
+                            </h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Dashboard com métricas em tempo real
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Relatórios financeiros detalhados
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Análise de performance de usuários
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check text-success me-2"></i>
+                                    Logs de auditoria completos
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tecnologias Utilizadas -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code me-2"></i>Tecnologias Utilizadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <i class="fab fa-python fa-3x text-primary mb-2"></i>
+                                <h6>Python 3.11</h6>
+                                <small class="text-muted">Backend</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <i class="fas fa-flask fa-3x text-success mb-2"></i>
+                                <h6>Flask</h6>
+                                <small class="text-muted">Framework Web</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <i class="fas fa-database fa-3x text-warning mb-2"></i>
+                                <h6>PostgreSQL</h6>
+                                <small class="text-muted">Banco de Dados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="p-3">
+                                <i class="fab fa-bootstrap fa-3x text-info mb-2"></i>
+                                <h6>Bootstrap 5</h6>
+                                <small class="text-muted">Frontend</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copyright e Licença -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-copyright me-2"></i>Copyright e Licença
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="mb-3">{{ copyright_text }}</p>
+                    <p class="text-muted mb-3">
+                        Este sistema foi desenvolvido especificamente para gestão de serviços com 
+                        sistema interno de tokenomics, proporcionando segurança e rastreabilidade 
+                        completa das transações.
+                    </p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> Este sistema utiliza um modelo interno próprio de tokens, 
+                        <strong>não utilizando blockchain</strong>. Todas as transações são processadas 
+                        internamente no banco de dados relacional para máxima performance e controle.
+                    </div>
+                    <div class="mt-4">
+                        <a href="tel:{{ contact_phone }}" class="btn btn-primary me-2">
+                            <i class="fas fa-phone me-1"></i>Entrar em Contato
+                        </a>
+                        <a href="https://wa.me/5589981375841" target="_blank" class="btn btn-success">
+                            <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.9rem !important;
+}
+
+.table td {
+    padding: 0.5rem 0;
+}
+
+.list-unstyled li {
+    padding: 0.25rem 0;
+}
+
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .col-md-3 {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

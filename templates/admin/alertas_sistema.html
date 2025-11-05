@@ -1,0 +1,370 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Alertas do Sistema - Admin{% endblock %}
+
+{% block admin_content %}
+<h2 class="mb-4"><i class="fas fa-bell me-2"></i>Alertas do Sistema</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">NÃO RESOLVIDOS</h6>
+                        <h3 class="mb-0 text-danger">{{ alertas_nao_resolvidos|length }}</h3>
+                    </div>
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">RESOLVIDOS</h6>
+                        <h3 class="mb-0 text-success">{{ alertas_resolvidos|length }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">CRÍTICOS</h6>
+                        <h3 class="mb-0 text-warning">
+                            {{ alertas_nao_resolvidos|selectattr('severity', 'equalto', 'critical')|list|length }}
+                        </h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-fire fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title text-muted mb-1">ALTOS</h6>
+                        <h3 class="mb-0 text-info">
+                            {{ alertas_nao_resolvidos|selectattr('severity', 'equalto', 'high')|list|length }}
+                        </h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Alertas Não Resolvidos</h5>
+            </div>
+            <div class="card-body">
+                {% if alertas_nao_resolvidos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Severidade</th>
+                                    <th>Tipo</th>
+                                    <th>Título</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alerta in alertas_nao_resolvidos %}
+                                <tr>
+                                    <td>
+                                        {% if alerta.severity == 'critical' %}
+                                            <span class="badge bg-danger">Crítico</span>
+                                        {% elif alerta.severity == 'high' %}
+                                            <span class="badge bg-warning">Alto</span>
+                                        {% elif alerta.severity == 'medium' %}
+                                            <span class="badge bg-info">Médio</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Baixo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ alerta.alert_type }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ alerta.title }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ alerta.message[:100] }}{% if alerta.message|length > 100 %}...{% endif %}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ alerta.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-primary me-1" 
+                                                onclick="verDetalhesAlerta({{ alerta.id }})" 
+                                                data-bs-toggle="modal" data-bs-target="#alertaModal">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <form method="POST" action="{{ url_for('admin.resolver_alerta', alert_id=alerta.id) }}" 
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" 
+                                                    onclick="return confirm('Marcar este alerta como resolvido?')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h5>Nenhum alerta pendente</h5>
+                        <p class="text-muted">Todos os alertas foram resolvidos!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Distribuição por Severidade</h5>
+            </div>
+            <div class="card-body">
+                {% set critical_count = alertas_nao_resolvidos|selectattr('severity', 'equalto', 'critical')|list|length %}
+                {% set high_count = alertas_nao_resolvidos|selectattr('severity', 'equalto', 'high')|list|length %}
+                {% set medium_count = alertas_nao_resolvidos|selectattr('severity', 'equalto', 'medium')|list|length %}
+                {% set low_count = alertas_nao_resolvidos|selectattr('severity', 'equalto', 'low')|list|length %}
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Críticos</span>
+                        <span class="badge bg-danger">{{ critical_count }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: {{ (critical_count / (alertas_nao_resolvidos|length) * 100) if alertas_nao_resolvidos else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Altos</span>
+                        <span class="badge bg-warning">{{ high_count }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: {{ (high_count / (alertas_nao_resolvidos|length) * 100) if alertas_nao_resolvidos else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Médios</span>
+                        <span class="badge bg-info">{{ medium_count }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: {{ (medium_count / (alertas_nao_resolvidos|length) * 100) if alertas_nao_resolvidos else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Baixos</span>
+                        <span class="badge bg-secondary">{{ low_count }}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-secondary" style="width: {{ (low_count / (alertas_nao_resolvidos|length) * 100) if alertas_nao_resolvidos else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Alertas Recentes Resolvidos</h5>
+            </div>
+            <div class="card-body">
+                {% if alertas_resolvidos %}
+                    {% for alerta in alertas_resolvidos[:5] %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if alerta.severity == 'critical' %}
+                                <i class="fas fa-fire text-danger"></i>
+                            {% elif alerta.severity == 'high' %}
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                            {% elif alerta.severity == 'medium' %}
+                                <i class="fas fa-info-circle text-info"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle text-secondary"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">{{ alerta.title }}</div>
+                            <small class="text-muted">
+                                Resolvido em {{ alerta.resolved_at.strftime('%d/%m/%Y %H:%M') if alerta.resolved_at }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">Nenhum alerta resolvido recentemente</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalhes do alerta -->
+<div class="modal fade" id="alertaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alertaModalBody">
+                <!-- Conteúdo será carregado via JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-success" id="resolverAlertaBtn">
+                    <i class="fas fa-check me-1"></i>Marcar como Resolvido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function verDetalhesAlerta(alertaId) {
+    // Buscar detalhes do alerta via AJAX
+    fetch(`/admin/alertas/${alertaId}/detalhes`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const alerta = data.alerta;
+            const modalBody = document.getElementById('alertaModalBody');
+            
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informações Básicas</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>ID:</strong></td>
+                                <td>${alerta.id}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tipo:</strong></td>
+                                <td>${alerta.alert_type}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Severidade:</strong></td>
+                                <td>
+                                    <span class="badge bg-${getSeverityColor(alerta.severity)}">${getSeverityText(alerta.severity)}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Criado em:</strong></td>
+                                <td>${new Date(alerta.created_at).toLocaleString('pt-BR')}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Título</h6>
+                        <p>${alerta.title}</p>
+                        
+                        <h6>Mensagem</h6>
+                        <p>${alerta.message}</p>
+                        
+                        ${alerta.data ? `
+                        <h6>Dados Adicionais</h6>
+                        <pre class="bg-light p-2 rounded"><code>${JSON.stringify(JSON.parse(alerta.data), null, 2)}</code></pre>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Configurar botão de resolver
+            const resolverBtn = document.getElementById('resolverAlertaBtn');
+            resolverBtn.onclick = () => resolverAlerta(alerta.id);
+        } else {
+            document.getElementById('alertaModalBody').innerHTML = `
+                <div class="alert alert-danger">
+                    Erro ao carregar detalhes do alerta: ${data.message}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('alertaModalBody').innerHTML = `
+            <div class="alert alert-danger">
+                Erro ao carregar detalhes: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function resolverAlerta(alertaId) {
+    if (confirm('Tem certeza que deseja marcar este alerta como resolvido?')) {
+        // Criar formulário e submeter
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/alertas/${alertaId}/resolver`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function getSeverityColor(severity) {
+    switch(severity) {
+        case 'critical': return 'danger';
+        case 'high': return 'warning';
+        case 'medium': return 'info';
+        case 'low': return 'secondary';
+        default: return 'secondary';
+    }
+}
+
+function getSeverityText(severity) {
+    switch(severity) {
+        case 'critical': return 'Crítico';
+        case 'high': return 'Alto';
+        case 'medium': return 'Médio';
+        case 'low': return 'Baixo';
+        default: return 'Desconhecido';
+    }
+}
+</script>
+{% endblock %}

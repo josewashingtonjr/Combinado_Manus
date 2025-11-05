@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Bem-vindo ao Combinado{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center p-5">
+                    <h1 class="display-4 text-primary mb-4">
+                        <i class="fas fa-handshake"></i> Combinado
+                    </h1>
+                    <p class="lead text-muted mb-5">
+                        Plataforma segura para conectar clientes e prestadores de serviços
+                    </p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="fas fa-user"></i> Usuários
+                                    </h5>
+                                    <p class="card-text">
+                                        Acesse sua conta como cliente ou prestador
+                                    </p>
+                                    <a href="{{ url_for('auth.user_login') }}" class="btn btn-primary">
+                                        Entrar
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning">
+                                        <i class="fas fa-cog"></i> Administração
+                                    </h5>
+                                    <p class="card-text">
+                                        Painel administrativo do sistema
+                                    </p>
+                                    <a href="{{ url_for('auth.admin_login') }}" class="btn btn-warning">
+                                        Admin
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="row text-start">
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-success">
+                                <i class="fas fa-shield-alt"></i> Seguro
+                            </h6>
+                            <small class="text-muted">
+                                Sistema de escrow protege suas transações
+                            </small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-info">
+                                <i class="fas fa-chart-line"></i> Transparente
+                            </h6>
+                            <small class="text-muted">
+                                Todas as transações são auditáveis
+                            </small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h6 class="text-warning">
+                                <i class="fas fa-bolt"></i> Rápido
+                            </h6>
+                            <small class="text-muted">
+                                Pagamentos instantâneos via saldo interno
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

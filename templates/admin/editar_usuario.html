@@ -1,0 +1,244 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Editar Usuário - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-edit me-2 text-warning"></i>Editar Usuário</h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('admin.usuarios') }}">Usuários</a></li>
+                        <li class="breadcrumb-item active">Editar: {{ user.nome }}</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>Dados do Usuário: {{ user.nome }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="editarUsuarioForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.nome.label(class="form-label") }}
+                                    {{ form.nome(class="form-control") }}
+                                    {% if form.nome.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.nome.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control") }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.email.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.cpf.label(class="form-label") }}
+                                    {{ form.cpf(class="form-control", placeholder="000.000.000-00") }}
+                                    {% if form.cpf.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.cpf.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control", placeholder="(11) 99999-9999") }}
+                                    {% if form.phone.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.phone.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.roles.label(class="form-label") }}
+                                    {{ form.roles(class="form-select") }}
+                                    {% if form.roles.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.roles.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Status do Usuário</label>
+                                    <div class="form-check">
+                                        {{ form.active(class="form-check-input") }}
+                                        {{ form.active.label(class="form-check-label") }}
+                                    </div>
+                                    {% if form.active.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.active.errors %}
+                                                <small>{{ error }}</small><br>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning" id="btnSalvar">
+                                <i class="fas fa-save me-1"></i>Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card de Informações do Usuário -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Informações do Usuário
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>ID:</strong> {{ user.id }}</p>
+                            <p><strong>Criado em:</strong> {{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</p>
+                            <p><strong>Status:</strong> 
+                                {% if user.active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inativo</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Papel:</strong> 
+                                {% if user.roles == 'cliente' %}
+                                    <span class="badge bg-primary">Cliente</span>
+                                {% elif user.roles == 'prestador' %}
+                                    <span class="badge bg-warning">Prestador</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ user.roles|title }}</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Carteira:</strong> 
+                                {% if user.wallet %}
+                                    <span class="badge bg-success">Criada</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Não criada</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ações Perigosas -->
+            <div class="card shadow-sm mt-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Ações Perigosas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning me-2"></i>
+                        <strong>Atenção:</strong> As ações abaixo são irreversíveis e podem afetar o sistema.
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('admin.deletar_usuario', user_id=user.id) }}" 
+                          onsubmit="return confirm('Tem certeza que deseja deletar este usuário? Esta ação não pode ser desfeita!')">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Deletar Usuário
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cpfField = document.getElementById('cpf');
+    const phoneField = document.getElementById('phone');
+    const btnSalvar = document.getElementById('btnSalvar');
+    
+    // Máscara para CPF
+    if (cpfField) {
+        cpfField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        });
+    }
+    
+    // Máscara para telefone
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 10) {
+                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            } else {
+                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            }
+            e.target.value = value;
+        });
+    }
+    
+    // Validação do formulário
+    document.getElementById('editarUsuarioForm').addEventListener('submit', function(e) {
+        btnSalvar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Salvando...';
+        btnSalvar.disabled = true;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Meus Convites - Sistema Combinado{% endblock %}
+
+{% block cliente_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Meus Convites</h1>
+    <a href="{{ url_for('cliente.criar_convite') }}" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>Criar Convite
+    </a>
+</div>
+
+<!-- Estatísticas dos Convites -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.total_invites }}</h4>
+                        <p class="mb-0">Total de Convites</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-envelope fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ "%.1f"|format(stats.acceptance_rate) }}%</h4>
+                        <p class="mb-0">Taxa de Aceitação</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.pending_invites }}</h4>
+                        <p class="mb-0">Pendentes</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0">{{ stats.total_value|format_currency }}</h4>
+                        <p class="mb-0">Valor Total</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros por Status -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtrar Convites</h5>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-pills" id="convite-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="todos-tab" data-bs-toggle="pill" data-bs-target="#todos" type="button" role="tab">
+                    <i class="fas fa-list me-1"></i>Todos ({{ stats.total_invites }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pendentes-tab" data-bs-toggle="pill" data-bs-target="#pendentes" type="button" role="tab">
+                    <i class="fas fa-clock me-1"></i>Pendentes ({{ stats.pending_invites }})
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="aceitos-tab" data-bs-toggle="pill" data-bs-target="#aceitos" type="button" role="tab">
+                    <i class="fas fa-check me-1"></i>Aceitos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="recusados-tab" data-bs-toggle="pill" data-bs-target="#recusados" type="button" role="tab">
+                    <i class="fas fa-times me-1"></i>Recusados
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Lista de Convites -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Convites Enviados</h5>
+    </div>
+    <div class="card-body">
+        {% if invites %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Serviço</th>
+                        <th>Prestador</th>
+                        <th>Valor</th>
+                        <th>Data de Entrega</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invite in invites %}
+                    <tr>
+                        <td>
+                            <strong>{{ invite.service_title }}</strong><br>
+                            <small class="text-muted">{{ invite.service_description[:50] }}{% if invite.service_description|length > 50 %}...{% endif %}</small>
+                        </td>
+                        <td>{{ invite.invited_email }}</td>
+                        <td>
+                            {% if invite.final_value and invite.final_value != invite.original_value %}
+                                <span class="text-decoration-line-through text-muted">{{ invite.original_value|format_currency }}</span><br>
+                                <strong class="text-success">{{ invite.final_value|format_currency }}</strong>
+                            {% else %}
+                                {{ invite.original_value|format_currency }}
+                            {% endif %}
+                        </td>
+                        <td>{{ invite.delivery_date.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if invite.status == 'pendente' %}
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-clock me-1"></i>Pendente
+                                </span>
+                            {% elif invite.status == 'aceito' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Aceito
+                                </span>
+                            {% elif invite.status == 'recusado' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Recusado
+                                </span>
+                            {% elif invite.status == 'expirado' %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-calendar-times me-1"></i>Expirado
+                                </span>
+                            {% elif invite.status == 'convertido' %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-exchange-alt me-1"></i>Convertido
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ invite.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('cliente.ver_convite', invite_id=invite.id) }}" 
+                                   class="btn btn-outline-primary" title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if invite.status == 'aceito' %}
+                                <form method="POST" action="{{ url_for('cliente.converter_convite', invite_id=invite.id) }}" 
+                                      class="d-inline" onsubmit="return confirm('Deseja converter este convite em ordem de serviço?')">
+                                    <button type="submit" class="btn btn-outline-success" title="Converter em Ordem">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-envelope-open fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">Nenhum convite enviado ainda</h5>
+            <p class="text-muted">Crie seu primeiro convite para um prestador específico!</p>
+            <a href="{{ url_for('cliente.criar_convite') }}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Criar Primeiro Convite
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Informações sobre Convites -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Como Funcionam os Convites</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-envelope text-primary me-2"></i>1. Criar Convite</h6>
+                        <p class="small">Envie um convite específico para um prestador com detalhes do serviço, valor e prazo.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-handshake text-success me-2"></i>2. Negociação</h6>
+                        <p class="small">O prestador pode aceitar, recusar ou propor alterações no valor e prazo.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-exchange-alt text-warning me-2"></i>3. Conversão</h6>
+                        <p class="small">Convites aceitos podem ser convertidos em ordens de serviço ativas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filtros por status
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('#convite-tabs button');
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const filter = this.id.replace('-tab', '');
+            
+            tableRows.forEach(row => {
+                const statusBadge = row.querySelector('.badge');
+                if (!statusBadge) return;
+                
+                const status = statusBadge.textContent.toLowerCase().trim();
+                
+                if (filter === 'todos') {
+                    row.style.display = '';
+                } else if (filter === 'pendentes' && status.includes('pendente')) {
+                    row.style.display = '';
+                } else if (filter === 'aceitos' && status.includes('aceito')) {
+                    row.style.display = '';
+                } else if (filter === 'recusados' && status.includes('recusado')) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+
+// Atualizar status dos convites a cada 30 segundos
+setInterval(function() {
+    location.reload();
+}, 30000);
+
+// Animação das linhas da tabela
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(function(row, index) {
+        setTimeout(function() {
+            row.classList.add('fade-in');
+        }, index * 50);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Página Não Encontrada - Sistema Combinado{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-6 text-center">
+            <!-- Ícone de erro -->
+            <div class="mb-4">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+            </div>
+            
+            <!-- Código do erro -->
+            <h1 class="display-1 text-muted mb-3" style="font-weight: bold;">404</h1>
+            
+            <!-- Título do erro -->
+            <h2 class="h3 text-dark mb-3">Página Não Encontrada</h2>
+            
+            <!-- Mensagem personalizada por tipo de usuário -->
+            {% if is_admin_user %}
+                <p class="text-muted mb-4">
+                    A página solicitada não foi encontrada no sistema administrativo. 
+                    Verifique a URL ou navegue através do menu lateral.
+                </p>
+            {% else %}
+                <p class="text-muted mb-4">
+                    A página que você está procurando não existe ou foi movida. 
+                    Que tal voltar ao início e explorar nossos serviços?
+                </p>
+            {% endif %}
+            
+            <!-- Botões de ação -->
+            <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                {% if is_admin_user %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard Administrativo
+                    </a>
+                    <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>
+                        Página Inicial
+                    </a>
+                {% elif current_user_id %}
+                    <!-- Usuário logado - mostrar opções baseadas no papel -->
+                    {% if user_roles and 'cliente' in user_roles %}
+                        <a href="{{ url_for('cliente.dashboard') }}" class="btn btn-success">
+                            <i class="fas fa-user-tie me-2"></i>
+                            Meu Dashboard
+                        </a>
+                    {% endif %}
+                    {% if user_roles and 'prestador' in user_roles %}
+                        <a href="{{ url_for('prestador.dashboard') }}" class="btn btn-warning">
+                            <i class="fas fa-user-cog me-2"></i>
+                            Dashboard Prestador
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('home.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>
+                        Página Inicial
+                    </a>
+                {% else %}
+                    <!-- Usuário não logado -->
+                    <a href="{{ url_for('home.index') }}" class="btn btn-primary">
+                        <i class="fas fa-home me-2"></i>
+                        Página Inicial
+                    </a>
+                    <a href="{{ url_for('auth.user_login') }}" class="btn btn-outline-success">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Fazer Login
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- Informações adicionais -->
+            <div class="mt-5 pt-4 border-top">
+                <small class="text-muted">
+                    Se você acredita que isso é um erro, entre em contato com o suporte.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .display-1 {
+        font-size: 6rem;
+        line-height: 1;
+    }
+    
+    @media (max-width: 768px) {
+        .display-1 {
+            font-size: 4rem;
+        }
+        
+        .fas.fa-exclamation-triangle {
+            font-size: 3rem !important;
+        }
+    }
+</style>
+{% endblock %}

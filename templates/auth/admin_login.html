@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Administrativo - Combinado</title>
+    
+    <!-- Design Tokens -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <div class="card" style="width: 100%; max-width: 400px;">
+                <div style="text-align: center; margin-bottom: var(--spacing-6);">
+                    <div style="color: var(--brand-secondary); font-size: var(--font-size-3xl); margin-bottom: var(--spacing-2);">
+                        <i class="fas fa-cog" aria-hidden="true"></i>
+                    </div>
+                    <h1 style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--neutral-gray-900); margin-bottom: var(--spacing-2);">
+                        Administração
+                    </h1>
+                    <p style="color: var(--neutral-gray-600);">
+                        Acesso restrito a administradores
+                    </p>
+                </div>
+                
+                <form id="adminLoginForm" class="form" novalidate>
+                    <div class="form__group">
+                        <label for="adminEmail" class="form__label">E-mail</label>
+                        <input 
+                            type="email" 
+                            id="adminEmail" 
+                            name="email" 
+                            class="form__input" 
+                            required 
+                            aria-describedby="adminEmailError"
+                        >
+                        <div id="adminEmailError" class="form__error" role="alert"></div>
+                    </div>
+                    
+                    <div class="form__group">
+                        <label for="adminPassword" class="form__label">Senha</label>
+                        <input 
+                            type="password" 
+                            id="adminPassword" 
+                            name="password" 
+                            class="form__input" 
+                            required 
+                            aria-describedby="adminPasswordError"
+                        >
+                        <div id="adminPasswordError" class="form__error" role="alert"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-secondary btn-full">
+                        <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+                        Entrar como Admin
+                    </button>
+                </form>
+                
+                <hr style="margin: var(--spacing-6) 0; border: none; border-top: 1px solid var(--neutral-gray-200);">
+                
+                <div style="text-align: center;">
+                    <a href="{{ url_for('home.index') }}" class="link">
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                        Voltar à página inicial
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/admin-login.js') }}"></script>
+</body>
+</html>

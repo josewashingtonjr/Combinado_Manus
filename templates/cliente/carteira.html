@@ -1,0 +1,222 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Carteira - Sistema Combinado{% endblock %}
+
+{% block cliente_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-wallet me-2"></i>Minha Carteira</h1>
+    <div>
+        <a href="{{ url_for('cliente.solicitar_tokens') }}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i>Adicionar Saldo
+        </a>
+    </div>
+</div>
+
+<!-- Resumo da Carteira -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card bg-gradient-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-coins fa-3x mb-3"></i>
+                <h3 class="mb-0">{{ wallet.saldo_atual|format_currency }}</h3>
+                <p class="mb-0">Saldo Total</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card bg-gradient-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-hand-holding-usd fa-3x mb-3"></i>
+                <h3 class="mb-0">{{ wallet.tokens_disponiveis|format_currency }}</h3>
+                <p class="mb-0">Disponível</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card bg-gradient-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-lock fa-3x mb-3"></i>
+                <h3 class="mb-0">{{ wallet.tokens_bloqueados|format_currency }}</h3>
+                <p class="mb-0">Em Escrow</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estatísticas Detalhadas -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estatísticas da Carteira</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h4 class="text-success">{{ wallet.estatisticas.total_recebido|format_currency }}</h4>
+                        <small class="text-muted">Total Recebido</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h4 class="text-danger">{{ wallet.estatisticas.total_gasto|format_currency }}</h4>
+                        <small class="text-muted">Total Gasto</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h4 class="text-info">{{ wallet.estatisticas.media_mensal|format_currency }}</h4>
+                        <small class="text-muted">Média Mensal</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h4 class="text-warning">{{ wallet.estatisticas.maior_transacao|format_currency }}</h4>
+                        <small class="text-muted">Maior Transação</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transações Recentes -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Transações Recentes</h5>
+                <a href="{{ url_for('cliente.transacoes') }}" class="btn btn-sm btn-outline-primary">
+                    Ver Todas
+                </a>
+            </div>
+            <div class="card-body">
+                {% if wallet.transacoes_recentes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th class="text-end">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transacao in wallet.transacoes_recentes %}
+                            <tr>
+                                <td>{{ transacao.data.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if transacao.tipo == 'credito' else 'danger' }}">
+                                        {{ transacao.tipo.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ transacao.descricao }}</td>
+                                <td class="text-end">
+                                    <span class="text-{{ 'success' if transacao.tipo == 'credito' else 'danger' }}">
+                                        {{ '+' if transacao.tipo == 'credito' else '-' }}{{ transacao.valor|format_currency }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>Nenhuma transação encontrada</p>
+                    <a href="{{ url_for('cliente.solicitar_tokens') }}" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i>Solicitar Primeiros Tokens
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Gráfico de Saldo (Placeholder) -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-line me-2"></i>Evolução do Saldo</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <canvas id="saldoChart" width="300" height="200"></canvas>
+                </div>
+                <small class="text-muted">Últimos 30 dias</small>
+            </div>
+        </div>
+        
+        <!-- Dicas de Segurança -->
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Segurança</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Saldo em escrow é protegido</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Todas as transações são auditadas</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Sistema de backup automático</small>
+                    </li>
+                    <li>
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Criptografia de ponta a ponta</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de evolução do saldo (placeholder)
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('saldoChart').getContext('2d');
+    
+    // Dados fictícios para demonstração
+    const saldoChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Há 30d', 'Há 25d', 'Há 20d', 'Há 15d', 'Há 10d', 'Há 5d', 'Hoje'],
+            datasets: [{
+                label: 'Saldo',
+                data: [0, 100, 150, 120, 180, 200, {{ wallet.saldo_atual or 0 }}],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
