@@ -114,7 +114,7 @@ class Invite(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     invited_email = db.Column(db.String(120), nullable=True)  # Mantido por compatibilidade
-    invited_phone = db.Column(db.String(20), nullable=True)  # Campo principal para WhatsApp/Telegram
+    invited_phone = db.Column(db.String(20), nullable=False)  # Campo principal para WhatsApp/Telegram
     service_title = db.Column(db.String(200), nullable=False)
     service_description = db.Column(db.Text, nullable=False)
     service_category = db.Column(db.String(100), nullable=True)  # Ex: pedreiro, encanador, eletricista
@@ -138,6 +138,9 @@ class Invite(db.Model):
             self.token = self.generate_token()
         if not self.status:
             self.status = 'pendente'
+        # Definir expiração baseada na data do serviço se não foi especificada
+        if not self.expires_at and self.delivery_date:
+            self.expires_at = self.delivery_date
     
     @staticmethod
     def generate_token():
@@ -146,16 +149,26 @@ class Invite(db.Model):
     
     @property
     def is_expired(self):
-        """Verifica se o convite está expirado"""
-        return datetime.utcnow() > self.expires_at
+        """Verifica se o convite está expirado - expira na data do serviço"""
+        return datetime.utcnow() > self.delivery_date
     
     @property
     def can_be_accepted(self):
         """Verifica se o convite pode ser aceito"""
         return self.status == 'pendente' and not self.is_expired
     
+    @property
+    def invite_link(self):
+        """Gera o link do convite para ser enviado ao prestador"""
+        from flask import url_for, request
+        try:
+            return url_for('auth.convite_acesso', token=self.token, _external=True)
+        except:
+            # Fallback se não estiver em contexto de request
+            return f"/convite/{self.token}"
+    
     def __repr__(self):
-        return f'<Invite {self.id}: {self.service_title} para {self.invited_email}>'
+        return f'<Invite {self.id}: {self.service_title} para {self.invited_phone}>'
 
 
 # ==============================================================================
@@ -223,4 +236,30 @@ class SystemAlert(db.Model):
     
     def __repr__(self):
         return f'<SystemAlert {self.alert_type} - {self.severity}>'
+
+class TokenRequest(db.Model):
+    """Modelo para solicitações de tokens"""
+    __tablename__ = 'token_requests'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, approved, rejected
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime, nullable=True)
+    processed_by = db.Column(db.Integer, db.ForeignKey('admin_users.id'), nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    
+    # Campos para comprovante de depósito
+    payment_method = db.Column(db.String(50), nullable=True, default='pix')  # pix, ted, doc, cartao
+    receipt_filename = db.Column(db.String(255), nullable=True)  # Nome do arquivo do comprovante
+    receipt_original_name = db.Column(db.String(255), nullable=True)  # Nome original do arquivo
+    receipt_uploaded_at = db.Column(db.DateTime, nullable=True)  # Quando foi enviado
+    
+    # Relacionamentos
+    user = db.relationship('User', backref='token_requests')
+    processor = db.relationship('AdminUser', backref='processed_token_requests')
+    
+    def __repr__(self):
+        return f'<TokenRequest {self.user_id} - R${self.amount} - {self.status}>'
 

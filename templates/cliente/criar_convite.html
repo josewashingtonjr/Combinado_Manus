@@ -59,7 +59,7 @@
                         </label>
                         <input type="tel" class="form-control" id="invited_phone" name="invited_phone" 
                                placeholder="(11) 99999-9999" required>
-                        <div class="form-text">Telefone para envio do convite via WhatsApp/Telegram</div>
+                        <div class="form-text">Telefone para envio do link do convite</div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -156,7 +156,8 @@
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Importante:</strong> Você precisa ter saldo suficiente para cobrir o valor do serviço 
                 mais a taxa de contestação ({{ contestation_fee|format_currency }}). 
-                O valor será reservado até que o convite seja aceito e convertido em ordem.
+                Após criar o convite, você receberá um link para enviar ao prestador. 
+                O convite expira automaticamente na data do serviço.
             </div>
             
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -249,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        return confirm('Deseja enviar este convite? O prestador receberá uma notificação por email.');
+        return confirm('Deseja criar este convite? Você receberá um link para enviar ao prestador.');
     });
 });
 </script>

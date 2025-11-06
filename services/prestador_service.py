@@ -108,6 +108,13 @@ class PrestadorService:
                 'mensagem': f'Você tem {saldo_disponivel:.2f} disponível para saque.'
             })
         
+        # Alerta de saldo baixo (menos de R$ 50,00)
+        if saldo_disponivel < 50.0:
+            alertas.append({
+                'tipo': 'warning',
+                'mensagem': 'Saldo baixo. Considere adicionar mais saldo à sua conta para aceitar novas ordens.'
+            })
+        
         # Alerta se não tem ordens ativas
         if ordens_ativas == 0 and ordens_disponiveis > 0:
             alertas.append({

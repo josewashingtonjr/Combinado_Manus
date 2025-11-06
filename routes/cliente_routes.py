@@ -283,12 +283,17 @@ def solicitar_tokens():
         flash('Acesso negado.', 'error')
         return redirect(url_for('auth.user_login'))
     
-    return render_template('cliente/solicitar_tokens.html', user=user)
+    # Obter solicitações recentes do usuário
+    token_requests = ClienteService.get_user_token_requests(user.id)
+    
+    return render_template('cliente/solicitar_tokens.html', 
+                         user=user, 
+                         token_requests=token_requests)
 
 @cliente_bp.route('/solicitar-tokens', methods=['POST'])
 @login_required
 def processar_solicitacao_tokens():
-    """Processar solicitação de tokens"""
+    """Processar solicitação de tokens com upload de comprovante"""
     user = AuthService.get_current_user()
     
     if 'cliente' not in user.roles:
@@ -298,14 +303,36 @@ def processar_solicitacao_tokens():
     try:
         amount = float(request.form.get('amount', 0))
         description = request.form.get('description', '')
+        payment_method = request.form.get('payment_method', 'pix')
         
         if amount <= 0:
             flash('Quantidade deve ser maior que zero.', 'error')
             return redirect(url_for('cliente.solicitar_tokens'))
         
-        # Registrar solicitação (será processada pelo admin)
-        ClienteService.create_token_request(user.id, amount, description)
-        flash('Solicitação de tokens enviada com sucesso! Aguarde aprovação do administrador.', 'success')
+        # Verificar se foi enviado um arquivo
+        receipt_file = request.files.get('receipt')
+        if not receipt_file or receipt_file.filename == '':
+            flash('Comprovante de depósito é obrigatório.', 'error')
+            return redirect(url_for('cliente.solicitar_tokens'))
+        
+        # Validar tipo de arquivo
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'pdf'}
+        file_extension = receipt_file.filename.rsplit('.', 1)[1].lower() if '.' in receipt_file.filename else ''
+        
+        if file_extension not in allowed_extensions:
+            flash('Formato de arquivo não permitido. Use JPG, PNG ou PDF.', 'error')
+            return redirect(url_for('cliente.solicitar_tokens'))
+        
+        # Registrar solicitação com comprovante
+        ClienteService.create_token_request_with_receipt(
+            user_id=user.id,
+            amount=amount,
+            description=description,
+            payment_method=payment_method,
+            receipt_file=receipt_file
+        )
+        
+        flash('Solicitação enviada com sucesso! Comprovante recebido. Processamento em até 2 horas.', 'success')
         
     except ValueError:
         flash('Quantidade inválida.', 'error')
@@ -374,15 +401,16 @@ def processar_criar_convite():
     
     try:
         # Obter dados do formulário
-        invited_email = request.form.get('invited_email', '').strip()
+        invited_phone = request.form.get('invited_phone', '').strip()
         service_title = request.form.get('service_title', '').strip()
         service_description = request.form.get('service_description', '').strip()
+        service_category = request.form.get('service_category', '').strip()
         original_value = float(request.form.get('original_value', 0))
         delivery_date_str = request.form.get('delivery_date', '')
         
         # Validações básicas
-        if not invited_email or '@' not in invited_email:
-            flash('Email do prestador é obrigatório e deve ser válido.', 'error')
+        if not invited_phone or len(invited_phone) < 10:
+            flash('Telefone do prestador é obrigatório e deve ser válido.', 'error')
             return redirect(url_for('cliente.criar_convite'))
         
         if not service_title:
@@ -410,14 +438,18 @@ def processar_criar_convite():
         # Criar o convite
         result = InviteService.create_invite(
             client_id=user.id,
-            invited_email=invited_email,
+            invited_phone=invited_phone,
             service_title=service_title,
             service_description=service_description,
             original_value=original_value,
-            delivery_date=delivery_date
+            delivery_date=delivery_date,
+            service_category=service_category
         )
         
-        flash(f'Convite criado com sucesso! O prestador receberá uma notificação no email {invited_email}.', 'success')
+        # Gerar link do convite
+        invite_link = result.get('invite_link', f"/convite/{result['token']}")
+        
+        flash(f'Convite criado com sucesso! Link para enviar ao prestador: {invite_link}', 'success')
         return redirect(url_for('cliente.convites'))
         
     except ValueError as e:

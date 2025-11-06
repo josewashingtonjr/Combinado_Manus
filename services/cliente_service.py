@@ -311,10 +311,11 @@ class ClienteService:
     @staticmethod
     def create_token_request(user_id, amount, description):
         """Cria uma solicitação de tokens para aprovação do admin"""
-        user = User.query.get(user_id)
+        from models import TokenRequest
         
-        # TODO: Implementar modelo TokenRequest
-        # Por enquanto, apenas simular a operação
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError('Usuário não encontrado')
         
         # Validações
         if amount <= 0:
@@ -323,18 +324,85 @@ class ClienteService:
         if amount > 10000:  # Limite máximo por solicitação
             raise ValueError('Quantidade excede o limite máximo de 10.000 tokens')
         
-        # TODO: Criar registro na tabela token_requests
-        # token_request = TokenRequest(
-        #     user_id=user_id,
-        #     amount=amount,
-        #     description=description,
-        #     status='pending',
-        #     created_at=datetime.utcnow()
-        # )
-        # db.session.add(token_request)
-        # db.session.commit()
+        # Criar registro na tabela token_requests
+        token_request = TokenRequest(
+            user_id=user_id,
+            amount=amount,
+            description=description or 'Solicitação de tokens',
+            status='pending'
+        )
         
-        return True
+        db.session.add(token_request)
+        db.session.commit()
+        
+        return token_request
+    
+    @staticmethod
+    def create_token_request_with_receipt(user_id, amount, description, payment_method, receipt_file):
+        """Cria uma solicitação de tokens com upload de comprovante"""
+        from models import TokenRequest
+        from datetime import datetime
+        import os
+        import uuid
+        
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError('Usuário não encontrado')
+        
+        # Validações
+        if amount <= 0:
+            raise ValueError('Quantidade deve ser maior que zero')
+        
+        if amount > 10000:  # Limite máximo por solicitação
+            raise ValueError('Quantidade excede o limite máximo de 10.000 tokens')
+        
+        # Processar upload do arquivo
+        receipt_filename = None
+        receipt_original_name = None
+        
+        if receipt_file and receipt_file.filename:
+            # Criar diretório se não existir
+            upload_dir = 'uploads/receipts'
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Gerar nome único para o arquivo
+            file_extension = receipt_file.filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"{user_id}_{uuid.uuid4().hex[:8]}_{int(datetime.now().timestamp())}.{file_extension}"
+            
+            # Salvar arquivo
+            file_path = os.path.join(upload_dir, unique_filename)
+            receipt_file.save(file_path)
+            
+            receipt_filename = unique_filename
+            receipt_original_name = receipt_file.filename
+        
+        # Criar registro na tabela token_requests
+        token_request = TokenRequest(
+            user_id=user_id,
+            amount=amount,
+            description=description or f'Solicitação via {payment_method.upper()}',
+            status='pending',
+            payment_method=payment_method,
+            receipt_filename=receipt_filename,
+            receipt_original_name=receipt_original_name,
+            receipt_uploaded_at=datetime.utcnow() if receipt_filename else None
+        )
+        
+        db.session.add(token_request)
+        db.session.commit()
+        
+        return token_request
+    
+    @staticmethod
+    def get_user_token_requests(user_id, limit=10):
+        """Obtém as solicitações de tokens do usuário"""
+        from models import TokenRequest
+        
+        requests = TokenRequest.query.filter_by(user_id=user_id)\
+                                   .order_by(TokenRequest.created_at.desc())\
+                                   .limit(limit).all()
+        
+        return requests
     
     @staticmethod
     def get_user_statistics(user_id):

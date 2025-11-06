@@ -243,7 +243,7 @@ def convites(user):
         return redirect(url_for('auth.user_login'))
     
     # Obter convites recebidos
-    received_invites = InviteService.get_invites_for_email(user.email)
+    received_invites = InviteService.get_invites_for_phone(user.phone) if user.phone else []
     
     return render_template('prestador/convites.html', 
                          user=user, 
@@ -262,7 +262,7 @@ def ver_convite(user, token):
         invite = InviteService.get_invite_by_token(token)
         
         # Verificar se o convite é para este prestador
-        if invite.invited_email != user.email:
+        if invite.invited_phone != user.phone:
             flash('Convite não encontrado.', 'error')
             return redirect(url_for('prestador.convites'))
         
@@ -405,3 +405,75 @@ def alterar_termos_convite(token):
         flash(f'Erro ao alterar termos: {str(e)}', 'error')
     
     return redirect(url_for('prestador.ver_convite', token=token))
+
+# ==============================================================================
+#  SOLICITAÇÃO DE TOKENS (ADICIONAR SALDO)
+# ==============================================================================
+
+@prestador_bp.route('/solicitar-tokens')
+@user_loader_required
+def solicitar_tokens(user):
+    """Solicitar compra de tokens (controlada pelo admin)"""
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    # Usar o mesmo serviço do cliente para obter solicitações
+    from services.cliente_service import ClienteService
+    token_requests = ClienteService.get_user_token_requests(user.id)
+    
+    return render_template('prestador/solicitar_tokens.html', 
+                         user=user, 
+                         token_requests=token_requests)
+
+@prestador_bp.route('/solicitar-tokens', methods=['POST'])
+@user_loader_required
+def processar_solicitacao_tokens(user):
+    """Processar solicitação de tokens com upload de comprovante"""
+    
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        amount = float(request.form.get('amount', 0))
+        description = request.form.get('description', '')
+        payment_method = request.form.get('payment_method', 'pix')
+        
+        if amount <= 0:
+            flash('Quantidade deve ser maior que zero.', 'error')
+            return redirect(url_for('prestador.solicitar_tokens'))
+        
+        # Verificar se foi enviado um arquivo
+        receipt_file = request.files.get('receipt')
+        if not receipt_file or receipt_file.filename == '':
+            flash('Comprovante de depósito é obrigatório.', 'error')
+            return redirect(url_for('prestador.solicitar_tokens'))
+        
+        # Validar tipo de arquivo
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'pdf'}
+        file_extension = receipt_file.filename.rsplit('.', 1)[1].lower() if '.' in receipt_file.filename else ''
+        
+        if file_extension not in allowed_extensions:
+            flash('Formato de arquivo não permitido. Use JPG, PNG ou PDF.', 'error')
+            return redirect(url_for('prestador.solicitar_tokens'))
+        
+        # Usar o mesmo serviço do cliente para criar solicitação
+        from services.cliente_service import ClienteService
+        ClienteService.create_token_request_with_receipt(
+            user_id=user.id,
+            amount=amount,
+            description=description,
+            payment_method=payment_method,
+            receipt_file=receipt_file
+        )
+        
+        flash('Solicitação enviada com sucesso! Comprovante recebido. Processamento em até 2 horas.', 'success')
+        
+    except ValueError:
+        flash('Quantidade inválida.', 'error')
+    except Exception as e:
+        flash(f'Erro ao processar solicitação: {str(e)}', 'error')
+    
+    return redirect(url_for('prestador.dashboard'))

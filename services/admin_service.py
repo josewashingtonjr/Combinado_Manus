@@ -103,6 +103,18 @@ class AdminService:
             Transaction.created_at >= inicio_mes
         ).scalar() or 0.0
         
+        # Solicitações de tokens (nova funcionalidade)
+        try:
+            from models import TokenRequest
+            solicitacoes_pendentes = TokenRequest.query.filter_by(status='pending').count()
+            valor_total_solicitacoes_pendentes = db.session.query(
+                func.sum(TokenRequest.amount)
+            ).filter_by(status='pending').scalar() or 0.0
+        except Exception:
+            # Fallback se a tabela ainda não existir
+            solicitacoes_pendentes = 0
+            valor_total_solicitacoes_pendentes = 0.0
+        
         stats = {
             # Usuários
             'total_usuarios': total_usuarios,
@@ -134,6 +146,10 @@ class AdminService:
             'tokens_em_escrow': tokens_em_escrow,
             'tokens_disponiveis_usuarios': tokens_disponiveis_usuarios,
             'percentual_escrow': percentual_escrow,
+            
+            # Solicitações de tokens (nova funcionalidade)
+            'solicitacoes_tokens_pendentes': solicitacoes_pendentes,
+            'valor_total_solicitacoes_pendentes': valor_total_solicitacoes_pendentes,
             
             # Métricas adicionais
             'taxa_usuarios_ativos': (usuarios_ativos / total_usuarios * 100) if total_usuarios > 0 else 0,

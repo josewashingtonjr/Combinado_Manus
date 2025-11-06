@@ -23,10 +23,27 @@
                         <i class="fas fa-users me-1"></i>Usuários
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('admin.tokens') }}">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="tokensDropdown" role="button" data-bs-toggle="dropdown">
                         <i class="fas fa-coins me-1"></i>Tokens
+                        {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
+                            <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
+                        {% endif %}
                     </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('admin.tokens') }}">
+                            <i class="fas fa-cogs me-1"></i>Gerenciar Tokens
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.solicitacoes_tokens') }}">
+                            <i class="fas fa-paper-plane me-1"></i>Solicitações
+                            {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
+                                <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
+                            {% endif %}
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('admin.adicionar_tokens') }}">
+                            <i class="fas fa-plus me-1"></i>Adicionar Tokens
+                        </a></li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('admin.contratos') }}">
@@ -114,13 +131,23 @@
                     <div class="list-group-item p-0">
                         <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
                            data-bs-toggle="collapse" href="#menuTokens" role="button">
-                            <span><i class="fas fa-coins me-2 text-warning"></i><strong>Tokens</strong></span>
+                            <span><i class="fas fa-coins me-2 text-warning"></i><strong>Tokens</strong>
+                            {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
+                                <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
+                            {% endif %}
+                            </span>
                             <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="collapse" id="menuTokens">
                             <div class="list-group list-group-flush">
                                 <a href="{{ url_for('admin.tokens') }}" class="list-group-item list-group-item-action ps-4 border-0">
                                     <i class="fas fa-wallet me-2"></i>Gerenciar
+                                </a>
+                                <a href="{{ url_for('admin.solicitacoes_tokens') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                    <i class="fas fa-paper-plane me-2"></i>Solicitações
+                                    {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
+                                        <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
+                                    {% endif %}
                                 </a>
                                 <a href="{{ url_for('admin.adicionar_tokens') }}" class="list-group-item list-group-item-action ps-4 border-0">
                                     <i class="fas fa-plus-circle me-2"></i>Adicionar

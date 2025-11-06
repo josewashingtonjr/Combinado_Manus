@@ -1,0 +1,322 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Solicitar Tokens - Sistema Combinado{% endblock %}
+
+{% block prestador_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-coins me-2"></i>Adicionar Saldo</h1>
+    <a href="{{ url_for('prestador.carteira') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar à Carteira
+    </a>
+</div>
+
+<!-- Informações sobre Tokens -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Como funciona:</strong> Solicite tokens para adicionar saldo à sua carteira. 
+            Sua solicitação será analisada pelo administrador e processada em até 2 horas.
+        </div>
+    </div>
+</div>
+
+<!-- Formulário de Solicitação -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Nova Solicitação</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('prestador.processar_solicitacao_tokens') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">
+                            <i class="fas fa-coins me-1"></i>Quantidade de Tokens *
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                   min="1" max="10000" step="1" placeholder="100" required>
+                        </div>
+                        <div class="form-text">
+                            <strong>1 Token = R$ 1,00</strong> | Mínimo: R$ 1,00 | Máximo: R$ 10.000,00 por solicitação
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Observações (opcional)
+                        </label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="3" placeholder="Descreva o motivo da solicitação ou informações adicionais..."></textarea>
+                        <div class="form-text">Informações adicionais para o administrador</div>
+                    </div>
+                    
+                    <!-- Método de Pagamento -->
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">
+                            <i class="fas fa-credit-card me-1"></i>Método de Pagamento *
+                        </label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="pix" selected>PIX (Instantâneo)</option>
+                            <option value="ted">TED (1-2 dias úteis)</option>
+                            <option value="doc">DOC (1-2 dias úteis)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Instruções PIX -->
+                    <div class="alert alert-info" id="pix-instructions">
+                        <h6><i class="fas fa-mobile-alt me-2"></i>Instruções para PIX</h6>
+                        <ol class="mb-2">
+                            <li>Faça o PIX para a chave: <strong>admin@combinado.com</strong></li>
+                            <li>Use como descrição: <strong>Tokens - Seu Nome</strong></li>
+                            <li>Tire print ou salve o comprovante</li>
+                            <li>Envie o comprovante no campo abaixo</li>
+                        </ol>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>Processamento em até 2 horas após confirmação do pagamento
+                        </small>
+                    </div>
+                    
+                    <!-- Upload do Comprovante -->
+                    <div class="mb-4">
+                        <label for="receipt" class="form-label">
+                            <i class="fas fa-file-upload me-1"></i>Comprovante de Depósito *
+                        </label>
+                        <input type="file" class="form-control" id="receipt" name="receipt" 
+                               accept=".jpg,.jpeg,.png,.pdf" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Formatos aceitos: JPG, PNG, PDF | Tamanho máximo: 5MB
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('prestador.carteira') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Solicitação
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Dados para Pagamento -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Dados PIX</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="bg-light p-3 rounded border">
+                        <h5 class="text-primary mb-2">
+                            <i class="fas fa-qrcode me-2"></i>PIX
+                        </h5>
+                        <div class="mb-2">
+                            <strong>Chave:</strong><br>
+                            <code class="fs-6">admin@combinado.com</code>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Favorecido:</strong><br>
+                            Sistema Combinado
+                        </div>
+                        <div>
+                            <strong>Banco:</strong><br>
+                            Banco do Brasil
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Importante
+                    </h6>
+                    <ul class="mb-0 small">
+                        <li>Use a descrição: <strong>"Tokens - Seu Nome"</strong></li>
+                        <li>Sempre envie o comprovante</li>
+                        <li>Processamento em até 2 horas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Como Funciona -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-list-ol me-2"></i>Como Funciona</h6>
+            </div>
+            <div class="card-body">
+                <div class="step-item mb-3">
+                    <div class="d-flex">
+                        <span class="badge bg-primary rounded-circle me-2">1</span>
+                        <small>Escolha a quantidade e método de pagamento</small>
+                    </div>
+                </div>
+                <div class="step-item mb-3">
+                    <div class="d-flex">
+                        <span class="badge bg-primary rounded-circle me-2">2</span>
+                        <small>Faça o PIX usando os dados ao lado</small>
+                    </div>
+                </div>
+                <div class="step-item mb-3">
+                    <div class="d-flex">
+                        <span class="badge bg-primary rounded-circle me-2">3</span>
+                        <small>Tire print do comprovante</small>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="d-flex">
+                        <span class="badge bg-primary rounded-circle me-2">4</span>
+                        <small>Envie o comprovante no formulário</small>
+                    </div>
+                </div>
+                
+                <hr class="my-3">
+                
+                <div class="text-center">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Processamento em até 2 horas
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Histórico de Solicitações -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Solicitações Recentes</h5>
+            </div>
+            <div class="card-body">
+                {% if token_requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Quantidade</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th>Processado em</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in token_requests %}
+                            <tr>
+                                <td>{{ request.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>R$ {{ "%.2f"|format(request.amount) }}</td>
+                                <td>{{ request.description or 'Sem descrição' }}</td>
+                                <td>
+                                    {% if request.status == 'pending' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>Pendente
+                                        </span>
+                                    {% elif request.status == 'approved' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>Aprovado
+                                        </span>
+                                    {% elif request.status == 'rejected' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times me-1"></i>Rejeitado
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.processed_at %}
+                                        {{ request.processed_at.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>Nenhuma solicitação encontrada</p>
+                    <small>Suas solicitações de tokens aparecerão aqui</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.getElementById('amount');
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const pixInstructions = document.getElementById('pix-instructions');
+    
+    // Atualizar instruções baseado no método de pagamento
+    paymentMethodSelect.addEventListener('change', function() {
+        const method = this.value;
+        
+        if (method === 'pix') {
+            pixInstructions.style.display = 'block';
+            pixInstructions.innerHTML = `
+                <h6><i class="fas fa-mobile-alt me-2"></i>Instruções para PIX</h6>
+                <ol class="mb-2">
+                    <li>Faça o PIX para a chave: <strong>admin@combinado.com</strong></li>
+                    <li>Use como descrição: <strong>Tokens - Seu Nome</strong></li>
+                    <li>Tire print ou salve o comprovante</li>
+                    <li>Envie o comprovante no campo abaixo</li>
+                </ol>
+                <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>Processamento em até 2 horas após confirmação do pagamento
+                </small>
+            `;
+        } else if (method === 'ted' || method === 'doc') {
+            pixInstructions.style.display = 'block';
+            pixInstructions.innerHTML = `
+                <h6><i class="fas fa-university me-2"></i>Instruções para ${method.toUpperCase()}</h6>
+                <div class="mb-2">
+                    <strong>Dados bancários:</strong><br>
+                    Banco: Banco do Brasil (001)<br>
+                    Agência: 1234-5<br>
+                    Conta: 12345-6<br>
+                    Favorecido: Sistema Combinado LTDA<br>
+                    CNPJ: 12.345.678/0001-90
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>Processamento em 1-2 dias úteis após confirmação
+                </small>
+            `;
+        }
+    });
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const amount = parseFloat(amountInput.value) || 0;
+        
+        if (amount <= 0) {
+            e.preventDefault();
+            alert('Por favor, insira uma quantidade válida.');
+            return false;
+        }
+        
+        if (amount > 10000) {
+            e.preventDefault();
+            alert('Quantidade máxima por solicitação: R$ 10.000,00');
+            return false;
+        }
+        
+        return confirm('Deseja enviar esta solicitação de tokens?');
+    });
+});
+</script>
+{% endblock %}

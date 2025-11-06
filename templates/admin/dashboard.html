@@ -47,6 +47,35 @@
         </div>
     </div>
     
+    <!-- CARD PRIORITÁRIO: Solicitações de Tokens Pendentes -->
+    <div class="col-md-3 mb-3">
+        <div class="card {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %} shadow-lg border-0">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ stats.get('solicitacoes_tokens_pendentes', 0) if stats else 0 }}</h4>
+                        <p class="mb-0 fw-semibold">🔔 Solicitações Pendentes</p>
+                        <small class="{% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}text-dark{% else %}text-light{% endif %}">
+                            {% if stats and stats.get('valor_total_solicitacoes_pendentes', 0) > 0 %}
+                                R$ {{ "%.2f"|format(stats.get('valor_total_solicitacoes_pendentes', 0)) }} aguardando
+                            {% else %}
+                                Nenhuma pendente
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-coins fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
+            <a href="{{ url_for('admin.solicitacoes_tokens') }}" class="card-footer text-center text-decoration-none {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}text-dark bg-warning-subtle{% else %}text-white{% endif %}" style="background: rgba(0,0,0,0.1);">
+                <small class="fw-bold"><i class="fas fa-arrow-right me-1"></i>PROCESSAR AGORA</small>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
     <div class="col-md-3 mb-3">
         <div class="card bg-danger text-white">
             <div class="card-body">
@@ -83,6 +112,8 @@
             </div>
         </div>
     </div>
+    
+""
     
     <div class="col-md-3 mb-3">
         <div class="card bg-info text-white">
@@ -279,6 +310,14 @@
                             <i class="fas fa-chart-bar me-2"></i>Relatórios
                         </a>
                     </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.solicitacoes_tokens') }}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-coins me-2"></i>Solicitações de Tokens
+                            {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
+                                <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -370,6 +409,17 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.bg-orange {
+    background-color: #fd7e14 !important;
+}
+.bg-orange:hover {
+    background-color: #e8690b !important;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
 function updateTime() {
@@ -381,5 +431,16 @@ function updateTime() {
 // Atualizar o tempo a cada segundo
 setInterval(updateTime, 1000);
 updateTime(); // Chamada inicial
+
+// Atualizar dashboard a cada 30 segundos se houver solicitações pendentes
+const solicitacoesPendentes = {{ stats.get('solicitacoes_tokens_pendentes', 0) if stats else 0 }};
+if (solicitacoesPendentes > 0) {
+    setInterval(function() {
+        // Recarregar apenas se ainda estivermos na página do dashboard
+        if (window.location.pathname.includes('/admin/dashboard')) {
+            location.reload();
+        }
+    }, 30000); // 30 segundos
+}
 </script>
 {% endblock %}

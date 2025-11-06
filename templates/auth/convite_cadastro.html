@@ -92,12 +92,21 @@
                             </div>
                             
                             <div class="mb-3">
+                                <label for="phone_display" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>Telefone do Convite
+                                </label>
+                                <input type="tel" class="form-control" id="phone_display" name="phone_display" 
+                                       value="{{ invite.invited_phone }}" readonly>
+                                <div class="form-text">Este é o telefone para o qual o convite foi enviado</div>
+                            </div>
+                            
+                            <div class="mb-3">
                                 <label for="email" class="form-label">
-                                    <i class="fas fa-envelope me-1"></i>Email
+                                    <i class="fas fa-envelope me-1"></i>Email *
                                 </label>
                                 <input type="email" class="form-control" id="email" name="email" 
-                                       value="{{ invite.invited_email }}" readonly>
-                                <div class="form-text">Este é o email para o qual o convite foi enviado</div>
+                                       placeholder="seu@email.com" required>
+                                <div class="form-text">Digite seu email para criar a conta</div>
                             </div>
                             
                             <div class="mb-3">
@@ -108,13 +117,7 @@
                                        placeholder="000.000.000-00" maxlength="14" required>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="phone" class="form-label">
-                                    <i class="fas fa-phone me-1"></i>Telefone
-                                </label>
-                                <input type="tel" class="form-control" id="phone" name="phone" 
-                                       placeholder="(00) 00000-0000">
-                            </div>
+
                             
                             <div class="row">
                                 <div class="col-md-6">
@@ -168,9 +171,9 @@
                                 
                                 <form method="POST" action="{{ url_for('auth.processar_login_convite', token=token) }}" id="loginForm">
                                     <div class="mb-3">
-                                        <label for="login_email" class="form-label">Email:</label>
-                                        <input type="email" class="form-control" id="login_email" name="email" 
-                                               value="{{ invite.invited_email }}" readonly>
+                                        <label for="login_phone" class="form-label">Telefone:</label>
+                                        <input type="tel" class="form-control" id="login_phone" name="phone" 
+                                               value="{{ invite.invited_phone }}" readonly>
                                     </div>
                                     
                                     <div class="mb-3">

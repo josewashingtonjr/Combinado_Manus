@@ -313,6 +313,23 @@ def inject_user_context():
         **role_context
     )
 
+@app.context_processor
+def inject_admin_stats():
+    """Injetar estatísticas do admin para mostrar notificações"""
+    # Só injetar se for administrador
+    if session.get('admin_id'):
+        try:
+            from services.admin_service import AdminService
+            stats = AdminService.get_dashboard_stats()
+            app.logger.info(f"Context processor - Stats injetadas: {list(stats.keys())}")
+            return dict(stats=stats)
+        except Exception as e:
+            app.logger.error(f"Erro no context processor: {str(e)}")
+            # Em caso de erro, retornar stats vazias
+            return dict(stats={'solicitacoes_tokens_pendentes': 0})
+    
+    return dict()
+
 # ==============================================================================
 #  INICIALIZAÇÃO DO BANCO DE DADOS
 # ==============================================================================

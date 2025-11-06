@@ -304,8 +304,8 @@ def convite_acesso(token):
             flash('Este convite não está mais disponível ou expirou.', 'error')
             return redirect(url_for('auth.user_login'))
         
-        # Verificar se já existe um usuário com este email
-        existing_user = User.query.filter_by(email=invite.invited_email).first()
+        # Verificar se já existe um usuário com este telefone
+        existing_user = User.query.filter_by(phone=invite.invited_phone).first()
         
         if existing_user:
             # Usuário já existe, redirecionar para login
@@ -361,22 +361,22 @@ def processar_cadastro_convite(token):
             flash('Você deve aceitar os termos de uso.', 'error')
             return redirect(url_for('auth.convite_acesso', token=token))
         
-        # Verificar se já existe usuário com este email ou CPF
+        # Verificar se já existe usuário com este telefone ou CPF
         existing_user = User.query.filter(
-            (User.email == invite.invited_email) | (User.cpf == cpf)
+            (User.phone == invite.invited_phone) | (User.cpf == cpf)
         ).first()
         
         if existing_user:
-            flash('Já existe uma conta com este email ou CPF.', 'error')
+            flash('Já existe uma conta com este telefone ou CPF.', 'error')
             return redirect(url_for('auth.convite_acesso', token=token))
         
         # Criar novo usuário
         from models import db
         user = User(
             nome=nome,
-            email=invite.invited_email,  # Email do convite
+            email=email,  # Email fornecido no cadastro
             cpf=cpf,
-            phone=phone,
+            phone=invite.invited_phone,  # Telefone do convite
             roles='cliente,prestador',  # Papéis duais por padrão
             active=True
         )

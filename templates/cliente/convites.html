@@ -191,6 +191,13 @@
                                    class="btn btn-outline-primary" title="Ver Detalhes">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                {% if invite.status == 'pendente' %}
+                                <button type="button" class="btn btn-outline-info" 
+                                        onclick="copyInviteLink('{{ invite.invite_link }}')" 
+                                        title="Copiar Link do Convite">
+                                    <i class="fas fa-link"></i>
+                                </button>
+                                {% endif %}
                                 {% if invite.status == 'aceito' %}
                                 <form method="POST" action="{{ url_for('cliente.converter_convite', invite_id=invite.id) }}" 
                                       class="d-inline" onsubmit="return confirm('Deseja converter este convite em ordem de serviço?')">
@@ -284,6 +291,38 @@ document.addEventListener('DOMContentLoaded', function() {
 setInterval(function() {
     location.reload();
 }, 30000);
+
+// Função para copiar link do convite
+function copyInviteLink(link) {
+    const fullLink = window.location.origin + link;
+    navigator.clipboard.writeText(fullLink).then(function() {
+        // Mostrar toast de sucesso
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check me-2"></i>Link copiado! Envie para o prestador.
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remover toast após 5 segundos
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }).catch(function() {
+        alert('Link do convite: ' + fullLink);
+    });
+}
 
 // Animação das linhas da tabela
 document.addEventListener('DOMContentLoaded', function() {

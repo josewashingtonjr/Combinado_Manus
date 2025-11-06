@@ -16,18 +16,16 @@ class InviteService:
     DEFAULT_EXPIRATION_DAYS = 7
     
     @staticmethod
-    def create_invite(client_id, invited_email, service_title, service_description, 
-                     original_value, delivery_date, expiration_days=None):
+    def create_invite(client_id, invited_phone, service_title, service_description, 
+                     original_value, delivery_date, service_category=None):
         """
         Cria um novo convite com validação de saldo conforme tokenomics
         
         Validações:
         - Cliente deve ter saldo suficiente para: valor do serviço + taxa de contestação
-        - Email do prestador deve ser válido
+        - Telefone do prestador deve ser válido
         - Data de entrega deve ser futura
         """
-        if expiration_days is None:
-            expiration_days = InviteService.DEFAULT_EXPIRATION_DAYS
         
         # Validações básicas
         if original_value <= 0:
@@ -36,8 +34,8 @@ class InviteService:
         if delivery_date <= datetime.utcnow():
             raise ValueError("Data de entrega deve ser futura")
         
-        if not invited_email or '@' not in invited_email:
-            raise ValueError("Email do prestador é obrigatório e deve ser válido")
+        if not invited_phone or len(invited_phone.strip()) < 10:
+            raise ValueError("Telefone do prestador é obrigatório e deve ser válido")
         
         # Verificar se cliente existe
         client = User.query.get(client_id)
@@ -60,12 +58,13 @@ class InviteService:
             # Criar o convite
             invite = Invite(
                 client_id=client_id,
-                invited_email=invited_email,
+                invited_phone=invited_phone.strip(),
                 service_title=service_title,
                 service_description=service_description,
+                service_category=service_category,
                 original_value=original_value,
                 delivery_date=delivery_date,
-                expires_at=datetime.utcnow() + timedelta(days=expiration_days)
+                expires_at=delivery_date  # Expira na data do serviço
             )
             
             db.session.add(invite)
@@ -75,8 +74,9 @@ class InviteService:
                 'success': True,
                 'invite_id': invite.id,
                 'token': invite.token,
+                'invite_link': invite.invite_link,
                 'expires_at': invite.expires_at,
-                'message': f'Convite criado com sucesso. Token: {invite.token}'
+                'message': f'Convite criado com sucesso!'
             }
             
         except SQLAlchemyError as e:
@@ -104,8 +104,9 @@ class InviteService:
         
         return [{
             'id': invite.id,
-            'invited_email': invite.invited_email,
+            'invited_phone': invite.invited_phone,
             'service_title': invite.service_title,
+            'service_category': invite.service_category,
             'original_value': float(invite.original_value),
             'final_value': float(invite.final_value) if invite.final_value else None,
             'delivery_date': invite.delivery_date,
@@ -114,14 +115,15 @@ class InviteService:
             'expires_at': invite.expires_at,
             'responded_at': invite.responded_at,
             'token': invite.token,
+            'invite_link': invite.invite_link,
             'is_expired': invite.is_expired,
             'can_be_accepted': invite.can_be_accepted
         } for invite in invites]
     
     @staticmethod
-    def get_invites_for_email(email, status=None):
-        """Retorna convites recebidos por um email"""
-        query = Invite.query.filter_by(invited_email=email)
+    def get_invites_for_phone(phone, status=None):
+        """Retorna convites recebidos por um telefone"""
+        query = Invite.query.filter_by(invited_phone=phone)
         
         if status:
             query = query.filter_by(status=status)
@@ -134,6 +136,7 @@ class InviteService:
             'client_name': invite.client.nome if invite.client else 'Cliente não encontrado',
             'service_title': invite.service_title,
             'service_description': invite.service_description,
+            'service_category': invite.service_category,
             'original_value': float(invite.original_value),
             'final_value': float(invite.final_value) if invite.final_value else None,
             'delivery_date': invite.delivery_date,
@@ -142,6 +145,7 @@ class InviteService:
             'expires_at': invite.expires_at,
             'responded_at': invite.responded_at,
             'token': invite.token,
+            'invite_link': invite.invite_link,
             'is_expired': invite.is_expired,
             'can_be_accepted': invite.can_be_accepted
         } for invite in invites]
@@ -170,9 +174,9 @@ class InviteService:
         if not provider:
             raise ValueError("Prestador não encontrado")
         
-        # Verificar se o email do convite corresponde ao prestador
-        if provider.email != invite.invited_email:
-            raise ValueError("Este convite não foi enviado para seu email")
+        # Verificar se o telefone do convite corresponde ao prestador
+        if provider.phone != invite.invited_phone:
+            raise ValueError("Este convite não foi enviado para seu telefone")
         
         # Validar saldo do prestador para taxa de contestação
         if not WalletService.has_sufficient_balance(provider_id, InviteService.CONTESTATION_FEE):
@@ -226,9 +230,9 @@ class InviteService:
         if not provider:
             raise ValueError("Prestador não encontrado")
         
-        # Verificar se o email do convite corresponde ao prestador
-        if provider.email != invite.invited_email:
-            raise ValueError("Este convite não foi enviado para seu email")
+        # Verificar se o telefone do convite corresponde ao prestador
+        if provider.phone != invite.invited_phone:
+            raise ValueError("Este convite não foi enviado para seu telefone")
         
         try:
             # Atualizar convite
@@ -261,9 +265,9 @@ class InviteService:
         if not invite.can_be_accepted:
             raise ValueError("Convite não pode ser alterado")
         
-        # Verificar se prestador existe e corresponde ao email
+        # Verificar se prestador existe e corresponde ao telefone
         provider = User.query.get(provider_id)
-        if not provider or provider.email != invite.invited_email:
+        if not provider or provider.phone != invite.invited_phone:
             raise ValueError("Prestador não autorizado para este convite")
         
         try:
@@ -308,8 +312,8 @@ class InviteService:
         if invite.status != 'aceito':
             raise ValueError("Apenas convites aceitos podem ser convertidos em ordens")
         
-        # Encontrar prestador pelo email
-        provider = User.query.filter_by(email=invite.invited_email).first()
+        # Encontrar prestador pelo telefone
+        provider = User.query.filter_by(phone=invite.invited_phone).first()
         if not provider:
             raise ValueError("Prestador não encontrado no sistema")
         

@@ -290,6 +290,150 @@ def criar_tokens():
     
     return render_template('admin/criar_tokens.html')
 
+@admin_bp.route('/tokens/solicitacoes')
+@admin_required
+def solicitacoes_tokens():
+    """Gerenciar solicitações de tokens dos usuários"""
+    try:
+        from models import TokenRequest, User
+        
+        # Obter todas as solicitações ordenadas por data
+        solicitacoes = TokenRequest.query.order_by(TokenRequest.created_at.desc()).all()
+        
+        # Estatísticas
+        stats = {
+            'total': len(solicitacoes),
+            'pendentes': len([s for s in solicitacoes if s.status == 'pending']),
+            'aprovadas': len([s for s in solicitacoes if s.status == 'approved']),
+            'rejeitadas': len([s for s in solicitacoes if s.status == 'rejected']),
+            'valor_total_pendente': sum([s.amount for s in solicitacoes if s.status == 'pending'])
+        }
+        
+        return render_template('admin/solicitacoes_tokens.html', 
+                             solicitacoes=solicitacoes,
+                             stats=stats)
+    except Exception as e:
+        import traceback
+        logger.error(f'Erro detalhado ao carregar solicitações: {str(e)}')
+        logger.error(f'Traceback: {traceback.format_exc()}')
+        flash(f'Erro ao carregar solicitações: {str(e)}', 'error')
+        return render_template('admin/solicitacoes_tokens.html', 
+                             solicitacoes=[],
+                             stats={})
+
+@admin_bp.route('/tokens/solicitacoes/<int:request_id>/processar', methods=['POST'])
+@admin_required
+def processar_solicitacao_token(request_id):
+    """Processar (aprovar/rejeitar) solicitação de token"""
+    try:
+        from models import TokenRequest, User
+        from services.wallet_service import WalletService
+        from datetime import datetime
+        import logging
+        
+        logger = logging.getLogger('app')
+        logger.info(f"Processando solicitação {request_id}")
+        
+        solicitacao = TokenRequest.query.get(request_id)
+        if not solicitacao:
+            logger.error(f"Solicitação {request_id} não encontrada")
+            flash('Solicitação não encontrada.', 'error')
+            return redirect(url_for('admin.solicitacoes_tokens'))
+        
+        action = request.form.get('action')
+        admin_notes = request.form.get('admin_notes', '')
+        
+        logger.info(f"Action: {action}, Admin notes: {admin_notes}")
+        
+        if action == 'approve':
+            logger.info(f"Aprovando solicitação {request_id}")
+            # Aprovar e adicionar tokens
+            user = User.query.get(solicitacao.user_id)
+            if user:
+                logger.info(f"Usuário encontrado: {user.nome}")
+                # Usar WalletService para adicionar tokens
+                result = WalletService.admin_sell_tokens_to_user(
+                    user_id=user.id,
+                    amount=solicitacao.amount,
+                    description=f'Aprovação de solicitação #{solicitacao.id}'
+                )
+                logger.info(f"Tokens adicionados com sucesso")
+                
+                # Atualizar status da solicitação
+                solicitacao.status = 'approved'
+                solicitacao.processed_at = datetime.utcnow()
+                solicitacao.processed_by = session.get('admin_id')
+                solicitacao.admin_notes = admin_notes
+                
+                db.session.commit()
+                logger.info(f"Status da solicitação atualizado")
+                
+                flash(f'Solicitação aprovada! {solicitacao.amount} tokens adicionados para {user.nome}.', 'success')
+            else:
+                logger.error(f"Usuário {solicitacao.user_id} não encontrado")
+                flash('Usuário não encontrado.', 'error')
+                
+        elif action == 'reject':
+            logger.info(f"Rejeitando solicitação {request_id}")
+            # Rejeitar solicitação
+            solicitacao.status = 'rejected'
+            solicitacao.processed_at = datetime.utcnow()
+            solicitacao.processed_by = session.get('admin_id')
+            solicitacao.admin_notes = admin_notes
+            
+            db.session.commit()
+            logger.info(f"Solicitação rejeitada com sucesso")
+            
+            flash('Solicitação rejeitada.', 'info')
+        else:
+            logger.warning(f"Action inválida: {action}")
+            flash('Ação inválida.', 'error')
+        
+    except Exception as e:
+        logger.error(f'Erro ao processar solicitação {request_id}: {str(e)}')
+        import traceback
+        logger.error(f'Traceback: {traceback.format_exc()}')
+        flash(f'Erro ao processar solicitação: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.solicitacoes_tokens'))
+
+@admin_bp.route('/tokens/solicitacoes/<int:request_id>/comprovante')
+@admin_required
+def view_receipt(request_id):
+    """Visualizar comprovante de depósito"""
+    try:
+        from models import TokenRequest
+        import os
+        from flask import send_file
+        
+        solicitacao = TokenRequest.query.get(request_id)
+        if not solicitacao:
+            flash('Solicitação não encontrada.', 'error')
+            return redirect(url_for('admin.solicitacoes_tokens'))
+        
+        if not solicitacao.receipt_filename:
+            flash('Comprovante não encontrado.', 'error')
+            return redirect(url_for('admin.solicitacoes_tokens'))
+        
+        # Caminho do arquivo
+        file_path = os.path.join('uploads/receipts', solicitacao.receipt_filename)
+        
+        if not os.path.exists(file_path):
+            flash('Arquivo de comprovante não encontrado no servidor.', 'error')
+            return redirect(url_for('admin.solicitacoes_tokens'))
+        
+        # Retornar arquivo para visualização
+        return send_file(
+            file_path,
+            as_attachment=False,
+            download_name=solicitacao.receipt_original_name or solicitacao.receipt_filename
+        )
+        
+    except Exception as e:
+        logger.error(f'Erro ao visualizar comprovante {request_id}: {str(e)}')
+        flash(f'Erro ao visualizar comprovante: {str(e)}', 'error')
+        return redirect(url_for('admin.solicitacoes_tokens'))
+
 # ==============================================================================
 #  GESTÃO DE CONFIGURAÇÕES
 # ==============================================================================
