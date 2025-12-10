@@ -72,60 +72,53 @@
 <!-- Navegação por Abas -->
 <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="contratos-tab" data-bs-toggle="tab" data-bs-target="#contratos" type="button" role="tab">
-            <i class="fas fa-file-contract me-2"></i>Contratos
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#usuarios" type="button" role="tab">
-            <i class="fas fa-users me-2"></i>Usuários
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="financeiro-tab" data-bs-toggle="tab" data-bs-target="#financeiro" type="button" role="tab">
+        <button class="nav-link active" id="financeiro-tab" data-bs-toggle="tab" data-bs-target="#financeiro" type="button" role="tab" aria-controls="financeiro" aria-selected="true">
             <i class="fas fa-chart-line me-2"></i>Financeiro
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="convites-tab" data-bs-toggle="tab" data-bs-target="#convites" type="button" role="tab">
-            <i class="fas fa-envelope-open-text me-2"></i>Convites
+        <button class="nav-link" id="usuarios-tab" data-bs-toggle="tab" data-bs-target="#usuarios" type="button" role="tab" aria-controls="usuarios" aria-selected="false">
+            <i class="fas fa-users me-2"></i>Usuários
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="contratos-tab" data-bs-toggle="tab" data-bs-target="#contratos" type="button" role="tab" aria-controls="contratos" aria-selected="false">
+            <i class="fas fa-file-contract me-2"></i>Contratos
         </button>
     </li>
 </ul>
 
 <!-- Conteúdo das Abas -->
 <div class="tab-content" id="reportTabsContent">
-    <!-- Aba Contratos -->
-    <div class="tab-pane fade show active" id="contratos" role="tabpanel">
+    <!-- Aba Financeiro -->
+    <div class="tab-pane fade show active" id="financeiro" role="tabpanel" aria-labelledby="financeiro-tab">
         <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros - Relatório de Contratos</h5>
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros - Relatório Financeiro</h5>
             </div>
             <div class="card-body">
-                <form method="GET" action="{{ url_for('admin.relatorios_contratos') }}" class="row g-3">
+                <form method="GET" action="{{ url_for('admin.relatorios') }}#financeiro" class="row g-3">
+                    <input type="hidden" name="tab" value="financeiro">
                     <div class="col-md-3">
                         <label class="form-label">Data Inicial</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
+                        <input type="date" name="start_date_financeiro" class="form-control" value="{{ request.args.get('start_date_financeiro', '') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Data Final</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
+                        <input type="date" name="end_date_financeiro" class="form-control" value="{{ request.args.get('end_date_financeiro', '') }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
-                            <option value="todos">Todos os Status</option>
-                            <option value="disponivel" {{ 'selected' if request.args.get('status') == 'disponivel' }}>Disponível</option>
-                            <option value="aceita" {{ 'selected' if request.args.get('status') == 'aceita' }}>Aceita</option>
-                            <option value="em_andamento" {{ 'selected' if request.args.get('status') == 'em_andamento' }}>Em Andamento</option>
-                            <option value="concluida" {{ 'selected' if request.args.get('status') == 'concluida' }}>Concluída</option>
-                            <option value="cancelada" {{ 'selected' if request.args.get('status') == 'cancelada' }}>Cancelada</option>
-                            <option value="disputada" {{ 'selected' if request.args.get('status') == 'disputada' }}>Disputada</option>
+                        <label class="form-label">Tipo de Transação</label>
+                        <select name="tipo_transacao" class="form-select">
+                            <option value="todos">Todos os Tipos</option>
+                            <option value="ordem" {{ 'selected' if request.args.get('tipo_transacao') == 'ordem' }}>Ordens</option>
+                            <option value="taxa" {{ 'selected' if request.args.get('tipo_transacao') == 'taxa' }}>Taxas</option>
+                            <option value="adicao" {{ 'selected' if request.args.get('tipo_transacao') == 'adicao' }}>Adição de Tokens</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-info w-100 text-white">
                             <i class="fas fa-search me-1"></i>Filtrar
                         </button>
                     </div>
@@ -134,43 +127,61 @@
         </div>
         
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Exportar Relatório de Contratos</h5>
-                <div>
-                    <a href="{{ url_for('admin.export_contracts', format='excel') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-success btn-sm me-2">
-                        <i class="fas fa-file-excel me-1"></i>Excel
-                    </a>
-                    <a href="{{ url_for('admin.export_contracts', format='pdf') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-file-pdf me-1"></i>PDF
-                    </a>
-                </div>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Relatório Financeiro</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted">Relatório completo de contratos/ordens com filtros aplicados. Inclui dados do cliente, prestador, valores e status.</p>
+                <p class="text-muted mb-3">Visualize as estatísticas financeiras com transações, receitas de taxas, volume de negócios e análise por período.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Volume Total de Transações</h6>
+                                <h3 class="text-info">{{ "{:,.0f}".format(stats.volume_transacoes if stats and stats.volume_transacoes else 0) }} tokens</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Receita em Taxas</h6>
+                                <h3 class="text-success">{{ "{:,.0f}".format(stats.receita_taxas if stats and stats.receita_taxas else 0) }} tokens</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Tokens em Circulação</h6>
+                                <h3 class="text-warning">{{ "{:,.0f}".format(stats.tokens_em_circulacao if stats and stats.tokens_em_circulacao else 0) }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Aba Usuários -->
-    <div class="tab-pane fade" id="usuarios" role="tabpanel">
+    <div class="tab-pane fade" id="usuarios" role="tabpanel" aria-labelledby="usuarios-tab">
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header bg-success text-white">
                 <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros - Relatório de Usuários</h5>
             </div>
             <div class="card-body">
-                <form method="GET" action="{{ url_for('admin.relatorios_usuarios') }}" class="row g-3">
+                <form method="GET" action="{{ url_for('admin.relatorios') }}#usuarios" class="row g-3">
+                    <input type="hidden" name="tab" value="usuarios">
                     <div class="col-md-3">
-                        <label class="form-label">Data Inicial</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
+                        <label class="form-label">Data de Cadastro Inicial</label>
+                        <input type="date" name="start_date_usuarios" class="form-control" value="{{ request.args.get('start_date_usuarios', '') }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Data Final</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
+                        <label class="form-label">Data de Cadastro Final</label>
+                        <input type="date" name="end_date_usuarios" class="form-control" value="{{ request.args.get('end_date_usuarios', '') }}">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Tipo</label>
+                        <label class="form-label">Tipo de Usuário</label>
                         <select name="user_type" class="form-select">
                             <option value="todos">Todos</option>
                             <option value="cliente" {{ 'selected' if request.args.get('user_type') == 'cliente' }}>Cliente</option>
@@ -180,15 +191,15 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
+                        <select name="status_usuario" class="form-select">
                             <option value="todos">Todos</option>
-                            <option value="ativo" {{ 'selected' if request.args.get('status') == 'ativo' }}>Ativo</option>
-                            <option value="inativo" {{ 'selected' if request.args.get('status') == 'inativo' }}>Inativo</option>
+                            <option value="ativo" {{ 'selected' if request.args.get('status_usuario') == 'ativo' }}>Ativo</option>
+                            <option value="inativo" {{ 'selected' if request.args.get('status_usuario') == 'inativo' }}>Inativo</option>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-success w-100">
                             <i class="fas fa-search me-1"></i>Filtrar
                         </button>
                     </div>
@@ -197,96 +208,76 @@
         </div>
         
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Exportar Relatório de Usuários</h5>
-                <div>
-                    <a href="{{ url_for('admin.export_users', format='excel') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-success btn-sm me-2">
-                        <i class="fas fa-file-excel me-1"></i>Excel
-                    </a>
-                    <a href="{{ url_for('admin.export_users', format='pdf') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-file-pdf me-1"></i>PDF
-                    </a>
-                </div>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Relatório de Usuários</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted">Relatório completo de usuários com informações de carteira, transações e estatísticas de uso.</p>
+                <p class="text-muted mb-3">Visualize as estatísticas de usuários com informações de carteira, transações e estatísticas de uso.</p>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Total de Usuários</h6>
+                                <h3 class="text-primary">{{ stats.total_usuarios if stats and stats.total_usuarios else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Clientes</h6>
+                                <h3 class="text-info">{{ stats.total_clientes if stats and stats.total_clientes else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Prestadores</h6>
+                                <h3 class="text-success">{{ stats.total_prestadores if stats and stats.total_prestadores else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Usuários Duais</h6>
+                                <h3 class="text-warning">{{ stats.total_duais if stats and stats.total_duais else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Aba Financeiro -->
-    <div class="tab-pane fade" id="financeiro" role="tabpanel">
+    <!-- Aba Contratos -->
+    <div class="tab-pane fade" id="contratos" role="tabpanel" aria-labelledby="contratos-tab">
         <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros - Relatório Financeiro</h5>
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros - Relatório de Contratos</h5>
             </div>
             <div class="card-body">
-                <form method="GET" action="{{ url_for('admin.relatorios_financeiro') }}" class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Data Inicial</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Data Final</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-search me-1"></i>Filtrar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Exportar Relatório Financeiro</h5>
-                <div>
-                    <a href="{{ url_for('admin.export_financial', format='excel') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-success btn-sm me-2">
-                        <i class="fas fa-file-excel me-1"></i>Excel
-                    </a>
-                    <a href="{{ url_for('admin.export_financial', format='pdf') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-file-pdf me-1"></i>PDF
-                    </a>
-                </div>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">Relatório financeiro com transações, receitas de taxas, volume de negócios e análise por período.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Aba Convites -->
-    <div class="tab-pane fade" id="convites" role="tabpanel">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros - Relatório de Convites</h5>
-            </div>
-            <div class="card-body">
-                <form method="GET" action="{{ url_for('admin.relatorios_convites') }}" class="row g-3">
+                <form method="GET" action="{{ url_for('admin.relatorios') }}#contratos" class="row g-3">
+                    <input type="hidden" name="tab" value="contratos">
                     <div class="col-md-3">
                         <label class="form-label">Data Inicial</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
+                        <input type="date" name="start_date_contratos" class="form-control" value="{{ request.args.get('start_date_contratos', '') }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Data Final</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
+                        <input type="date" name="end_date_contratos" class="form-control" value="{{ request.args.get('end_date_contratos', '') }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
+                        <label class="form-label">Status da Ordem</label>
+                        <select name="status_ordem" class="form-select">
                             <option value="todos">Todos os Status</option>
-                            <option value="pendente" {{ 'selected' if request.args.get('status') == 'pendente' }}>Pendente</option>
-                            <option value="aceito" {{ 'selected' if request.args.get('status') == 'aceito' }}>Aceito</option>
-                            <option value="recusado" {{ 'selected' if request.args.get('status') == 'recusado' }}>Recusado</option>
-                            <option value="expirado" {{ 'selected' if request.args.get('status') == 'expirado' }}>Expirado</option>
-                            <option value="convertido" {{ 'selected' if request.args.get('status') == 'convertido' }}>Convertido</option>
+                            <option value="aguardando_execucao" {{ 'selected' if request.args.get('status_ordem') == 'aguardando_execucao' }}>Aguardando Execução</option>
+                            <option value="servico_executado" {{ 'selected' if request.args.get('status_ordem') == 'servico_executado' }}>Serviço Executado</option>
+                            <option value="concluida" {{ 'selected' if request.args.get('status_ordem') == 'concluida' }}>Concluída</option>
+                            <option value="cancelada" {{ 'selected' if request.args.get('status_ordem') == 'cancelada' }}>Cancelada</option>
+                            <option value="contestada" {{ 'selected' if request.args.get('status_ordem') == 'contestada' }}>Contestada</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -300,21 +291,46 @@
         </div>
         
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Exportar Relatório de Convites</h5>
-                <div>
-                    <a href="{{ url_for('admin.export_invites', format='excel') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-success btn-sm me-2">
-                        <i class="fas fa-file-excel me-1"></i>Excel
-                    </a>
-                    <a href="{{ url_for('admin.export_invites', format='pdf') }}{{ '?' + request.query_string.decode() if request.query_string }}" 
-                       class="btn btn-outline-danger btn-sm">
-                        <i class="fas fa-file-pdf me-1"></i>PDF
-                    </a>
-                </div>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Relatório de Contratos/Ordens</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted">Relatório de convites com taxas de aceitação, conversão e análise de performance do sistema de convites.</p>
+                <p class="text-muted mb-3">Visualize as estatísticas de contratos/ordens com filtros aplicados. Inclui dados do cliente, prestador, valores e status.</p>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Total de Ordens</h6>
+                                <h3 class="text-primary">{{ stats.total_ordens if stats and stats.total_ordens else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Ordens Ativas</h6>
+                                <h3 class="text-warning">{{ stats.ordens_ativas if stats and stats.ordens_ativas else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Ordens Concluídas</h6>
+                                <h3 class="text-success">{{ stats.ordens_concluidas if stats and stats.ordens_concluidas else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6 class="text-muted">Ordens Contestadas</h6>
+                                <h3 class="text-danger">{{ stats.ordens_contestadas if stats and stats.ordens_contestadas else 0 }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -324,4 +340,51 @@
     <i class="fas fa-info-circle me-2"></i>
     <strong>Nota:</strong> Os relatórios são gerados em tempo real com base nos dados atuais do sistema. Use os filtros em cada aba para personalizar os dados exportados.
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Detectar hash na URL ao carregar a página
+    function activateTabFromHash() {
+        let hash = window.location.hash;
+        
+        // Se não houver hash, usar a primeira aba (financeiro)
+        if (!hash) {
+            hash = '#financeiro';
+        }
+        
+        // Verificar se o hash corresponde a uma aba válida
+        const validTabs = ['#financeiro', '#usuarios', '#contratos'];
+        if (!validTabs.includes(hash)) {
+            hash = '#financeiro'; // Fallback para primeira aba
+        }
+        
+        // Ativar a aba correspondente
+        const tabButton = document.querySelector(`button[data-bs-target="${hash}"]`);
+        if (tabButton) {
+            const bsTab = new bootstrap.Tab(tabButton);
+            bsTab.show();
+        }
+    }
+    
+    // Ativar aba ao carregar a página
+    activateTabFromHash();
+    
+    // Atualizar hash da URL ao trocar de aba
+    const tabButtons = document.querySelectorAll('#reportTabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach(function(button) {
+        button.addEventListener('shown.bs.tab', function(event) {
+            const target = event.target.getAttribute('data-bs-target');
+            if (target) {
+                // Atualizar URL sem recarregar a página
+                history.pushState(null, null, target);
+            }
+        });
+    });
+    
+    // Detectar mudanças no hash (navegação com botão voltar/avançar)
+    window.addEventListener('hashchange', function() {
+        activateTabFromHash();
+    });
+});
+</script>
 {% endblock %}

@@ -1,27 +1,13 @@
 {% extends "admin/base_admin.html" %}
 
-{% block title %}Analisar Contestação #{{ contestacao.id }} - Admin{% endblock %}
+{% block title %}Analisar Contestação - Ordem #{{ order.id }} - Admin{% endblock %}
 
 {% block admin_content %}
-<div class="mb-4">
-    <a href="{{ url_for('admin.contestacoes') }}" class="btn btn-outline-secondary">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-gavel me-2"></i>Arbitragem de Contestação - Ordem #{{ order.id }}</h2>
+    <a href="{{ url_for('admin.contestacoes') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left me-1"></i>Voltar para Contestações
     </a>
-</div>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-gavel me-2"></i>Análise de Contestação #{{ contestacao.id }}</h2>
-    <div>
-        {% if contestacao.status == 'pendente' %}
-            <span class="badge bg-danger fs-6">Pendente</span>
-        {% elif contestacao.status == 'em_analise' %}
-            <span class="badge bg-warning fs-6">Em Análise</span>
-        {% elif contestacao.status == 'resolvida' %}
-            <span class="badge bg-success fs-6">Resolvida</span>
-        {% else %}
-            <span class="badge bg-secondary fs-6">Rejeitada</span>
-        {% endif %}
-    </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -35,235 +21,350 @@
     {% endif %}
 {% endwith %}
 
-<div class="row">
-    <!-- Informações do Contrato -->
-    <div class="col-md-6 mb-4">
+<!-- Informações da Ordem -->
+<div class="row mb-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Informações do Contrato</h5>
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações da Ordem</h5>
             </div>
             <div class="card-body">
-                <table class="table table-borderless mb-0">
+                <table class="table table-sm">
                     <tr>
-                        <td><strong>ID do Contrato:</strong></td>
-                        <td>#{{ contestacao.contrato_id }}</td>
+                        <th width="40%">ID da Ordem:</th>
+                        <td><strong>#{{ order.id }}</strong></td>
                     </tr>
                     <tr>
-                        <td><strong>Cliente:</strong></td>
-                        <td>{{ contestacao.cliente_nome }}</td>
+                        <th>Serviço:</th>
+                        <td>{{ order.title }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Prestador:</strong></td>
-                        <td>{{ contestacao.prestador_nome }}</td>
+                        <th>Descrição:</th>
+                        <td>{{ order.description }}</td>
                     </tr>
                     <tr>
-                        <td><strong>Valor do Contrato:</strong></td>
-                        <td><strong class="text-primary">R$ {{ "%.2f"|format(contestacao.valor_contrato) }}</strong></td>
+                        <th>Valor do Serviço:</th>
+                        <td><strong class="text-success">R$ {{ "%.2f"|format(order.value) }}</strong></td>
                     </tr>
                     <tr>
-                        <td><strong>Data de Criação:</strong></td>
-                        <td>{{ contestacao.contrato_data.strftime('%d/%m/%Y') if contestacao.contrato_data else '-' }}</td>
+                        <th>Status:</th>
+                        <td><span class="badge bg-warning">{{ order.status }}</span></td>
                     </tr>
                     <tr>
-                        <td><strong>Status do Contrato:</strong></td>
-                        <td><span class="badge bg-warning">Em Disputa</span></td>
+                        <th>Criada em:</th>
+                        <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Concluída em:</th>
+                        <td>{{ order.completed_at.strftime('%d/%m/%Y %H:%M') if order.completed_at else '-' }}</td>
                     </tr>
                 </table>
             </div>
         </div>
     </div>
-
-    <!-- Informações da Contestação -->
-    <div class="col-md-6 mb-4">
+    
+    <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Detalhes da Contestação</h5>
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Partes Envolvidas</h5>
             </div>
             <div class="card-body">
-                <table class="table table-borderless mb-0">
+                <div class="mb-3">
+                    <h6 class="text-primary"><i class="fas fa-user me-2"></i>Cliente</h6>
+                    <div><strong>{{ order.client.nome if order.client else 'N/A' }}</strong></div>
+                    <div class="text-muted">{{ order.client.email if order.client else '' }}</div>
+                    <div class="text-muted">{{ order.client.phone if order.client else '' }}</div>
+                </div>
+                
+                <hr>
+                
+                <div>
+                    <h6 class="text-success"><i class="fas fa-user-tie me-2"></i>Prestador</h6>
+                    <div><strong>{{ order.provider.nome if order.provider else 'N/A' }}</strong></div>
+                    <div class="text-muted">{{ order.provider.email if order.provider else '' }}</div>
+                    <div class="text-muted">{{ order.provider.phone if order.provider else '' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da Contestação -->
+<div class="card mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Detalhes da Contestação</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm">
                     <tr>
-                        <td><strong>Contestante:</strong></td>
-                        <td>{{ contestacao.usuario_nome }} ({{ contestacao.usuario_tipo }})</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Tipo:</strong></td>
-                        <td><span class="badge bg-secondary">{{ contestacao.tipo }}</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Data da Contestação:</strong></td>
-                        <td>{{ contestacao.created_at.strftime('%d/%m/%Y %H:%M') if contestacao.created_at else '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Valor em Disputa:</strong></td>
-                        <td><strong class="text-danger">R$ {{ "%.2f"|format(contestacao.valor) }}</strong></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Prioridade:</strong></td>
+                        <th width="40%">Aberta por:</th>
                         <td>
-                            {% if contestacao.prioridade == 'alta' %}
-                                <span class="badge bg-danger">Alta</span>
-                            {% elif contestacao.prioridade == 'media' %}
-                                <span class="badge bg-warning">Média</span>
+                            {% if order.dispute_opened_by == order.client_id %}
+                                <span class="badge bg-info">Cliente</span> - {{ order.client.nome if order.client else 'N/A' }}
                             {% else %}
-                                <span class="badge bg-info">Baixa</span>
+                                <span class="badge bg-primary">Prestador</span> - {{ order.provider.nome if order.provider else 'N/A' }}
                             {% endif %}
                         </td>
                     </tr>
+                    <tr>
+                        <th>Data de Abertura:</th>
+                        <td>{{ order.dispute_opened_at.strftime('%d/%m/%Y %H:%M') if order.dispute_opened_at else '-' }}</td>
+                    </tr>
                 </table>
             </div>
         </div>
+        
+        <hr>
+        
+        <h6 class="text-danger"><i class="fas fa-comment-alt me-2"></i>Declaração do Cliente:</h6>
+        <div class="alert alert-light">
+            {{ order.dispute_client_statement if order.dispute_client_statement else 'Nenhuma declaração fornecida.' }}
+        </div>
+        
+        {% if order.dispute_provider_response %}
+        <h6 class="text-primary"><i class="fas fa-reply me-2"></i>Resposta do Prestador:</h6>
+        <div class="alert alert-light">
+            {{ order.dispute_provider_response }}
+        </div>
+        {% endif %}
     </div>
 </div>
 
-<!-- Motivo da Contestação -->
+<!-- Provas Apresentadas -->
+{% if order.dispute_evidence_urls %}
 <div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-comment-alt me-2"></i>Motivo da Contestação</h5>
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Provas Apresentadas ({{ order.dispute_evidence_urls|length }} arquivo(s))</h5>
     </div>
     <div class="card-body">
-        <p class="mb-0">{{ contestacao.motivo or 'Nenhum motivo fornecido' }}</p>
-    </div>
-</div>
-
-<!-- Evidências -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Evidências Anexadas</h5>
-    </div>
-    <div class="card-body">
-        {% if contestacao.evidencias %}
-            <div class="row">
-                {% for evidencia in contestacao.evidencias %}
-                <div class="col-md-3 mb-3">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-file fa-3x text-primary mb-2"></i>
-                            <p class="mb-1 small">{{ evidencia.nome }}</p>
-                            <a href="{{ evidencia.url }}" class="btn btn-sm btn-primary" target="_blank">
-                                <i class="fas fa-download"></i> Baixar
+        <div class="row">
+            {% for evidence in order.dispute_evidence_urls %}
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        {% set evidence_url = evidence.url if evidence is mapping else evidence %}
+                        {% set evidence_type = evidence.type if evidence is mapping else evidence_url.split('.')[-1].lower() %}
+                        {% set evidence_filename = evidence.filename if evidence is mapping else evidence_url.split('/')[-1] %}
+                        
+                        {% if evidence_type in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <img src="{{ evidence_url }}" class="img-fluid mb-2" alt="Prova" style="max-height: 150px;">
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-external-link-alt me-1"></i>Ver Imagem
                             </a>
+                        {% elif evidence_type == 'pdf' %}
+                            <i class="fas fa-file-pdf fa-3x text-danger mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-danger">
+                                <i class="fas fa-download me-1"></i>Baixar PDF
+                            </a>
+                        {% elif evidence_type in ['mp4', 'avi', 'mov'] %}
+                            <i class="fas fa-file-video fa-3x text-info mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-info">
+                                <i class="fas fa-play me-1"></i>Ver Vídeo
+                            </a>
+                        {% else %}
+                            <i class="fas fa-file fa-3x text-secondary mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-download me-1"></i>Baixar Arquivo
+                            </a>
+                        {% endif %}
+                        
+                        {% if evidence is mapping and evidence.size %}
+                        <div class="text-muted small mt-1">
+                            Tamanho: {{ "%.2f"|format(evidence.size / 1024) }} KB
                         </div>
+                        {% endif %}
                     </div>
                 </div>
-                {% endfor %}
             </div>
-        {% else %}
-            <p class="text-muted mb-0">Nenhuma evidência anexada</p>
-        {% endif %}
+            {% endfor %}
+        </div>
     </div>
 </div>
-
-<!-- Histórico de Ações -->
+{% elif order.dispute_evidence %}
+<!-- Fallback para campo antigo dispute_evidence -->
 <div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Histórico de Ações</h5>
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Provas Apresentadas ({{ order.dispute_evidence|length }} arquivo(s))</h5>
     </div>
     <div class="card-body">
-        {% if contestacao.historico %}
-            <div class="timeline">
-                {% for acao in contestacao.historico %}
-                <div class="timeline-item mb-3">
-                    <div class="d-flex">
-                        <div class="me-3">
-                            <i class="fas fa-circle text-primary"></i>
-                        </div>
-                        <div>
-                            <p class="mb-0"><strong>{{ acao.descricao }}</strong></p>
-                            <small class="text-muted">{{ acao.data.strftime('%d/%m/%Y %H:%M') }} - {{ acao.usuario }}</small>
-                        </div>
+        <div class="row">
+            {% for evidence_url in order.dispute_evidence %}
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        {% set evidence_type = evidence_url.split('.')[-1].lower() %}
+                        {% set evidence_filename = evidence_url.split('/')[-1] %}
+                        
+                        {% if evidence_type in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <img src="{{ evidence_url }}" class="img-fluid mb-2" alt="Prova" style="max-height: 150px;">
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-external-link-alt me-1"></i>Ver Imagem
+                            </a>
+                        {% elif evidence_type == 'pdf' %}
+                            <i class="fas fa-file-pdf fa-3x text-danger mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-danger">
+                                <i class="fas fa-download me-1"></i>Baixar PDF
+                            </a>
+                        {% elif evidence_type in ['mp4', 'avi', 'mov'] %}
+                            <i class="fas fa-file-video fa-3x text-info mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-info">
+                                <i class="fas fa-play me-1"></i>Ver Vídeo
+                            </a>
+                        {% else %}
+                            <i class="fas fa-file fa-3x text-secondary mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-download me-1"></i>Baixar Arquivo
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
-                {% endfor %}
             </div>
-        {% else %}
-            <p class="text-muted mb-0">Nenhuma ação registrada ainda</p>
-        {% endif %}
+            {% endfor %}
+        </div>
     </div>
 </div>
+{% endif %}
 
-<!-- Ações do Administrador -->
-{% if contestacao.status in ['pendente', 'em_analise'] %}
-<div class="card border-warning">
-    <div class="card-header bg-warning text-dark">
-        <h5 class="mb-0"><i class="fas fa-gavel me-2"></i>Decisão do Administrador</h5>
+<!-- Transações Relacionadas -->
+{% if transactions %}
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Histórico de Transações</h5>
     </div>
     <div class="card-body">
-        <form method="POST" action="{{ url_for('admin.decidir_contestacao', contestacao_id=contestacao.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="mb-3">
-                <label class="form-label"><strong>Decisão:</strong></label>
-                <select name="decisao" class="form-select" required>
-                    <option value="">Selecione uma decisão</option>
-                    <option value="aprovar_cliente">Aprovar - Favor do Cliente (Reembolso Total)</option>
-                    <option value="aprovar_prestador">Aprovar - Favor do Prestador (Pagamento Total)</option>
-                    <option value="dividir_50_50">Dividir 50/50</option>
-                    <option value="dividir_personalizado">Divisão Personalizada</option>
-                    <option value="rejeitar">Rejeitar Contestação</option>
-                </select>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Usuário</th>
+                        <th>Valor</th>
+                        <th>Descrição</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td><small>{{ transaction.transaction_id }}</small></td>
+                        <td><span class="badge bg-secondary">{{ transaction.type }}</span></td>
+                        <td>{{ transaction.user.nome if transaction.user else 'N/A' }}</td>
+                        <td class="{% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                            R$ {{ "%.2f"|format(transaction.amount|abs) }}
+                        </td>
+                        <td><small>{{ transaction.description }}</small></td>
+                        <td><small>{{ transaction.created_at.strftime('%d/%m/%Y %H:%M') if transaction.created_at else '-' }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Formulário de Decisão -->
+<div class="card border-warning">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Decisão Administrativa</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Atenção:</strong> Sua decisão é final e irá processar automaticamente os pagamentos. 
+            Analise cuidadosamente todas as provas antes de decidir.
+        </div>
+        
+        <form method="POST" action="{{ url_for('admin.resolver_contestacao', order_id=order.id) }}" id="formResolverContestacao">
+            <div class="mb-4">
+                <label class="form-label"><strong>Quem deve vencer esta disputa?</strong> <span class="text-danger">*</span></label>
+                
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="winner" id="winnerClient" value="client" required>
+                    <label class="form-check-label" for="winnerClient">
+                        <strong class="text-info">Cliente</strong> - {{ order.client.nome if order.client else 'N/A' }}
+                        <div class="text-muted small">
+                            O valor do serviço será devolvido ao cliente. A taxa de contestação do cliente será transferida para a plataforma.
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="winner" id="winnerProvider" value="provider" required>
+                    <label class="form-check-label" for="winnerProvider">
+                        <strong class="text-primary">Prestador</strong> - {{ order.provider.nome if order.provider else 'N/A' }}
+                        <div class="text-muted small">
+                            O prestador receberá o valor do serviço (menos a taxa da plataforma). A taxa de contestação do cliente será transferida para a plataforma.
+                        </div>
+                    </label>
+                </div>
             </div>
             
-            <div class="mb-3" id="divisao-personalizada" style="display: none;">
-                <label class="form-label">Percentual para o Cliente (%):</label>
-                <input type="number" name="percentual_cliente" class="form-control" min="0" max="100" step="1">
-                <small class="text-muted">O restante será destinado ao prestador</small>
+            <div class="mb-4">
+                <label for="admin_notes" class="form-label">
+                    <strong>Justificativa da Decisão</strong> <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" id="admin_notes" name="admin_notes" rows="5" required 
+                          placeholder="Descreva os motivos que levaram à sua decisão. Esta justificativa será registrada no sistema e poderá ser consultada posteriormente."></textarea>
+                <div class="form-text">Mínimo de 20 caracteres. Seja claro e objetivo na justificativa.</div>
             </div>
             
-            <div class="mb-3">
-                <label class="form-label"><strong>Justificativa da Decisão:</strong></label>
-                <textarea name="justificativa" class="form-control" rows="4" required 
-                          placeholder="Explique detalhadamente o motivo da sua decisão..."></textarea>
-            </div>
-            
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-check me-1"></i>Confirmar Decisão
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-warning btn-lg" onclick="return confirm('Tem certeza que deseja resolver esta contestação? Esta ação é irreversível e processará os pagamentos automaticamente.')">
+                    <i class="fas fa-gavel me-2"></i>Resolver Contestação
                 </button>
-                <button type="button" class="btn btn-warning" onclick="marcarEmAnalise()">
-                    <i class="fas fa-clock me-1"></i>Marcar como Em Análise
-                </button>
+                <a href="{{ url_for('admin.contestacoes') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </a>
             </div>
         </form>
     </div>
 </div>
-{% else %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>
-    Esta contestação já foi {{ 'resolvida' if contestacao.status == 'resolvida' else 'rejeitada' }}.
-    {% if contestacao.decisao_justificativa %}
-    <br><br>
-    <strong>Justificativa:</strong> {{ contestacao.decisao_justificativa }}
-    {% endif %}
-</div>
-{% endif %}
 
 <script>
-document.querySelector('select[name="decisao"]')?.addEventListener('change', function() {
-    const divisaoDiv = document.getElementById('divisao-personalizada');
-    if (this.value === 'dividir_personalizado') {
-        divisaoDiv.style.display = 'block';
-    } else {
-        divisaoDiv.style.display = 'none';
+// Validação adicional do formulário
+document.getElementById('formResolverContestacao').addEventListener('submit', function(e) {
+    const adminNotes = document.getElementById('admin_notes').value.trim();
+    const winner = document.querySelector('input[name="winner"]:checked');
+    
+    if (!winner) {
+        e.preventDefault();
+        alert('Por favor, selecione o vencedor da disputa.');
+        return false;
+    }
+    
+    if (adminNotes.length < 20) {
+        e.preventDefault();
+        alert('A justificativa deve ter no mínimo 20 caracteres.');
+        return false;
+    }
+    
+    const winnerName = winner.value === 'client' ? 'cliente' : 'prestador';
+    const confirmMsg = `Confirma a resolução desta contestação a favor do ${winnerName}?\n\nEsta ação é IRREVERSÍVEL e processará os pagamentos automaticamente.`;
+    
+    if (!confirm(confirmMsg)) {
+        e.preventDefault();
+        return false;
     }
 });
-
-function marcarEmAnalise() {
-    if (confirm('Deseja marcar esta contestação como "Em Análise"?')) {
-        fetch('{{ url_for("admin.marcar_em_analise", contestacao_id=contestacao.id) }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
-                location.reload();
-            } else {
-                alert('Erro: ' + data.error);
-            }
-        });
-    }
-}
 </script>
 {% endblock %}

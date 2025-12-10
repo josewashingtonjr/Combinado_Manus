@@ -1,0 +1,176 @@
+/* ========================================
+   Estilos para Menus do Painel Admin
+   ======================================== */
+
+/* Menu Lateral - Estrutura Geral */
+.col-md-2.d-none.d-md-block {
+    display: block !important;
+}
+
+/* Cabeçalho do Menu Lateral */
+.sidebar-menu-header {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.sidebar-menu-header:hover {
+    background-color: #f8f9fa !important;
+}
+
+.sidebar-menu-header:active,
+.sidebar-menu-header[aria-expanded="true"] {
+    background-color: #e9ecef !important;
+}
+
+/* Ícone de Chevron com Transição */
+.transition-icon {
+    transition: transform 0.3s ease;
+}
+
+.sidebar-menu-header[aria-expanded="true"] .transition-icon {
+    transform: rotate(180deg);
+}
+
+/* Itens de Submenu */
+.sidebar-submenu-item {
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.sidebar-submenu-item:hover {
+    background-color: #f1f3f5 !important;
+    color: #0d6efd !important;
+    padding-left: 1.25rem !important;
+    border-left: 3px solid #0d6efd;
+}
+
+.sidebar-submenu-item:active,
+.sidebar-submenu-item.active {
+    background-color: #e7f1ff !important;
+    color: #0d6efd !important;
+    font-weight: 500;
+    border-left: 3px solid #0d6efd;
+}
+
+/* Espaçamento Consistente */
+.list-group-item.p-0 {
+    padding: 0 !important;
+}
+
+.list-group-item-action {
+    padding: 0.75rem 1rem;
+}
+
+/* Badges de Notificação */
+.badge.bg-warning {
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+    border-radius: 10px;
+}
+
+/* Ícones do Menu */
+.sidebar-menu-header i,
+.sidebar-submenu-item i {
+    width: 1.25rem;
+    text-align: center;
+}
+
+/* Card do Menu Lateral */
+.card.shadow-sm {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.card-header.bg-primary {
+    border-radius: 8px 8px 0 0;
+}
+
+/* Estados de Hover para Links Principais */
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+/* Navbar Superior - Consistência */
+.navbar-nav .nav-link {
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-nav .nav-link:active,
+.navbar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 500;
+}
+
+/* Dropdown da Navbar */
+.navbar-nav .dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #dee2e6;
+}
+
+.navbar-nav .dropdown-item {
+    transition: all 0.2s ease;
+    padding: 0.5rem 1rem;
+}
+
+.navbar-nav .dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+    padding-left: 1.25rem;
+}
+
+.navbar-nav .dropdown-item:active {
+    background-color: #e7f1ff;
+}
+
+/* Responsividade - Mobile */
+@media (max-width: 767.98px) {
+    .col-md-2.d-none.d-md-block {
+        display: none !important;
+    }
+    
+    .navbar-collapse {
+        background-color: #0d6efd;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Animações Suaves */
+.collapse {
+    transition: height 0.3s ease;
+}
+
+/* Cores Consistentes para Ícones */
+.text-primary { color: #0d6efd !important; }
+.text-success { color: #198754 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-danger { color: #dc3545 !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-secondary { color: #6c757d !important; }
+.text-muted { color: #6c757d !important; }
+
+/* Acessibilidade - Foco */
+.sidebar-menu-header:focus,
+.sidebar-submenu-item:focus,
+.nav-link:focus,
+.dropdown-item:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Fallback sem JavaScript */
+.no-js .collapse {
+    display: block !important;
+    height: auto !important;
+}

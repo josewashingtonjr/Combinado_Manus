@@ -1,0 +1,887 @@
+{% extends "base.html" %}
+
+{% block title %}Pré-Ordem #{{ pre_order.id }} - {{ pre_order.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para o template de pré-ordem */
+    .pre-order-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    
+    .value-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .value-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .value-original {
+        color: #6c757d;
+        text-decoration: line-through;
+    }
+    
+    .value-current {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .value-difference {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .value-increase {
+        color: #dc3545;
+    }
+    
+    .value-decrease {
+        color: #28a745;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 2rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -2.5rem;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #007bff;
+    }
+    
+    .timeline-item.proposal::before {
+        background: #ffc107;
+        box-shadow: 0 0 0 2px #ffc107;
+    }
+    
+    .timeline-item.acceptance::before {
+        background: #28a745;
+        box-shadow: 0 0 0 2px #28a745;
+    }
+    
+    .timeline-item.rejection::before {
+        background: #dc3545;
+        box-shadow: 0 0 0 2px #dc3545;
+    }
+    
+    .status-badge-large {
+        font-size: 1.1rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+    }
+    
+    .action-button {
+        min-width: 150px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .info-section {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 5px;
+    }
+    
+    .proposal-form {
+        background: #fff;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 2rem;
+    }
+    
+    .expiration-warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    
+    .expiration-danger {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .pre-order-header {
+            padding: 1rem;
+        }
+        
+        .value-current {
+            font-size: 1.5rem;
+        }
+        
+        .action-button {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .timeline {
+            padding-left: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4" data-pre-order-id="{{ pre_order.id }}" data-user-id="{{ user.id }}" data-user-role="{{ user_role }}">
+    <!-- Cabeçalho da Pré-Ordem -->
+    <div class="pre-order-header">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div>
+                <h2 class="mb-2">
+                    <i class="fas fa-handshake me-2"></i>
+                    {{ pre_order.title }}
+                </h2>
+                <p class="mb-0 opacity-75">
+                    <i class="fas fa-hashtag"></i> Pré-Ordem #{{ pre_order.id }}
+                </p>
+            </div>
+            <div class="text-end">
+                <span class="badge {{ pre_order.status_color_class }} status-badge-large" data-pre-order-status="{{ pre_order.status }}">
+                    {{ pre_order.status_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertas de Expiração -->
+    {% if pre_order.is_near_expiration and pre_order.status not in ['convertida', 'cancelada', 'expirada'] %}
+    <div class="expiration-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Atenção!</strong> Esta pré-ordem expira em menos de 24 horas. 
+        Restam aproximadamente <strong>{{ "%.1f"|format(pre_order.days_until_expiration * 24) }} horas</strong>.
+    </div>
+    {% elif pre_order.days_until_expiration <= 3 and pre_order.status not in ['convertida', 'cancelada', 'expirada'] %}
+    <div class="expiration-warning">
+        <i class="fas fa-clock me-2"></i>
+        <strong>Aviso:</strong> Esta pré-ordem expira em <strong>{{ "%.1f"|format(pre_order.days_until_expiration) }} dias</strong>.
+    </div>
+    {% endif %}
+    
+    <!-- Informações Principais -->
+    <div class="row mb-4">
+        <!-- Card de Valores -->
+        <div class="col-md-4 mb-3">
+            <div class="value-card">
+                <h6 class="text-muted mb-2">Valor Atual</h6>
+                <div class="value-current">R$ {{ "%.2f"|format(pre_order.current_value) }}</div>
+                {% if pre_order.current_value != pre_order.original_value %}
+                <div class="mt-2">
+                    <small class="value-original">Original: R$ {{ "%.2f"|format(pre_order.original_value) }}</small>
+                </div>
+                <div class="value-difference {% if pre_order.value_change_percentage > 0 %}value-increase{% else %}value-decrease{% endif %}">
+                    {% if pre_order.value_change_percentage > 0 %}
+                        <i class="fas fa-arrow-up"></i> +{{ "%.1f"|format(pre_order.value_change_percentage) }}%
+                    {% else %}
+                        <i class="fas fa-arrow-down"></i> {{ "%.1f"|format(pre_order.value_change_percentage) }}%
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Card de Prazo -->
+        <div class="col-md-4 mb-3">
+            <div class="value-card">
+                <h6 class="text-muted mb-2">Prazo de Entrega</h6>
+                <div class="value-current" style="font-size: 1.5rem;">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="mt-2">
+                    {{ pre_order.delivery_date.strftime('%d/%m/%Y') }}
+                </div>
+                <small class="text-muted">
+                    {{ pre_order.delivery_date.strftime('%H:%M') }}
+                </small>
+            </div>
+        </div>
+        
+        <!-- Card de Status de Aceitação -->
+        <div class="col-md-4 mb-3">
+            <div class="value-card">
+                <h6 class="text-muted mb-2">Aceitação dos Termos</h6>
+                <div class="mt-3">
+                    <div class="mb-2">
+                        <i class="fas fa-user me-2"></i>
+                        <strong>Cliente:</strong>
+                        {% if pre_order.client_accepted_terms %}
+                            <span class="badge bg-success" data-acceptance="client"><i class="fas fa-check"></i> Aceitou</span>
+                        {% else %}
+                            <span class="badge bg-warning" data-acceptance="client"><i class="fas fa-clock"></i> Pendente</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <i class="fas fa-user-cog me-2"></i>
+                        <strong>Prestador:</strong>
+                        {% if pre_order.provider_accepted_terms %}
+                            <span class="badge bg-success" data-acceptance="provider"><i class="fas fa-check"></i> Aceitou</span>
+                        {% else %}
+                            <span class="badge bg-warning" data-acceptance="provider"><i class="fas fa-clock"></i> Pendente</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Descrição e Detalhes -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Descrição do Serviço</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">{{ pre_order.description }}</p>
+                    
+                    {% if pre_order.service_category %}
+                    <div class="info-section">
+                        <strong><i class="fas fa-tag me-2"></i>Categoria:</strong> {{ pre_order.service_category }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <strong><i class="fas fa-user me-2"></i>Cliente:</strong><br>
+                                {{ pre_order.client.nome }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-section">
+                                <strong><i class="fas fa-user-cog me-2"></i>Prestador:</strong><br>
+                                {{ pre_order.provider.nome }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                Criada em: {{ pre_order.created_at.strftime('%d/%m/%Y às %H:%M') }}
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-hourglass-end me-1"></i>
+                                Expira em: {{ pre_order.expires_at.strftime('%d/%m/%Y às %H:%M') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ações -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações</h5>
+                </div>
+                <div class="card-body">
+                    {% if can_accept_terms %}
+                    <button type="button" class="btn btn-success action-button w-100 mb-2" 
+                            data-bs-toggle="modal" data-bs-target="#acceptTermsModal">
+                        <i class="fas fa-check-circle me-2"></i>Aceitar Termos
+                    </button>
+                    {% endif %}
+                    
+                    {% if can_propose_changes %}
+                    <button type="button" class="btn btn-primary action-button w-100 mb-2"
+                            onclick="document.getElementById('proposalForm').scrollIntoView({behavior: 'smooth'})">
+                        <i class="fas fa-edit me-2"></i>Propor Alteração
+                    </button>
+                    {% endif %}
+                    
+                    {% if can_cancel %}
+                    <button type="button" class="btn btn-danger action-button w-100 mb-2"
+                            data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        <i class="fas fa-times-circle me-2"></i>Cancelar Pré-Ordem
+                    </button>
+                    {% endif %}
+                    
+                    {% if pre_order.status == 'pronto_conversao' and is_admin %}
+                    <form method="POST" action="{{ url_for('pre_ordem.converter', pre_order_id=pre_order.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning action-button w-100 mb-2">
+                            <i class="fas fa-exchange-alt me-2"></i>Converter em Ordem
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('cliente.dashboard' if user_role == 'cliente' else 'prestador.dashboard') }}" 
+                       class="btn btn-outline-secondary action-button w-100 mb-2">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar ao Dashboard
+                    </a>
+                    
+                    <!-- Botão de atualização manual -->
+                    <button type="button" class="btn btn-outline-info action-button w-100" 
+                            onclick="window.preOrdemRealtime && window.preOrdemRealtime.forceRefresh()"
+                            title="Atualizar dados da pré-ordem">
+                        <i class="fas fa-sync-alt me-2"></i>Atualizar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Indicador de Proposta Ativa -->
+            <div class="card mt-3 border-warning proposal-indicator" data-proposal-indicator 
+                 style="{% if not pre_order.has_active_proposal %}display: none;{% endif %}">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-circle fa-2x text-warning mb-2"></i>
+                    <h6 class="text-warning mb-0">Proposta Pendente</h6>
+                    <small class="text-muted">Aguardando resposta</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Histórico -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Histórico de Negociação</h5>
+                </div>
+                <div class="card-body">
+                    {% if history_items %}
+                    <div class="timeline">
+                        {% for item in history_items %}
+                        <div class="timeline-item {{ item.event_type }}">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ item.event_type_display }}</h6>
+                                            <p class="mb-2">{{ item.description }}</p>
+                                            {% if item.event_data %}
+                                            <div class="small text-muted">
+                                                {% if item.event_data.proposed_value %}
+                                                <div><strong>Valor proposto:</strong> R$ {{ "%.2f"|format(item.event_data.proposed_value) }}</div>
+                                                {% endif %}
+                                                {% if item.event_data.proposed_delivery_date %}
+                                                <div><strong>Prazo proposto:</strong> {{ item.event_data.proposed_delivery_date }}</div>
+                                                {% endif %}
+                                                {% if item.event_data.justification %}
+                                                <div><strong>Justificativa:</strong> {{ item.event_data.justification }}</div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">
+                                                <i class="fas fa-user me-1"></i>{{ item.actor.nome }}<br>
+                                                <i class="fas fa-clock me-1"></i>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>Nenhum evento registrado ainda</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulário de Proposta -->
+    {% if can_propose_changes %}
+    <div class="row mb-4" id="proposalForm">
+        <div class="col-12">
+            <div class="proposal-form">
+                <h4 class="mb-4"><i class="fas fa-edit me-2"></i>Propor Alteração</h4>
+                <form method="POST" action="{{ url_for('pre_ordem.propor_alteracao', pre_order_id=pre_order.id) }}" id="proposalFormElement">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="proposed_value" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>Novo Valor (R$)
+                            </label>
+                            <input type="number" step="0.01" class="form-control" id="proposed_value" 
+                                   name="proposed_value" placeholder="Deixe em branco para manter o atual"
+                                   value="{{ pre_order.current_value }}">
+                            <div class="form-text" id="valueDifference"></div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="proposed_delivery_date" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Novo Prazo de Entrega
+                            </label>
+                            <input type="datetime-local" class="form-control" id="proposed_delivery_date" 
+                                   name="proposed_delivery_date" 
+                                   value="{{ pre_order.delivery_date.strftime('%Y-%m-%dT%H:%M') }}">
+                            <div class="form-text">Deixe em branco para manter o atual</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="proposed_description" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Nova Descrição
+                        </label>
+                        <textarea class="form-control" id="proposed_description" name="proposed_description" 
+                                  rows="3" placeholder="Deixe em branco para manter a atual">{{ pre_order.description }}</textarea>
+                        <div class="form-text">Deixe em branco para manter a atual</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="justification" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Justificativa <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="justification" name="justification" 
+                                  rows="4" required minlength="50" 
+                                  placeholder="Explique o motivo da alteração proposta (mínimo 50 caracteres)"></textarea>
+                        <div class="form-text">
+                            <span id="charCount">0</span>/50 caracteres (mínimo)
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Importante:</strong> A outra parte será notificada imediatamente sobre sua proposta. 
+                        Propostas extremas (aumento >100% ou redução >50%) requerem justificativa detalhada.
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Proposta
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-undo me-2"></i>Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Confirmação - Aceitar Termos -->
+<div class="modal fade" id="acceptTermsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="fas fa-check-circle me-2"></i>Aceitar Termos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Área de verificação de saldo -->
+                <div id="balanceCheckArea" class="mb-3">
+                    <div class="text-center py-3" id="balanceCheckLoading">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Verificando saldo...</span>
+                        </div>
+                        <p class="mt-2 mb-0">Verificando seu saldo...</p>
+                    </div>
+                    
+                    <!-- Saldo suficiente -->
+                    <div id="balanceSufficient" style="display: none;">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Saldo suficiente!</strong>
+                            <div class="mt-2">
+                                <small>Seu saldo: <strong id="currentBalanceOk">R$ 0,00</strong></small><br>
+                                <small>Valor necessário: <strong id="requiredAmountOk">R$ 0,00</strong></small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Saldo insuficiente -->
+                    <div id="balanceInsufficient" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Saldo insuficiente!</strong>
+                            <div class="mt-2">
+                                <small>Seu saldo: <strong id="currentBalanceInsuf">R$ 0,00</strong></small><br>
+                                <small>Valor necessário: <strong id="requiredAmountInsuf">R$ 0,00</strong></small><br>
+                                <small class="text-danger">Faltam: <strong id="shortfallAmount">R$ 0,00</strong></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Formulário de adição de saldo -->
+                        <div class="card border-primary mt-3">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-plus-circle me-2"></i>Adicionar Saldo
+                            </div>
+                            <div class="card-body">
+                                <p class="small text-muted mb-3">
+                                    Adicione saldo à sua carteira para poder aceitar os termos.
+                                </p>
+                                <div class="mb-3">
+                                    <label for="amountToAdd" class="form-label">Valor a adicionar (R$)</label>
+                                    <input type="number" step="0.01" min="0.01" class="form-control" 
+                                           id="amountToAdd" name="amount_to_add" 
+                                           placeholder="Digite o valor">
+                                    <div class="form-text">
+                                        Sugestão: <a href="#" id="suggestedAmountLink" onclick="useSuggestedAmount(); return false;">
+                                            R$ <span id="suggestedAmount">0,00</span>
+                                        </a> (valor mínimo + 10% de margem)
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary w-100" onclick="addBalanceAndAccept()">
+                                    <i class="fas fa-wallet me-2"></i>Adicionar Saldo e Aceitar Termos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <p>Você está prestes a aceitar os termos atuais desta pré-ordem:</p>
+                <ul>
+                    <li><strong>Valor:</strong> R$ {{ "%.2f"|format(pre_order.current_value) }}</li>
+                    <li><strong>Prazo:</strong> {{ pre_order.delivery_date.strftime('%d/%m/%Y às %H:%M') }}</li>
+                </ul>
+                {% if user_role == 'cliente' %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção:</strong> Certifique-se de ter saldo suficiente. 
+                    Quando ambas as partes aceitarem, os valores serão bloqueados em garantia.
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Quando ambas as partes aceitarem os termos, a pré-ordem será convertida em ordem definitiva.
+                </div>
+                {% endif %}
+                <p class="mb-0">Deseja continuar?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('pre_ordem.aceitar_termos', pre_order_id=pre_order.id) }}" class="d-inline" id="acceptTermsForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success" id="acceptTermsBtn">
+                        <i class="fas fa-check me-2"></i>Sim, Aceitar Termos
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação - Cancelar -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-times-circle me-2"></i>Cancelar Pré-Ordem</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('pre_ordem.cancelar', pre_order_id=pre_order.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Esta ação não pode ser desfeita!
+                    </div>
+                    <p>Por favor, informe o motivo do cancelamento:</p>
+                    <textarea class="form-control" name="cancellation_reason" rows="4" 
+                              required minlength="20" 
+                              placeholder="Explique o motivo do cancelamento (mínimo 20 caracteres)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Confirmar Cancelamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Script de atualizações em tempo real -->
+<script src="{{ url_for('static', filename='js/pre-ordem-realtime.js') }}"></script>
+
+<script>
+// Variáveis globais para verificação de saldo
+let balanceCheckData = null;
+const preOrderId = {{ pre_order.id }};
+const csrfToken = '{{ csrf_token() }}';
+
+// Função para verificar saldo ao abrir modal
+function checkBalanceOnModalOpen() {
+    const loadingEl = document.getElementById('balanceCheckLoading');
+    const sufficientEl = document.getElementById('balanceSufficient');
+    const insufficientEl = document.getElementById('balanceInsufficient');
+    const acceptBtn = document.getElementById('acceptTermsBtn');
+    
+    // Mostrar loading
+    loadingEl.style.display = 'block';
+    sufficientEl.style.display = 'none';
+    insufficientEl.style.display = 'none';
+    acceptBtn.disabled = true;
+    
+    // Fazer requisição para verificar saldo
+    fetch(`/pre-ordem/${preOrderId}/verificar-saldo`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingEl.style.display = 'none';
+        balanceCheckData = data;
+        
+        if (data.success && data.balance_check) {
+            const check = data.balance_check;
+            
+            if (check.is_sufficient) {
+                // Saldo suficiente
+                if (sufficientEl) sufficientEl.style.display = 'block';
+                if (insufficientEl) insufficientEl.style.display = 'none';
+                if (acceptBtn) acceptBtn.disabled = false;
+                
+                const currentBalanceOk = document.getElementById('currentBalanceOk');
+                const requiredAmountOk = document.getElementById('requiredAmountOk');
+                if (currentBalanceOk) currentBalanceOk.textContent = 
+                    `R$ ${check.current_balance.toFixed(2).replace('.', ',')}`;
+                if (requiredAmountOk) requiredAmountOk.textContent = 
+                    `R$ ${check.required_amount.toFixed(2).replace('.', ',')}`;
+            } else {
+                // Saldo insuficiente
+                if (sufficientEl) sufficientEl.style.display = 'none';
+                if (insufficientEl) insufficientEl.style.display = 'block';
+                if (acceptBtn) acceptBtn.disabled = true;
+                
+                const currentBalanceInsuf = document.getElementById('currentBalanceInsuf');
+                const requiredAmountInsuf = document.getElementById('requiredAmountInsuf');
+                const shortfallAmount = document.getElementById('shortfallAmount');
+                const suggestedAmount = document.getElementById('suggestedAmount');
+                const amountToAdd = document.getElementById('amountToAdd');
+                
+                if (currentBalanceInsuf) currentBalanceInsuf.textContent = 
+                    `R$ ${check.current_balance.toFixed(2).replace('.', ',')}`;
+                if (requiredAmountInsuf) requiredAmountInsuf.textContent = 
+                    `R$ ${check.required_amount.toFixed(2).replace('.', ',')}`;
+                if (shortfallAmount) shortfallAmount.textContent = 
+                    `R$ ${check.shortfall.toFixed(2).replace('.', ',')}`;
+                if (suggestedAmount) suggestedAmount.textContent = 
+                    check.suggested_amount.toFixed(2).replace('.', ',');
+                if (amountToAdd) amountToAdd.value = check.suggested_amount.toFixed(2);
+            }
+        } else {
+            // Erro na verificação
+            loadingEl.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Não foi possível verificar seu saldo. Tente novamente.
+                </div>
+            `;
+            loadingEl.style.display = 'block';
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao verificar saldo:', error);
+        loadingEl.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle me-2"></i>
+                Erro ao verificar saldo: ${error.message}
+            </div>
+        `;
+        loadingEl.style.display = 'block';
+    });
+}
+
+// Função para usar valor sugerido
+function useSuggestedAmount() {
+    if (balanceCheckData && balanceCheckData.balance_check) {
+        document.getElementById('amountToAdd').value = 
+            balanceCheckData.balance_check.suggested_amount.toFixed(2);
+    }
+}
+
+// Função para adicionar saldo e aceitar termos
+function addBalanceAndAccept() {
+    const amountInput = document.getElementById('amountToAdd');
+    const amount = parseFloat(amountInput.value);
+    
+    if (!amount || amount <= 0) {
+        alert('Por favor, informe um valor válido para adicionar.');
+        return;
+    }
+    
+    // Desabilitar botão e mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processando...';
+    
+    // Fazer requisição para adicionar saldo e aceitar
+    fetch(`/pre-ordem/${preOrderId}/adicionar-saldo-e-aceitar`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            amount_to_add: amount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Sucesso - recarregar página
+            alert(data.message);
+            window.location.reload();
+        } else {
+            // Erro
+            alert(data.message || data.error || 'Erro ao processar solicitação');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao processar solicitação: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+// Listener para quando o modal de aceitar termos é aberto
+document.addEventListener('DOMContentLoaded', function() {
+    const acceptTermsModal = document.getElementById('acceptTermsModal');
+    if (acceptTermsModal) {
+        acceptTermsModal.addEventListener('show.bs.modal', function() {
+            checkBalanceOnModalOpen();
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Contador de caracteres para justificativa
+    const justificationField = document.getElementById('justification');
+    const charCount = document.getElementById('charCount');
+    
+    if (justificationField && charCount) {
+        justificationField.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+            if (this.value.length >= 50) {
+                charCount.classList.add('text-success');
+                charCount.classList.remove('text-danger');
+            } else {
+                charCount.classList.add('text-danger');
+                charCount.classList.remove('text-success');
+            }
+        });
+    }
+    
+    // Cálculo de diferença de valor
+    const proposedValueField = document.getElementById('proposed_value');
+    const valueDifference = document.getElementById('valueDifference');
+    const currentValue = {{ pre_order.current_value }};
+    
+    if (proposedValueField && valueDifference) {
+        proposedValueField.addEventListener('input', function() {
+            const newValue = parseFloat(this.value) || 0;
+            const diff = newValue - currentValue;
+            const diffPercent = currentValue > 0 ? (diff / currentValue) * 100 : 0;
+            
+            if (diff !== 0) {
+                const arrow = diff > 0 ? '↑' : '↓';
+                const color = diff > 0 ? 'text-danger' : 'text-success';
+                valueDifference.innerHTML = `<span class="${color}"><strong>${arrow} R$ ${Math.abs(diff).toFixed(2)} (${diffPercent.toFixed(1)}%)</strong></span>`;
+                
+                // Alerta para propostas extremas
+                if (Math.abs(diffPercent) > 100 || Math.abs(diffPercent) > 50) {
+                    valueDifference.innerHTML += '<br><span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Proposta extrema - justificativa detalhada necessária</span>';
+                }
+            } else {
+                valueDifference.innerHTML = '';
+            }
+        });
+    }
+    
+    // Validação do formulário
+    const proposalForm = document.getElementById('proposalFormElement');
+    if (proposalForm) {
+        proposalForm.addEventListener('submit', function(e) {
+            const proposedValue = document.getElementById('proposed_value').value;
+            const proposedDate = document.getElementById('proposed_delivery_date').value;
+            const proposedDesc = document.getElementById('proposed_description').value;
+            const justification = document.getElementById('justification').value;
+            
+            // Verificar se pelo menos um campo foi alterado
+            const valueChanged = proposedValue && parseFloat(proposedValue) !== currentValue;
+            const dateChanged = proposedDate && proposedDate !== '{{ pre_order.delivery_date.strftime("%Y-%m-%dT%H:%M") }}';
+            const descChanged = proposedDesc && proposedDesc !== '{{ pre_order.description|replace("'", "\\'") }}';
+            
+            if (!valueChanged && !dateChanged && !descChanged) {
+                e.preventDefault();
+                alert('Por favor, altere pelo menos um campo (valor, prazo ou descrição) para enviar uma proposta.');
+                return false;
+            }
+            
+            // Verificar justificativa mínima
+            if (justification.length < 50) {
+                e.preventDefault();
+                alert('A justificativa deve ter no mínimo 50 caracteres.');
+                return false;
+            }
+            
+            return true;
+        });
+    }
+});
+</script>
+{% endblock %}

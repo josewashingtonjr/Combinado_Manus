@@ -1,0 +1,1718 @@
+/* Estilos para a nova página de convite */
+
+/* Container principal */
+.invite-page-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px 0;
+}
+
+/* Logo destacada */
+.invite-logo-section {
+    padding: 30px 0;
+    margin-bottom: 1rem;
+}
+
+.invite-logo {
+    max-height: 120px;
+    min-height: 120px;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    transition: transform 0.3s ease;
+}
+
+.invite-logo:hover {
+    transform: scale(1.05);
+}
+
+.logo-fallback {
+    padding: 20px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    display: inline-block;
+    min-width: 200px;
+}
+
+.logo-fallback h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Título principal */
+.invite-header {
+    margin-bottom: 2rem;
+}
+
+.invite-title {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.invite-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Card de informações do convite redesenhado */
+.invite-info-card {
+    border: none;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    background: white;
+}
+
+/* Header do card com design moderno */
+.invite-card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 1.5rem;
+    color: white;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.header-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.header-text h5 {
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-text small {
+    opacity: 0.9;
+}
+
+/* Body do card */
+.invite-card-body {
+    padding: 2rem;
+}
+
+/* Destaque do serviço */
+.service-highlight {
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    border: 2px solid #e9ecef;
+}
+
+.service-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem auto;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.service-main-icon {
+    font-size: 1.8rem;
+    color: white;
+}
+
+.service-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    line-height: 1.3;
+}
+
+.service-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #495057;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Grid de detalhes */
+.invite-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+/* Items de detalhe redesenhados */
+.detail-item {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.detail-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #007bff, #28a745);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.detail-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: #e9ecef;
+}
+
+.detail-item:hover::before {
+    opacity: 1;
+}
+
+/* Tipos específicos de detail-item */
+.detail-item-primary {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-color: #28a745;
+}
+
+.detail-item-primary::before {
+    background: linear-gradient(90deg, #28a745, #20c997);
+    opacity: 1;
+}
+
+.detail-item-secondary {
+    background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);
+}
+
+.detail-item-secondary::before {
+    background: linear-gradient(90deg, #007bff, #17a2b8);
+}
+
+.detail-item-info {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+}
+
+.detail-item-info::before {
+    background: linear-gradient(90deg, #ffc107, #fd7e14);
+}
+
+/* Ícones dos detalhes */
+.detail-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.detail-icon-value {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.detail-icon-date {
+    background: linear-gradient(135deg, #007bff 0%, #17a2b8 100%);
+}
+
+.detail-icon-client {
+    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+}
+
+.detail-icon-status {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.detail-icon i {
+    font-size: 1.3rem;
+    color: white;
+}
+
+/* Conteúdo dos detalhes */
+.detail-content {
+    text-align: left;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.detail-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+.detail-value-money {
+    color: #28a745;
+    font-size: 1.6rem;
+}
+
+.detail-value-date {
+    color: #007bff;
+    font-size: 1.2rem;
+}
+
+.detail-value-client {
+    color: #6f42c1;
+    font-size: 1.2rem;
+}
+
+.detail-value-status {
+    font-size: 1rem;
+}
+
+.detail-subtitle {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 0.25rem;
+}
+
+/* Metadados do convite */
+.invite-metadata {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1rem;
+    border-top: 3px solid #dee2e6;
+}
+
+.metadata-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: space-between;
+}
+
+.metadata-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.metadata-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.metadata-value {
+    color: #6c757d;
+}
+
+/* Banner de segurança */
+.security-banner {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #c3e6cb;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.security-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.security-icon {
+    font-size: 1.5rem;
+    color: #155724;
+}
+
+.security-text {
+    color: #155724;
+    font-size: 1rem;
+}
+
+/* Painel de instruções */
+.instructions-panel .card-header {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    border: none;
+}
+
+.instruction-steps {
+    padding: 0.5rem 0;
+}
+
+.instruction-step {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+
+.instruction-step:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.instruction-step:last-child {
+    margin-bottom: 0;
+}
+
+.step-icon-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 1.5rem;
+    flex-shrink: 0;
+}
+
+.step-number {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+}
+
+.step-icon {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.step-content {
+    flex: 1;
+    padding-top: 0.5rem;
+}
+
+.step-content strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.step-content small {
+    color: #6c757d;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+/* Dica adicional */
+.instruction-tip {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.tip-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(255, 193, 7, 0.3);
+}
+
+.tip-icon i {
+    font-size: 1.1rem;
+}
+
+.tip-content {
+    flex: 1;
+    padding-top: 0.25rem;
+}
+
+.tip-content strong {
+    color: #856404;
+    margin-bottom: 0.25rem;
+    display: block;
+}
+
+.tip-content {
+    color: #856404;
+    line-height: 1.4;
+}
+
+/* Botões de ação - altura mínima 48px para touch targets (Requirement 2) */
+.action-buttons {
+    margin: 2rem 0;
+}
+
+.accept-btn, .reject-btn {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    border: none;
+    transition: all 0.3s ease;
+    text-transform: none;
+    min-height: 48px; /* Altura mínima para touch targets adequados */
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    gap: 8px;
+}
+
+.accept-btn {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+.accept-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    color: white;
+}
+
+.accept-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.4);
+}
+
+.reject-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    color: white;
+}
+
+.reject-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    color: white;
+}
+
+.reject-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(220, 53, 69, 0.4);
+}
+
+/* Estados de loading para botões */
+.accept-btn.loading, .reject-btn.loading {
+    cursor: not-allowed;
+    opacity: 0.8;
+    transform: none !important;
+}
+
+.accept-btn.loading {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.reject-btn.loading {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Efeito de pulso para botões importantes */
+.accept-btn:not(.loading) {
+    animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(40, 167, 69, 0.5);
+    }
+}
+
+/* Melhorias de acessibilidade para botões */
+.accept-btn:focus, .reject-btn:focus {
+    outline: 3px solid rgba(0, 123, 255, 0.5);
+    outline-offset: 2px;
+}
+
+.accept-btn:focus {
+    outline-color: rgba(40, 167, 69, 0.5);
+}
+
+.reject-btn:focus {
+    outline-color: rgba(220, 53, 69, 0.5);
+}
+
+/* Seção de cadastro */
+.cadastro-section {
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cadastro-section .card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.cadastro-section .card-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 15px 15px 0 0;
+}
+
+/* Formulários */
+.form-control-lg {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control-lg:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Modal de rejeição */
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 2px solid #dee2e6;
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-footer {
+    border-top: 2px solid #dee2e6;
+    border-radius: 0 0 15px 15px;
+}
+
+/* Botão de confirmação de rejeição */
+.confirm-reject-btn {
+    min-height: 44px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.confirm-reject-btn.loading {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.confirm-reject-btn:focus {
+    outline: 2px solid rgba(220, 53, 69, 0.5);
+    outline-offset: 2px;
+}
+
+/* ==============================================================================
+   ESTILOS RESPONSIVOS - MOBILE FIRST APPROACH
+   ============================================================================== */
+
+/* Base styles - Mobile First (320px+) */
+body {
+    font-size: 14px; /* Tamanho mínimo de fonte para legibilidade */
+    line-height: 1.5;
+}
+
+/* Container principal - Mobile */
+.invite-page-container {
+    padding: 10px 0;
+    min-height: 100vh;
+}
+
+.container {
+    padding: 0 15px;
+    max-width: 100%;
+}
+
+/* Logo - Mobile */
+.invite-logo-section {
+    padding: 15px 0;
+    margin-bottom: 1rem;
+}
+
+.invite-logo {
+    max-height: 80px;
+    min-height: 80px;
+    width: auto;
+    max-width: 100%;
+}
+
+.logo-fallback {
+    min-width: 160px;
+    padding: 12px;
+}
+
+.logo-fallback h1 {
+    font-size: 1.6rem;
+    line-height: 1.2;
+}
+
+/* Títulos - Mobile */
+.invite-title {
+    font-size: 1.6rem;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+}
+
+.invite-subtitle {
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* Cards - Mobile */
+.invite-card-header {
+    padding: 1rem;
+}
+
+.invite-card-body {
+    padding: 1rem;
+}
+
+.header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+}
+
+/* Serviço destacado - Mobile */
+.service-highlight {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.service-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 0.75rem;
+}
+
+.service-main-icon {
+    font-size: 1.5rem;
+}
+
+.service-title {
+    font-size: 1.3rem;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+}
+
+.service-description {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Grid de detalhes - Mobile (coluna única) */
+.invite-details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.detail-item {
+    padding: 1rem;
+    text-align: center;
+    border-radius: 12px;
+}
+
+.detail-icon {
+    width: 45px;
+    height: 45px;
+    margin: 0 auto 1rem auto;
+}
+
+.detail-icon i {
+    font-size: 1.1rem;
+}
+
+.detail-content {
+    text-align: center;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.detail-value {
+    font-size: 1.1rem;
+    line-height: 1.2;
+}
+
+.detail-value-money {
+    font-size: 1.3rem;
+}
+
+.detail-subtitle {
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* Metadados - Mobile */
+.invite-metadata {
+    padding: 0.75rem;
+    border-radius: 8px;
+}
+
+.metadata-row {
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.metadata-item {
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+/* Banner de segurança - Mobile */
+.security-banner {
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.security-content {
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.security-text {
+    font-size: 0.95rem;
+}
+
+/* Instruções - Mobile */
+.instruction-step {
+    flex-direction: column;
+    text-align: center;
+    padding: 1rem 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.step-icon-wrapper {
+    margin: 0 auto 1rem auto;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.step-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+}
+
+.step-content strong {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.step-content small {
+    font-size: 0.9rem;
+}
+
+.instruction-tip {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.tip-icon {
+    margin: 0 auto;
+    width: 36px;
+    height: 36px;
+}
+
+/* Botões - Mobile (touch targets adequados - Requirement 2) */
+.accept-btn, .reject-btn {
+    font-size: 1rem;
+    min-height: 48px; /* Touch target mínimo obrigatório */
+    min-width: 48px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: 100%; /* Largura total em mobile para facilitar toque */
+}
+
+.action-buttons .col-md-6 {
+    margin-bottom: 1rem;
+}
+
+/* Formulários - Mobile */
+.form-control, .form-control-lg {
+    min-height: 48px; /* Touch target adequado */
+    font-size: 16px; /* Previne zoom no iOS */
+    padding: 0.75rem 1rem;
+}
+
+.form-check-input {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+}
+
+.btn {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 14px;
+}
+
+/* Modal - Mobile */
+.modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+}
+
+.modal-content {
+    border-radius: 12px;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+/* ==============================================================================
+   BREAKPOINT: SMALL TABLETS (576px+)
+   ============================================================================== */
+@media (min-width: 576px) {
+    body {
+        font-size: 15px;
+    }
+    
+    .invite-page-container {
+        padding: 15px 0;
+    }
+    
+    .invite-logo {
+        max-height: 90px;
+        min-height: 90px;
+    }
+    
+    .logo-fallback {
+        min-width: 180px;
+        padding: 15px;
+    }
+    
+    .logo-fallback h1 {
+        font-size: 1.8rem;
+    }
+    
+    .invite-title {
+        font-size: 1.8rem;
+    }
+    
+    .invite-subtitle {
+        font-size: 1.05rem;
+    }
+    
+    .service-title {
+        font-size: 1.4rem;
+    }
+    
+    .service-description {
+        font-size: 1rem;
+    }
+    
+    .detail-value {
+        font-size: 1.15rem;
+    }
+    
+    .detail-value-money {
+        font-size: 1.4rem;
+    }
+    
+    .accept-btn, .reject-btn {
+        font-size: 1.05rem;
+        min-height: 50px;
+    }
+    
+    .modal-dialog {
+        margin: 1.75rem auto;
+        max-width: 500px;
+    }
+}
+
+/* ==============================================================================
+   BREAKPOINT: TABLETS (768px+)
+   ============================================================================== */
+@media (min-width: 768px) {
+    body {
+        font-size: 16px;
+    }
+    
+    .invite-page-container {
+        padding: 20px 0;
+    }
+    
+    .container {
+        padding: 0 20px;
+    }
+    
+    .invite-logo-section {
+        padding: 20px 0;
+    }
+    
+    .invite-logo {
+        max-height: 100px;
+        min-height: 100px;
+    }
+    
+    .logo-fallback {
+        min-width: 200px;
+        padding: 18px;
+    }
+    
+    .logo-fallback h1 {
+        font-size: 2rem;
+    }
+    
+    .invite-title {
+        font-size: 2rem;
+    }
+    
+    .invite-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    /* Layout em duas colunas para detalhes */
+    .invite-details-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+    
+    .invite-card-body {
+        padding: 1.5rem;
+    }
+    
+    .service-highlight {
+        padding: 1rem;
+    }
+    
+    .service-title {
+        font-size: 1.6rem;
+    }
+    
+    .service-description {
+        font-size: 1.05rem;
+    }
+    
+    .detail-item {
+        padding: 1.25rem;
+        text-align: left;
+    }
+    
+    .detail-icon {
+        margin: 0 0 1rem 0;
+    }
+    
+    .detail-content {
+        text-align: left;
+    }
+    
+    .detail-value {
+        font-size: 1.2rem;
+    }
+    
+    .detail-value-money {
+        font-size: 1.5rem;
+    }
+    
+    .metadata-row {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .metadata-item {
+        justify-content: flex-start;
+    }
+    
+    .instruction-step {
+        flex-direction: row;
+        text-align: left;
+        padding: 1rem;
+    }
+    
+    .step-icon-wrapper {
+        margin: 0 1.5rem 0 0;
+    }
+    
+    .instruction-tip {
+        flex-direction: row;
+        text-align: left;
+        gap: 1rem;
+    }
+    
+    .tip-icon {
+        margin: 0;
+    }
+    
+    .security-content {
+        flex-direction: row;
+        gap: 0.75rem;
+    }
+    
+    .accept-btn, .reject-btn {
+        font-size: 1.1rem;
+        min-height: 55px;
+    }
+    
+    .action-buttons .col-md-6 {
+        margin-bottom: 0;
+    }
+}
+
+/* ==============================================================================
+   BREAKPOINT: DESKTOP (992px+)
+   ============================================================================== */
+@media (min-width: 992px) {
+    .invite-page-container {
+        padding: 30px 0;
+    }
+    
+    .invite-logo-section {
+        padding: 25px 0;
+    }
+    
+    .invite-logo {
+        max-height: 110px;
+        min-height: 110px;
+    }
+    
+    .invite-title {
+        font-size: 2.1rem;
+    }
+    
+    .service-title {
+        font-size: 1.7rem;
+    }
+    
+    .service-description {
+        font-size: 1.1rem;
+    }
+    
+    .invite-card-body {
+        padding: 2rem;
+    }
+    
+    .service-highlight {
+        padding: 1.25rem;
+    }
+    
+    .detail-item {
+        padding: 1.5rem;
+    }
+    
+    .detail-value {
+        font-size: 1.25rem;
+    }
+    
+    .detail-value-money {
+        font-size: 1.6rem;
+    }
+    
+    .accept-btn, .reject-btn {
+        font-size: 1.15rem;
+        min-height: 60px;
+        padding: 0.875rem 1.5rem;
+    }
+}
+
+/* ==============================================================================
+   BREAKPOINT: LARGE DESKTOP (1200px+)
+   ============================================================================== */
+@media (min-width: 1200px) {
+    .invite-logo {
+        max-height: 120px;
+        min-height: 120px;
+    }
+    
+    .logo-fallback {
+        min-width: 220px;
+        padding: 20px;
+    }
+    
+    .logo-fallback h1 {
+        font-size: 2.5rem;
+    }
+    
+    .invite-title {
+        font-size: 2.2rem;
+    }
+    
+    .service-title {
+        font-size: 1.8rem;
+    }
+    
+    .service-description {
+        font-size: 1.15rem;
+    }
+    
+    /* Layout em grid mais complexo para telas grandes */
+    .invite-details-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+/* ==============================================================================
+   BREAKPOINT: EXTRA LARGE (1400px+)
+   ============================================================================== */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .invite-logo {
+        max-height: 140px;
+        min-height: 120px;
+    }
+    
+    .logo-fallback h1 {
+        font-size: 2.8rem;
+    }
+}
+
+/* ==============================================================================
+   LANDSCAPE ORIENTATION ADJUSTMENTS
+   ============================================================================== */
+@media (max-height: 600px) and (orientation: landscape) {
+    .invite-page-container {
+        padding: 10px 0;
+    }
+    
+    .invite-logo-section {
+        padding: 10px 0;
+    }
+    
+    .invite-logo {
+        max-height: 60px;
+        min-height: 60px;
+    }
+    
+    .logo-fallback {
+        padding: 8px;
+        min-width: 140px;
+    }
+    
+    .logo-fallback h1 {
+        font-size: 1.4rem;
+    }
+    
+    .invite-title {
+        font-size: 1.4rem;
+    }
+    
+    .service-title {
+        font-size: 1.2rem;
+    }
+    
+    .instruction-step {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+    }
+}
+
+/* ==============================================================================
+   HIGH DPI DISPLAYS
+   ============================================================================== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .invite-logo {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* ==============================================================================
+   PRINT STYLES
+   ============================================================================== */
+@media print {
+    .invite-page-container {
+        background: white !important;
+        padding: 0;
+    }
+    
+    .accept-btn, .reject-btn, .instruction-tip {
+        display: none !important;
+    }
+    
+    .invite-info-card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+}
+
+/* Estados de loading */
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Efeito de ripple para botões */
+.accept-btn::before, .reject-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.accept-btn:active::before, .reject-btn:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Indicador visual para botões focados via teclado */
+.accept-btn:focus-visible, .reject-btn:focus-visible {
+    outline: 3px solid;
+    outline-offset: 2px;
+}
+
+.accept-btn:focus-visible {
+    outline-color: #28a745;
+}
+
+.reject-btn:focus-visible {
+    outline-color: #dc3545;
+}
+
+/* Melhorias de acessibilidade */
+.btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.form-control:focus {
+    outline: none;
+}
+
+/* Telas grandes - limitar tamanho máximo da logo */
+@media (min-width: 1200px) {
+    .invite-logo {
+        max-height: 150px;
+        min-height: 120px;
+    }
+    
+    .logo-fallback {
+        min-width: 220px;
+    }
+    
+    .logo-fallback h1 {
+        font-size: 2.8rem;
+    }
+}
+
+/* ==============================================================================
+   ACCESSIBILITY & INTERACTION IMPROVEMENTS
+   ============================================================================== */
+
+/* Touch targets adequados para todas as telas - altura mínima 48px (Requirement 2) */
+.btn, .form-control, .form-select {
+    min-height: 48px;
+    min-width: 48px;
+}
+
+.form-check-input {
+    min-height: 24px;
+    min-width: 24px;
+}
+
+/* Melhorias de foco para navegação por teclado */
+.btn:focus-visible, .form-control:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Estados de hover mais suaves */
+.btn, .card, .detail-item {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Melhor contraste para texto pequeno */
+.detail-subtitle, .metadata-value, .form-text {
+    color: #495057;
+}
+
+/* Espaçamento consistente para leitores de tela */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==============================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================================================== */
+
+/* Otimizações para animações em dispositivos móveis */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Carregamento de imagens otimizado */
+.invite-logo {
+    image-rendering: auto;
+    object-fit: contain;
+}
+
+/* ==============================================================================
+   DARK MODE SUPPORT (FUTURE ENHANCEMENT)
+   ============================================================================== */
+@media (prefers-color-scheme: dark) {
+    /* Preparação para modo escuro futuro */
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --card-bg: #2d2d2d;
+    }
+}
+
+/* ===== ESTILOS PARA INTERAÇÕES JAVASCRIPT ===== */
+
+/* Estados de loading nos botões */
+.btn.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn.loading .btn-text {
+    opacity: 0.7;
+}
+
+/* Efeitos de hover aprimorados */
+.btn.hover-effect {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.accept-btn.hover-effect {
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.reject-btn.hover-effect {
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Estados de foco nos campos */
+.form-control.focused {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-group.focused .form-label,
+.mb-3.focused .form-label {
+    color: #007bff;
+    font-weight: 600;
+}
+
+/* Campos com valor */
+.form-control.has-value {
+    background-color: #f8f9fa;
+}
+
+/* Estados de validação aprimorados */
+.form-control.is-valid {
+    border-color: #28a745;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.94-.94 2.94 2.94L8.5 6.4l.94.94L6.5 10.27z'/%3e%3c/svg%3e");
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 2.4 2.4M8.2 4.6l-2.4 2.4'/%3e%3c/svg%3e");
+}
+
+/* Feedback visual para campos */
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+    animation: fadeInUp 0.3s ease;
+}
+
+.valid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #28a745;
+    animation: fadeInUp 0.3s ease;
+}
+
+/* Animações */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Botões de motivo rápido selecionados */
+.quick-reason.btn-primary {
+    animation: pulse 0.3s ease;
+}
+
+/* Container de toasts */
+.toast-container {
+    z-index: 9999;
+}
+
+.toast {
+    min-width: 300px;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Estados de carregamento específicos */
+.accept-btn.loading {
+    background-color: #1e7e34;
+    border-color: #1c7430;
+}
+
+.reject-btn.loading {
+    background-color: #bd2130;
+    border-color: #b21f2d;
+}
+
+.confirm-reject-btn.loading {
+    background-color: #bd2130;
+    border-color: #b21f2d;
+}
+
+/* Melhorias visuais para formulários */
+.form-control:focus {
+    transition: all 0.3s ease;
+}
+
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.form-check-input:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Indicadores visuais para campos obrigatórios */
+.form-label::after {
+    content: "";
+}
+
+.form-label:has(+ input[required])::after,
+.form-label:has(+ textarea[required])::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Melhorias para o modal de rejeição */
+.modal.fade .modal-dialog {
+    transition: transform 0.4s ease;
+}
+
+.modal.show .modal-dialog {
+    transform: none;
+}
+
+/* Estilos para campos com erro */
+.form-control.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Estilos para campos válidos */
+.form-control.is-valid:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Responsividade para toasts */
+@media (max-width: 576px) {
+    .toast-container {
+        left: 1rem;
+        right: 1rem;
+        top: 1rem !important;
+    }
+    
+    .toast {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+/* Melhorias para acessibilidade */
+.btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.form-control:focus {
+    outline: none;
+}
+
+/* Estados desabilitados */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Indicadores de progresso */
+.progress-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #007bff, #28a745);
+    z-index: 10000;
+    animation: progressBar 2s ease-in-out infinite;
+}
+
+@keyframes progressBar {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}

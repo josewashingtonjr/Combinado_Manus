@@ -2,8 +2,12 @@
 
 {% block title %}Dashboard Cliente - Sistema Combinado{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard-realtime.css') }}">
+{% endblock %}
+
 {% block cliente_content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4" data-dashboard-realtime>
     <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard Cliente</h1>
     <div class="text-muted">
         <i class="fas fa-user me-1"></i>
@@ -43,14 +47,18 @@
 <!-- Cards de Estatísticas -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
-        <div class="card bg-success text-white">
+        <div class="card bg-success text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="mb-0">{{ data.saldo_atual|format_value_by_user_type(user_type) }}</h4>
-                        <p class="mb-0">{{ terminology.balance_label }} Atual</p>
+                        <h4 class="mb-0" data-balance-available="{{ data.saldo_atual }}">R$ {{ "%.2f"|format(data.saldo_atual) }}</h4>
+                        <p class="mb-0">Saldo Disponível</p>
                         {% if data.saldo_bloqueado > 0 %}
-                        <small class="text-light">+{{ data.saldo_bloqueado|format_value_by_user_type(user_type) }} em garantia</small>
+                        <small class="text-light">
+                            <i class="fas fa-lock me-1"></i><span data-balance-blocked="{{ data.saldo_bloqueado }}">R$ {{ "%.2f"|format(data.saldo_bloqueado) }}</span> bloqueado
+                        </small>
+                        {% else %}
+                        <small class="text-light">Pronto para usar</small>
                         {% endif %}
                     </div>
                     <div class="align-self-center">
@@ -62,30 +70,20 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card bg-info text-white">
+        <div class="card bg-warning text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
-                        <h4 class="mb-0">{{ data.tokens_disponiveis|format_value_by_user_type(user_type) }}</h4>
-                        <p class="mb-0">{{ terminology.balance_label }} Disponível</p>
-                        <small class="text-light">Para novas ordens</small>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-money-bill-wave fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4 class="mb-0">{{ data.ordens_ativas }}</h4>
-                        <p class="mb-0">Ordens Ativas</p>
+                        <h4 class="mb-0" data-orders-count="{{ data.ordens_ativas }}">{{ data.ordens_ativas }}</h4>
+                        <p class="mb-0">Ordens em Aberto</p>
+                        {% if data.ordens_por_status %}
+                        <small class="text-light">
+                            {% if data.ordens_por_status.aceita %}{{ data.ordens_por_status.aceita }} aceita{% if data.ordens_por_status.aceita > 1 %}s{% endif %}{% endif %}
+                            {% if data.ordens_por_status.em_andamento %}{{ ', ' if data.ordens_por_status.aceita else '' }}{{ data.ordens_por_status.em_andamento }} em andamento{% endif %}
+                        </small>
+                        {% else %}
                         <small class="text-light">{{ data.ordens_concluidas }} concluídas</small>
+                        {% endif %}
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-clipboard-list fa-2x"></i>
@@ -96,13 +94,36 @@
     </div>
     
     <div class="col-md-3 mb-3">
-        <div class="card bg-primary text-white">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="mb-0" data-balance-total="{{ data.saldo_atual + data.saldo_bloqueado }}">R$ {{ "%.2f"|format(data.saldo_atual + data.saldo_bloqueado) }}</h4>
+                        <p class="mb-0">Saldo Total</p>
+                        <small class="text-light">
+                            {% if data.saldo_bloqueado > 0 %}
+                            {{ "%.0f"|format((data.saldo_atual / (data.saldo_atual + data.saldo_bloqueado)) * 100) }}% disponível
+                            {% else %}
+                            100% disponível
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-money-bill-wave fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
                         <h4 class="mb-0">{{ data.transacoes_mes }}</h4>
                         <p class="mb-0">Transações (Mês)</p>
-                        <small class="text-light">{{ data.gasto_total_mes|format_value_by_user_type(user_type) }} gastos</small>
+                        <small class="text-light">R$ {{ "%.2f"|format(data.gasto_total_mes) }} gastos</small>
                     </div>
                     <div class="align-self-center">
                         <i class="fas fa-exchange-alt fa-2x"></i>
@@ -170,6 +191,278 @@
         </div>
     </div>
 </div>
+
+<!-- Pré-Ordens em Negociação -->
+<div class="row mb-4" id="pre-ordens">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-handshake me-2"></i>Pré-Ordens em Negociação
+                    {% if data.pre_orders_count > 0 %}
+                    <span class="badge bg-light text-dark ms-2">{{ data.pre_orders_count }}</span>
+                    {% endif %}
+                </h5>
+                {% if data.pre_orders_needing_action > 0 %}
+                <span class="badge bg-warning">
+                    <i class="fas fa-exclamation-circle me-1"></i>{{ data.pre_orders_needing_action }} aguardando sua ação
+                </span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if data.pre_orders_count > 0 %}
+                <!-- Filtros -->
+                <div class="btn-group mb-3" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" data-filter="todas">
+                        Todas ({{ data.pre_orders_count }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-filter="minha-acao">
+                        Aguardando Minha Ação ({{ data.pre_orders_needing_action }})
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-filter="outra-parte">
+                        Aguardando Prestador ({{ data.pre_orders_count - data.pre_orders_needing_action }})
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Prestador</th>
+                                <th>Valor Atual</th>
+                                <th>Status</th>
+                                <th>Indicadores</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pre-orders-table-body">
+                            {% for po in data.pre_orders_ativas %}
+                            <tr data-needs-action="{{ 'true' if po.needs_action else 'false' }}" 
+                                data-filter-category="{{ 'minha-acao' if po.needs_action else 'outra-parte' }}">
+                                <td>
+                                    <strong>{{ po.title }}</strong>
+                                    {% if po.is_near_expiration %}
+                                    <br><small class="text-danger">
+                                        <i class="fas fa-clock me-1"></i>Expira em {{ "%.1f"|format(po.days_until_expiration) }} dia(s)
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <i class="fas fa-user-cog me-1"></i>{{ po.provider_name }}
+                                </td>
+                                <td>
+                                    <strong class="text-success">R$ {{ "%.2f"|format(po.current_value) }}</strong>
+                                    {% if po.current_value != po.original_value %}
+                                    <br><small class="text-muted">
+                                        Original: R$ {{ "%.2f"|format(po.original_value) }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge {{ po.status_color_class }}">
+                                        {{ po.status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if po.has_active_proposal %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-file-alt me-1"></i>Proposta Pendente
+                                    </span>
+                                    {% endif %}
+                                    {% if po.needs_action %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-exclamation-circle me-1"></i>Ação Necessária
+                                    </span>
+                                    {% elif not po.client_accepted_terms %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-hourglass-half me-1"></i>Aguardando Sua Aceitação
+                                    </span>
+                                    {% elif not po.provider_accepted_terms %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-hourglass-half me-1"></i>Aguardando Prestador
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-double me-1"></i>Pronto para Conversão
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=po.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>Ver Detalhes
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-handshake fa-3x mb-3"></i>
+                    <p class="mb-2">Você não tem pré-ordens em negociação no momento</p>
+                    <small>Quando você aceitar um convite, uma pré-ordem será criada para negociação antes do compromisso final</small>
+                    <div class="mt-3">
+                        <a href="{{ url_for('cliente.convites') }}" class="btn btn-info">
+                            <i class="fas fa-envelope-open-text me-1"></i>Ver Convites
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ordens em Aberto -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Ordens em Aberto</h5>
+            </div>
+            <div class="card-body" data-orders-list>
+                {% if data.ordens_em_aberto %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Prestador</th>
+                                <th>Status</th>
+                                <th>Valor</th>
+                                <th>Data de Criação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ordem in data.ordens_em_aberto %}
+                            <tr data-order-id="{{ ordem.id }}">
+                                <td><strong>#{{ ordem.id }}</strong></td>
+                                <td>{{ ordem.title }}</td>
+                                <td>
+                                    <i class="fas fa-user-cog me-1"></i>
+                                    {{ ordem.related_user_name }}
+                                </td>
+                                <td>
+                                    <span class="order-status-badge badge bg-{{ 'success' if ordem.status == 'aceita' else 'warning' if ordem.status == 'em_andamento' else 'info' }}">
+                                        {{ ordem.status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">R$ {{ "%.2f"|format(ordem.value) }}</strong>
+                                </td>
+                                <td>
+                                    <small>{{ ordem.created_at.strftime('%d/%m/%Y') }}</small>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('order.ver_ordem', order_id=ordem.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>Ver Detalhes
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p class="mb-2">Você não tem ordens em aberto no momento</p>
+                    <small>Ordens em aberto aparecem aqui quando estão ativas, em andamento ou aguardando confirmação</small>
+                    <div class="mt-3">
+                        <a href="{{ url_for('cliente.criar_convite') }}" class="btn btn-success">
+                            <i class="fas fa-plus-circle me-1"></i>Criar Novo Convite
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fundos Bloqueados -->
+{% if data.saldo_bloqueado > 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-lock me-2"></i>Fundos em Garantia</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Saldo Disponível</h6>
+                            <h3 class="text-success mb-0">R$ {{ "%.2f"|format(data.saldo_atual) }}</h3>
+                            <small class="text-muted">Para novas ordens</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Bloqueado em Garantia</h6>
+                            <h3 class="text-warning mb-0">R$ {{ "%.2f"|format(data.saldo_bloqueado) }}</h3>
+                            <small class="text-muted">Em ordens ativas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h6 class="text-muted mb-2">Saldo Total</h6>
+                            <h3 class="text-primary mb-0">R$ {{ "%.2f"|format(data.saldo_atual + data.saldo_bloqueado) }}</h3>
+                            <small class="text-muted">Disponível + Bloqueado</small>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if data.fundos_bloqueados_detalhados %}
+                <h6 class="mt-4 mb-3"><i class="fas fa-list me-2"></i>Detalhamento por Ordem</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ordem</th>
+                                <th>Título</th>
+                                <th>Valor Bloqueado</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bloqueio in data.fundos_bloqueados_detalhados %}
+                            <tr>
+                                <td><strong>#{{ bloqueio.order_id }}</strong></td>
+                                <td>{{ bloqueio.title }}</td>
+                                <td><strong class="text-warning">R$ {{ "%.2f"|format(bloqueio.amount) }}</strong></td>
+                                <td>
+                                    <a href="{{ url_for('order.ver_ordem', order_id=bloqueio.order_id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>Ver Ordem
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-warning">
+                                <td colspan="2"><strong>Total Bloqueado</strong></td>
+                                <td><strong>R$ {{ "%.2f"|format(data.saldo_bloqueado) }}</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Sobre fundos em garantia:</strong> Os valores bloqueados são liberados automaticamente quando as ordens são concluídas ou canceladas.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Resumo Financeiro e Atividades -->
 <div class="row">
@@ -282,13 +575,10 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Atualizar dados do dashboard a cada 30 segundos
-setInterval(function() {
-    // TODO: Implementar atualização via AJAX quando tivermos API
-    console.log('Atualizando dados do dashboard...');
-}, 30000);
+<!-- Script de Atualizações em Tempo Real -->
+<script src="{{ url_for('static', filename='js/dashboard-realtime.js') }}"></script>
 
+<script>
 // Animação dos cards
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.card');
@@ -296,6 +586,30 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
             card.classList.add('fade-in');
         }, index * 100);
+    });
+    
+    // Filtros de pré-ordens
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const preOrderRows = document.querySelectorAll('#pre-orders-table-body tr');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Atualizar botões ativos
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filtrar linhas
+            preOrderRows.forEach(row => {
+                if (filter === 'todas') {
+                    row.style.display = '';
+                } else {
+                    const category = row.getAttribute('data-filter-category');
+                    row.style.display = (category === filter) ? '' : 'none';
+                }
+            });
+        });
     });
 });
 </script>

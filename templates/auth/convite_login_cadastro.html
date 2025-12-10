@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/invite.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-utilities.css') }}">
+<style>
+/* Página de login/cadastro após aceitar convite */
+body.invite-auth-page {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+/* Ocultar completamente todos os elementos de navegação */
+body.invite-auth-page .sidebar, 
+body.invite-auth-page .col-md-2.d-none.d-md-block,
+body.invite-auth-page .navbar-nav, 
+body.invite-auth-page .navbar-toggler,
+body.invite-auth-page nav.navbar,
+body.invite-auth-page .navbar-brand,
+body.invite-auth-page .navbar-collapse,
+body.invite-auth-page .nav-item,
+body.invite-auth-page .dropdown-menu,
+body.invite-auth-page [class*="sidebar"],
+body.invite-auth-page [class*="nav-"],
+body.invite-auth-page [class*="menu-"] {
+    display: none !important;
+}
+
+/* Layout da página ocupa toda a largura */
+body.invite-auth-page .container-fluid {
+    padding: 0;
+    max-width: 100%;
+}
+
+body.invite-auth-page .container-fluid .row {
+    margin: 0;
+}
+
+/* Forçar o conteúdo principal a ocupar toda a largura */
+body.invite-auth-page .col-md-10 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+/* Container da página */
+body.invite-auth-page .invite-auth-container {
+    width: 100%;
+    padding: 20px 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+/* Garantir que o footer não apareça */
+body.invite-auth-page footer {
+    display: none !important;
+}
+
+/* Estilos específicos para os cards de login/cadastro */
+.auth-option-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.auth-option-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+.auth-option-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.auth-option-header.register {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+.form-control-lg {
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+}
+
+.btn-auth {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+</style>
+
+<script>
+// Adicionar classe específica ao body
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('invite-auth-page');
+});
+</script>
+{% endblock %}
+
+{% block title %}Login ou Cadastro - Convite Aceito - Sistema Combinado{% endblock %}
+
+{% block navbar %}
+<!-- Não exibir navbar na página de login/cadastro do convite -->
+{% endblock %}
+
+{% block content %}
+<div class="invite-auth-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                
+                <!-- Logo destacada no topo -->
+                <div class="invite-logo-section text-center mb-4">
+                    <img src="{{ url_for('static', filename='images/logo.svg') }}" 
+                         alt="Logo Sistema Combinado" 
+                         class="invite-logo img-fluid"
+                         style="max-height: 80px;"
+                         onerror="handleLogoError(this)">
+                    <div class="logo-fallback" style="display: none;">
+                        <h2 class="mb-0">Sistema<br>Combinado</h2>
+                    </div>
+                </div>
+
+                <!-- Confirmação de aceitação -->
+                <div class="text-center mb-4">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h4 class="mb-2">Convite Aceito com Sucesso!</h4>
+                        <p class="mb-0">Agora complete seu cadastro ou faça login para visualizar os detalhes do convite</p>
+                    </div>
+                </div>
+
+                <!-- Resumo do convite aceito -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0 text-center">
+                            <i class="fas fa-envelope-open-text me-2"></i>
+                            Convite Aceito
+                        </h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <h5 class="mb-2">{{ invite.service_title }}</h5>
+                        <p class="text-muted mb-2">Solicitado por: <strong>{{ invite.client.nome }}</strong></p>
+                        <p class="mb-0">
+                            <span class="badge bg-success fs-6">{{ invite.original_value|format_currency }}</span>
+                            <span class="text-muted ms-2">Prazo: {{ invite.delivery_date.strftime('%d/%m/%Y') }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Mensagens Flash -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Opções de autenticação -->
+                <div class="row g-4">
+                    <!-- Cadastro para novos usuários -->
+                    <div class="col-md-6">
+                        <div class="card auth-option-card h-100">
+                            <div class="card-header auth-option-header register text-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    Criar Nova Conta
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-center text-muted mb-4">
+                                    Primeira vez no sistema? Crie sua conta de prestador
+                                </p>
+                                
+                                <form method="POST" action="{{ url_for('auth.processar_cadastro_convite', token=token) }}" id="cadastroForm">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    
+                                    <div class="mb-3">
+                                        <label for="nome" class="form-label">
+                                            <i class="fas fa-user me-1"></i>Nome Completo *
+                                        </label>
+                                        <input type="text" class="form-control form-control-lg" id="nome" name="nome" 
+                                               placeholder="Seu nome completo" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="phone" class="form-label">
+                                            <i class="fas fa-phone me-1"></i>Telefone *
+                                        </label>
+                                        <input type="tel" class="form-control form-control-lg" id="phone" name="phone" 
+                                               value="{{ invite.invited_phone }}" placeholder="(11) 99999-9999" required>
+                                        <div class="form-text">Você pode alterar o telefone se necessário</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">
+                                            <i class="fas fa-envelope me-1"></i>Email *
+                                        </label>
+                                        <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                                               placeholder="seu@email.com" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="cpf" class="form-label">
+                                            <i class="fas fa-id-card me-1"></i>CPF *
+                                        </label>
+                                        <input type="text" class="form-control form-control-lg" id="cpf" name="cpf" 
+                                               placeholder="000.000.000-00" maxlength="14" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">
+                                            <i class="fas fa-lock me-1"></i>Senha *
+                                        </label>
+                                        <input type="password" class="form-control form-control-lg" id="password" name="password" 
+                                               placeholder="Mínimo 6 caracteres" minlength="6" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="confirm_password" class="form-label">
+                                            <i class="fas fa-lock me-1"></i>Confirmar Senha *
+                                        </label>
+                                        <input type="password" class="form-control form-control-lg" id="confirm_password" name="confirm_password" 
+                                               placeholder="Repita a senha" minlength="6" required>
+                                    </div>
+                                    
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                                        <label class="form-check-label" for="terms">
+                                            Eu aceito os <a href="#" target="_blank">termos de uso</a> e 
+                                            <a href="#" target="_blank">política de privacidade</a> *
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success btn-lg btn-auth">
+                                            <i class="fas fa-user-plus me-2"></i>Criar Conta e Ver Convite
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Login para usuários existentes -->
+                    <div class="col-md-6">
+                        <div class="card auth-option-card h-100">
+                            <div class="card-header auth-option-header text-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    Fazer Login
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-center text-muted mb-4">
+                                    Já possui uma conta? Faça login para ver o convite
+                                </p>
+                                
+                                <form method="POST" action="{{ url_for('auth.processar_login_convite', token=token) }}" id="loginForm">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    
+                                    <div class="mb-3">
+                                        <label for="login_email" class="form-label">
+                                            <i class="fas fa-envelope me-1"></i>Email
+                                        </label>
+                                        <input type="email" class="form-control form-control-lg" id="login_email" name="email" 
+                                               placeholder="seu@email.com" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="login_password" class="form-label">
+                                            <i class="fas fa-lock me-1"></i>Senha
+                                        </label>
+                                        <input type="password" class="form-control form-control-lg" id="login_password" name="password" 
+                                               placeholder="Sua senha" required>
+                                    </div>
+                                    
+                                    <div class="d-grid mb-3">
+                                        <button type="submit" class="btn btn-primary btn-lg btn-auth">
+                                            <i class="fas fa-sign-in-alt me-2"></i>Entrar e Ver Convite
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="text-center">
+                                        <small class="text-muted">
+                                            <a href="#" class="text-decoration-none">Esqueceu sua senha?</a>
+                                        </small>
+                                    </div>
+                                </form>
+                                
+                                <!-- Espaço extra para equilibrar com o card de cadastro -->
+                                <div style="height: 200px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botão para voltar -->
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('auth.convite_acesso', token=token) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar ao Convite
+                    </a>
+                </div>
+
+                <!-- Rodapé com ajuda -->
+                <div class="text-center mt-4">
+                    <p class="small text-muted">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Precisa de ajuda? <a href="mailto:suporte@combinado.com">Entre em contato</a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/invite-interactions.js') }}"></script>
+<script>
+// Função para lidar com erro de carregamento da logo
+function handleLogoError(img) {
+    img.onerror = null; // Prevenir loop infinito
+    img.src = '{{ url_for("static", filename="images/logo.png") }}';
+    if (img.complete && img.naturalWidth === 0) {
+        img.style.display = 'none';
+        img.nextElementSibling.style.display = 'inline-block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificação da logo
+    const logoImg = document.querySelector('.invite-logo');
+    const logoFallback = document.querySelector('.logo-fallback');
+    
+    if (logoImg && logoFallback) {
+        function showFallback() {
+            logoImg.style.display = 'none';
+            logoFallback.style.display = 'inline-block';
+        }
+        
+        logoImg.addEventListener('load', function() {
+            if (this.naturalWidth === 0 || this.naturalHeight === 0) {
+                showFallback();
+            }
+        });
+        
+        setTimeout(function() {
+            if (logoImg.complete && (logoImg.naturalWidth === 0 || logoImg.naturalHeight === 0)) {
+                showFallback();
+            }
+        }, 1000);
+    }
+    
+    // Máscaras, validações e interações são gerenciadas pelo invite-interactions.js
+});
+</script>
+{% endblock %}

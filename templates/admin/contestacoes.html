@@ -1,12 +1,19 @@
 {% extends "admin/base_admin.html" %}
 
-{% block title %}Contestações de Contratos - Admin{% endblock %}
+{% block title %}Contestações de Ordens - Admin{% endblock %}
 
 {% block admin_content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-exclamation-triangle me-2"></i>Gestão de Contestações</h2>
     <div>
-        <span class="badge bg-danger fs-6">{{ contestacoes_pendentes }} Pendentes</span>
+        {% if status_filter == 'pendente' %}
+        <span class="badge bg-warning fs-6">Filtro: Pendentes</span>
+        {% elif status_filter == 'em_analise' %}
+        <span class="badge bg-info fs-6">Filtro: Em Análise</span>
+        {% else %}
+        <span class="badge bg-secondary fs-6">Filtro: Todas</span>
+        {% endif %}
+        <span class="badge bg-danger fs-6 ms-2">{{ stats.total_contestadas }} Contestadas</span>
     </div>
 </div>
 
@@ -15,67 +22,26 @@
         {% for category, message in messages %}
             <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
                 {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar alerta"></button>
             </div>
         {% endfor %}
     {% endif %}
 {% endwith %}
 
-<!-- Filtros -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
-    </div>
-    <div class="card-body">
-        <form method="GET" class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="pendente">Pendente</option>
-                    <option value="em_analise">Em Análise</option>
-                    <option value="resolvida">Resolvida</option>
-                    <option value="rejeitada">Rejeitada</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Tipo</label>
-                <select name="tipo" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="nao_entregue">Serviço Não Entregue</option>
-                    <option value="mal_executado">Mal Executado</option>
-                    <option value="pagamento">Problema de Pagamento</option>
-                    <option value="outro">Outro</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Contrato ID</label>
-                <input type="text" name="contrato_id" class="form-control" placeholder="ID do contrato">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-search me-1"></i>Filtrar
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- Estatísticas Rápidas -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-center border-danger">
+        <div class="card text-center border-warning">
             <div class="card-body">
-                <h3 class="text-danger mb-0">{{ stats.pendentes }}</h3>
+                <h3 class="text-warning mb-0">{{ stats.total_pendentes }}</h3>
                 <p class="text-muted mb-0">Pendentes</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center border-warning">
+        <div class="card text-center border-info">
             <div class="card-body">
-                <h3 class="text-warning mb-0">{{ stats.em_analise }}</h3>
+                <h3 class="text-info mb-0">{{ stats.total_em_analise }}</h3>
                 <p class="text-muted mb-0">Em Análise</p>
             </div>
         </div>
@@ -83,16 +49,16 @@
     <div class="col-md-3">
         <div class="card text-center border-success">
             <div class="card-body">
-                <h3 class="text-success mb-0">{{ stats.resolvidas }}</h3>
+                <h3 class="text-success mb-0">{{ stats.total_resolvidas }}</h3>
                 <p class="text-muted mb-0">Resolvidas</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center border-secondary">
+        <div class="card text-center border-danger">
             <div class="card-body">
-                <h3 class="text-secondary mb-0">{{ stats.rejeitadas }}</h3>
-                <p class="text-muted mb-0">Rejeitadas</p>
+                <h3 class="text-danger mb-0">{{ stats.total_contestadas }}</h3>
+                <p class="text-muted mb-0">Total Contestadas</p>
             </div>
         </div>
     </div>
@@ -101,74 +67,140 @@
 <!-- Lista de Contestações -->
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0">Contestações Registradas</h5>
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            {% if status_filter == 'pendente' %}
+            Contestações Pendentes
+            {% elif status_filter == 'em_analise' %}
+            Contestações Em Análise
+            {% else %}
+            Todas as Contestações
+            {% endif %}
+        </h5>
     </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Contrato</th>
-                        <th>Contestante</th>
-                        <th>Tipo</th>
-                        <th>Status</th>
-                        <th>Data</th>
+                        <th>ID Ordem</th>
+                        <th>Serviço</th>
+                        <th>Cliente</th>
+                        <th>Prestador</th>
                         <th>Valor</th>
+                        <th>Aberta em</th>
+                        <th>Aberta por</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% if contestacoes %}
-                        {% for contestacao in contestacoes %}
+                    {% if contestacoes.items %}
+                        {% for order in contestacoes.items %}
                         <tr>
-                            <td>#{{ contestacao.id }}</td>
                             <td>
-                                <a href="{{ url_for('admin.ver_contrato', contrato_id=contestacao.contrato_id) }}">
-                                    Contrato #{{ contestacao.contrato_id }}
-                                </a>
-                            </td>
-                            <td>{{ contestacao.usuario_nome }}</td>
-                            <td>
-                                <span class="badge bg-secondary">{{ contestacao.tipo }}</span>
+                                <strong>#{{ order.id }}</strong>
                             </td>
                             <td>
-                                {% if contestacao.status == 'pendente' %}
-                                    <span class="badge bg-danger">Pendente</span>
-                                {% elif contestacao.status == 'em_analise' %}
-                                    <span class="badge bg-warning">Em Análise</span>
-                                {% elif contestacao.status == 'resolvida' %}
-                                    <span class="badge bg-success">Resolvida</span>
+                                <div class="text-truncate" style="max-width: 200px;" title="{{ order.title }}">
+                                    {{ order.title }}
+                                </div>
+                            </td>
+                            <td>
+                                <div>{{ order.client.nome if order.client else 'N/A' }}</div>
+                                <small class="text-muted">{{ order.client.email if order.client else '' }}</small>
+                            </td>
+                            <td>
+                                <div>{{ order.provider.nome if order.provider else 'N/A' }}</div>
+                                <small class="text-muted">{{ order.provider.email if order.provider else '' }}</small>
+                            </td>
+                            <td>
+                                <strong class="text-success">R$ {{ "%.2f"|format(order.value) }}</strong>
+                            </td>
+                            <td>
+                                <div>{{ order.dispute_opened_at.strftime('%d/%m/%Y') if order.dispute_opened_at else '-' }}</div>
+                                <small class="text-muted">{{ order.dispute_opened_at.strftime('%H:%M') if order.dispute_opened_at else '' }}</small>
+                            </td>
+                            <td>
+                                {% if order.dispute_opened_by == order.client_id %}
+                                    <span class="badge bg-info">Cliente</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Rejeitada</span>
+                                    <span class="badge bg-primary">Prestador</span>
                                 {% endif %}
                             </td>
-                            <td>{{ contestacao.created_at.strftime('%d/%m/%Y %H:%M') if contestacao.created_at else '-' }}</td>
-                            <td>R$ {{ "%.2f"|format(contestacao.valor) }}</td>
                             <td>
-                                <a href="{{ url_for('admin.analisar_contestacao', contestacao_id=contestacao.id) }}" 
-                                   class="btn btn-sm btn-primary">
-                                    <i class="fas fa-eye"></i> Analisar
+                                <a href="{{ url_for('admin.ver_contestacao', order_id=order.id) }}" 
+                                   class="btn btn-sm btn-warning">
+                                    <i class="fas fa-gavel me-1"></i>Analisar
                                 </a>
                             </td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="8" class="text-center text-muted">
-                                <i class="fas fa-info-circle me-2"></i>Nenhuma contestação registrada
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-check-circle me-2 fs-3"></i>
+                                <div class="mt-2">
+                                    {% if status_filter == 'pendente' %}
+                                    Nenhuma contestação pendente
+                                    {% elif status_filter == 'em_analise' %}
+                                    Nenhuma contestação em análise
+                                    {% else %}
+                                    Nenhuma contestação encontrada
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                     {% endif %}
                 </tbody>
             </table>
         </div>
+        
+        <!-- Paginação -->
+        {% if contestacoes.pages > 1 %}
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination justify-content-center mt-3">
+                {% if contestacoes.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.contestacoes', page=contestacoes.prev_num, status=status_filter) }}">Anterior</a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in contestacoes.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        {% if page_num == contestacoes.page %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link" href="{{ url_for('admin.contestacoes', page=page_num, status=status_filter) }}">{{ page_num }}</a></li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if contestacoes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.contestacoes', page=contestacoes.next_num, status=status_filter) }}">Próxima</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
     </div>
 </div>
 
 <div class="alert alert-info mt-4">
     <i class="fas fa-info-circle me-2"></i>
-    <strong>Sobre Contestações:</strong> Quando um cliente ou prestador contesta um contrato, o valor fica bloqueado 
-    até que a administração analise e tome uma decisão. Analise cada caso com cuidado e baseie-se nas evidências apresentadas.
+    <strong>Sobre Contestações:</strong> Quando um cliente contesta uma ordem, os valores ficam bloqueados em escrow 
+    até que a administração analise e tome uma decisão. Analise cada caso com cuidado, revise as provas apresentadas 
+    e justifique sua decisão nas notas administrativas.
+</div>
+
+<div class="alert alert-warning mt-3">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Importante:</strong> Sua decisão é final e irá processar automaticamente os pagamentos conforme o vencedor escolhido.
+    <ul class="mb-0 mt-2">
+        <li><strong>Se decidir a favor do cliente:</strong> O valor do serviço será devolvido ao cliente, e a taxa de contestação do cliente será transferida para a plataforma.</li>
+        <li><strong>Se decidir a favor do prestador:</strong> O prestador receberá o valor do serviço (menos a taxa da plataforma), e a taxa de contestação do cliente será transferida para a plataforma.</li>
+    </ul>
 </div>
 {% endblock %}

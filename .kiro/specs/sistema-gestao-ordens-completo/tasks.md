@@ -1,0 +1,417 @@
+# Implementation Plan
+
+**IMPORTANTE: Todos os textos, mensagens, labels, placeholders e conteúdo da interface devem estar em português (pt-BR).**
+
+- [x] 1. Atualizar modelo de dados e configurações
+  - Adicionar campos de configuração no modelo Order para armazenar taxas vigentes na criação
+  - Adicionar campo auto_confirmed no modelo Order
+  - Adicionar campo dispute_evidence_urls no modelo Order
+  - Criar registros iniciais no SystemConfig para as taxas (platform_fee_percentage, contestation_fee, cancellation_fee_percentage)
+  - Criar migration para os novos campos
+  - _Requirements: 2.2, 2.3, 13.7_
+
+- [x] 2. Implementar ConfigService para gestão de taxas
+  - Criar arquivo services/config_service.py
+  - Implementar método get_platform_fee_percentage() com valor padrão 5.0%
+  - Implementar método get_contestation_fee() com valor padrão R$ 10.00
+  - Implementar método get_cancellation_fee_percentage() com valor padrão 10.0%
+  - Implementar método set_platform_fee_percentage() com validação 0-100%
+  - Implementar método set_contestation_fee() com validação de valor positivo
+  - Implementar método set_cancellation_fee_percentage() com validação 0-100%
+  - Implementar método get_all_fees() que retorna todas as taxas atuais
+  - Adicionar cache de 5 minutos para as configurações
+  - _Requirements: 13.1, 13.2, 13.3, 13.8, 13.9_
+
+- [x] 3. Implementar OrderManagementService - Criação de Ordem
+  - Criar/atualizar arquivo services/order_management_service.py
+  - Implementar método create_order_from_invite()
+  - Validar convite (existe, não expirado, não convertido)
+  - Obter taxas atuais do ConfigService
+  - Calcular valores totais a bloquear (valor + taxa_contestação para cliente, taxa_contestação para prestador)
+  - Bloquear valores nas carteiras usando WalletService
+  - Criar ordem com status aguardando_execucao
+  - Armazenar taxas vigentes nos campos *_at_creation
+  - Atualizar convite (status=convertido, order_id)
+  - Registrar transações financeiras
+  - Usar transação atômica para todas as operações
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 12.1, 12.2_
+
+- [x] 4. Implementar OrderManagementService - Marcação de Conclusão
+  - Implementar método mark_service_completed()
+  - Validar ordem (existe, pertence ao prestador, status=aguardando_execucao)
+  - Atualizar status para servico_executado
+  - Registrar completed_at com datetime.utcnow()
+  - Calcular confirmation_deadline como completed_at + 36 horas
+  - Calcular dispute_deadline como completed_at + 36 horas
+  - Bloquear opção de cancelamento
+  - Registrar transação
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.6_
+
+- [x] 5. Implementar OrderManagementService - Confirmação Manual
+  - Implementar método confirm_service()
+  - Validar ordem (existe, pertence ao cliente, status=servico_executado)
+  - Validar prazo (confirmation_deadline não expirado)
+  - Implementar método auxiliar _process_order_payments()
+  - Calcular valor líquido prestador (valor - taxa_plataforma)
+  - Transferir valor líquido para prestador
+  - Transferir taxa_plataforma para admin
+  - Devolver taxa_contestação para cliente
+  - Devolver taxa_contestação para prestador
+  - Atualizar status para concluida
+  - Registrar confirmed_at
+  - Usar transação atômica
+  - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 12.1, 12.3_
+
+- [x] 6. Implementar OrderManagementService - Confirmação Automática
+  - Implementar método auto_confirm_expired_orders()
+  - Buscar ordens com status=servico_executado
+  - Filtrar onde confirmation_deadline <= datetime.utcnow()
+  - Para cada ordem expirada, processar pagamentos usando _process_order_payments()
+  - Atualizar status para concluida
+  - Registrar confirmed_at e auto_confirmed=True
+  - Retornar estatísticas (processed, confirmed, errors)
+  - Registrar logs detalhados de cada operação
+  - Tratar erros individualmente sem interromper o processamento de outras ordens
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 12.1_
+
+- [x] 7. Implementar OrderManagementService - Cancelamento com Multa
+  - Implementar método cancel_order()
+  - Validar ordem (existe, status=aguardando_execucao)
+  - Validar usuário (é cliente ou prestador da ordem)
+  - Validar motivo (obrigatório)
+  - Obter taxa de cancelamento do ConfigService
+  - Calcular multa (valor * cancellation_fee_percentage / 100)
+  - Implementar método auxiliar _process_cancellation_payments()
+  - Identificar parte prejudicada (se cliente cancelou, prestador é prejudicado e vice-versa)
+  - Transferir 50% da multa para plataforma
+  - Transferir 50% da multa para parte prejudicada
+  - Devolver valor do serviço menos multa para quem cancelou
+  - Devolver taxas de contestação para ambos
+  - Atualizar ordem (status=cancelada, cancelled_by, cancelled_at, cancellation_reason, cancellation_fee)
+  - Usar transação atômica
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 12.1_
+
+- [x] 8. Implementar OrderManagementService - Abertura de Contestação
+  - Implementar método open_dispute()
+  - Validar ordem (existe, pertence ao cliente, status=servico_executado)
+  - Validar prazo (dispute_deadline não expirado)
+  - Validar motivo (mínimo 20 caracteres)
+  - Implementar upload de arquivos de prova
+  - Validar tipos de arquivo (jpg, png, pdf, mp4)
+  - Validar tamanho (máximo 10MB por arquivo, máximo 5 arquivos)
+  - Sanitizar nomes de arquivo
+  - Salvar arquivos em diretório seguro
+  - Armazenar URLs dos arquivos em dispute_evidence_urls
+  - Atualizar ordem (status=contestada, dispute_opened_by, dispute_opened_at, dispute_client_statement)
+  - Bloquear confirmação automática
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7_
+
+- [x] 9. Implementar OrderManagementService - Arbitragem de Contestação
+  - Implementar método resolve_dispute()
+  - Validar ordem (existe, status=contestada)
+  - Validar winner ('client' ou 'provider')
+  - Se winner='client': devolver valor para cliente, transferir taxa_contestação do cliente para plataforma, prestador não recebe
+  - Se winner='provider': transferir valor menos taxa_plataforma para prestador, devolver taxa_contestação do prestador, transferir taxa_contestação do cliente para plataforma
+  - Atualizar ordem (status=resolvida, dispute_winner, dispute_resolved_at, dispute_admin_notes)
+  - Usar transação atômica
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
+
+- [x] 10. Implementar OrderManagementService - Métodos Auxiliares
+  - Implementar método get_orders_by_user() com filtros de status
+  - Implementar método get_order_statistics() retornando contadores para dashboard
+  - Adicionar eager loading de relacionamentos (client, provider) para otimização
+  - Implementar ordenação por created_at DESC
+  - _Requirements: 1.1, 1.2_
+
+- [x] 11. Criar job de confirmação automática
+  - Criar arquivo jobs/auto_confirm_orders.py
+  - Implementar função main() que inicializa app context
+  - Chamar OrderManagementService.auto_confirm_expired_orders()
+  - Registrar logs detalhados em logs/auto_confirm_orders.log
+  - Implementar tratamento de erros com logging
+  - Adicionar shebang #!/usr/bin/env python3.11
+  - Tornar arquivo executável (chmod +x)
+  - _Requirements: 5.3, 5.4_
+
+- [x] 12. Configurar cron job para confirmação automática
+  - Criar arquivo de documentação crontab_config.txt com instruções
+  - Adicionar linha de cron para executar a cada hora: 0 * * * * cd /path && python3.11 jobs/auto_confirm_orders.py
+  - Redirecionar output para logs/cron_auto_confirm.log
+  - Documentar comandos para instalação (crontab -e, crontab -l)
+  - _Requirements: 5.3_
+
+- [x] 13. Criar rotas de ordens - Dashboard e Listagem
+  - Criar/atualizar arquivo routes/order_routes.py
+  - Implementar rota GET /ordens para listar ordens do usuário
+  - Obter role do usuário (cliente ou prestador)
+  - Obter filtro de status dos query params
+  - Chamar OrderManagementService.get_orders_by_user()
+  - Chamar OrderManagementService.get_order_statistics()
+  - Renderizar template apropriado (cliente/ordens.html ou prestador/ordens.html)
+  - Passar ordens, estatísticas e filtro atual para o template
+  - Todas as mensagens flash devem estar em português
+  - _Requirements: 1.1, 1.2, 1.3_
+
+- [x] 14. Criar rotas de ordens - Detalhes
+  - Implementar rota GET /ordens/<id> para exibir detalhes
+  - Validar que usuário é cliente ou prestador da ordem
+  - Buscar ordem com eager loading de relacionamentos
+  - Calcular horas restantes para confirmação automática
+  - Determinar botões de ação disponíveis baseado em status e role
+  - Renderizar template apropriado (cliente/ver_ordem.html ou prestador/ver_ordem.html)
+  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+
+- [x] 15. Criar rotas de ordens - Ações do Prestador
+  - Implementar rota POST /ordens/<id>/marcar-concluido
+  - Validar que usuário é o prestador da ordem
+  - Chamar OrderManagementService.mark_service_completed()
+  - Exibir mensagem de sucesso ou erro
+  - Redirecionar para detalhes da ordem
+  - _Requirements: 3.1, 3.5, 10.1_
+
+- [x] 16. Criar rotas de ordens - Confirmação pelo Cliente
+  - Implementar rota POST /ordens/<id>/confirmar
+  - Validar que usuário é o cliente da ordem
+  - Chamar OrderManagementService.confirm_service()
+  - Exibir mensagem de sucesso ou erro
+  - Redirecionar para detalhes da ordem
+  - _Requirements: 4.1, 10.2_
+
+- [x] 17. Criar rotas de ordens - Contestação
+  - Implementar rota GET /ordens/<id>/contestar para exibir formulário
+  - Validar que usuário é o cliente
+  - Renderizar template cliente/contestar_ordem.html
+  - Implementar rota POST /ordens/<id>/contestar para processar contestação
+  - Validar que usuário é o cliente
+  - Obter arquivos de prova do request.files
+  - Chamar OrderManagementService.open_dispute()
+  - Exibir mensagem de sucesso ou erro
+  - Redirecionar para detalhes da ordem
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 10.2_
+
+- [x] 18. Criar rotas de ordens - Cancelamento
+  - Implementar rota POST /ordens/<id>/cancelar
+  - Validar que usuário é cliente ou prestador da ordem
+  - Obter motivo do cancelamento do request.form
+  - Chamar OrderManagementService.cancel_order()
+  - Exibir mensagem de sucesso ou erro
+  - Redirecionar para dashboard de ordens
+  - _Requirements: 6.1, 6.7, 10.4_
+
+- [x] 19. Criar rotas de ordens - APIs JSON
+  - Implementar rota GET /ordens/<id>/status (API)
+  - Retornar JSON com status, hours_remaining, can_confirm, can_dispute
+  - Implementar rota GET /ordens/estatisticas (API)
+  - Retornar JSON com estatísticas do dashboard
+  - Adicionar decorador @login_required em todas as rotas
+  - _Requirements: 1.5, 13.1_
+
+- [x] 20. Criar rotas admin - Gestão de Ordens
+  - Criar/atualizar arquivo routes/admin_routes.py
+  - Implementar rota GET /admin/ordens para listar todas as ordens
+  - Adicionar filtros por status, user_id, date_range
+  - Implementar rota GET /admin/ordens/<id> para detalhes completos
+  - Renderizar template admin/ordens.html
+  - _Requirements: 10.3_
+
+- [x] 21. Criar rotas admin - Arbitragem de Contestações
+  - Implementar rota GET /admin/contestacoes para listar contestações pendentes
+  - Filtrar ordens com status=contestada
+  - Implementar rota GET /admin/contestacoes/<order_id> para detalhes
+  - Exibir provas de ambas as partes
+  - Implementar rota POST /admin/contestacoes/<order_id>/resolver
+  - Obter winner e admin_notes do request.form
+  - Chamar OrderManagementService.resolve_dispute()
+  - Redirecionar para lista de contestações
+  - Renderizar template admin/arbitrar_contestacao.html
+  - _Requirements: 8.1, 8.2, 8.3, 10.3_
+
+- [x] 22. Criar rotas admin - Configuração de Taxas
+  - Implementar rota GET /admin/configuracoes/taxas
+  - Obter taxas atuais do ConfigService.get_all_fees()
+  - Renderizar formulário com valores atuais
+  - Implementar rota POST /admin/configuracoes/taxas
+  - Validar valores (percentuais 0-100%, valores fixos positivos)
+  - Chamar ConfigService.set_platform_fee_percentage()
+  - Chamar ConfigService.set_contestation_fee()
+  - Chamar ConfigService.set_cancellation_fee_percentage()
+  - Exibir mensagem de sucesso
+  - Renderizar template admin/configuracoes_taxas.html
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.8, 13.9_
+
+- [x] 23. Criar template - Dashboard Cliente
+  - Criar/atualizar arquivo templates/cliente/ordens.html
+  - Exibir 6 cards de estatísticas (Total, Aguardando, Para Confirmar, Concluídas, Canceladas, Contestadas)
+  - Implementar filtros por status com botões ou dropdown
+  - Exibir lista de ordens em cards
+  - Cada card deve mostrar: título, prestador, valor, status com cor/ícone, data, botões de ação
+  - Adicionar alertas visuais para prazos (vermelho < 12h, amarelo 12-36h)
+  - Implementar atualização automática a cada 30 segundos com JavaScript
+  - Adicionar layout responsivo (mobile: cards empilhados, desktop: grid)
+  - Todos os textos, labels e botões devem estar em português
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 14.1, 14.3, 14.4_
+
+- [x] 24. Criar template - Dashboard Prestador
+  - Criar/atualizar arquivo templates/prestador/ordens.html
+  - Exibir 6 cards de estatísticas (Total, Aguardando, Aguardando Cliente, Concluídas, Canceladas, Contestadas)
+  - Implementar filtros por status
+  - Exibir lista de ordens em cards
+  - Cada card deve mostrar: título, cliente, valor, status com cor/ícone, data, botões de ação
+  - Adicionar alertas visuais
+  - Implementar atualização automática a cada 30 segundos
+  - Adicionar layout responsivo
+  - Todos os textos, labels e botões devem estar em português
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 14.1, 14.3, 14.4_
+
+- [x] 25. Criar template - Detalhes da Ordem Cliente
+  - Criar/atualizar arquivo templates/cliente/ver_ordem.html
+  - Exibir status visual com cor e ícone apropriado
+  - Exibir contador regressivo de 36 horas quando status=servico_executado
+  - Mostrar alerta vermelho quando faltam menos de 12 horas
+  - Exibir informações completas: título, descrição, prestador, valor, datas
+  - Exibir cálculo detalhado de valores (taxa plataforma, taxa contestação, valor líquido)
+  - Exibir histórico de datas (criação, conclusão, confirmação)
+  - Mostrar botões de ação contextual: Confirmar, Contestar, Cancelar
+  - Implementar atualização automática a cada 60 segundos quando status=servico_executado
+  - Adicionar modais de confirmação para ações críticas
+  - Todos os textos, labels, alertas e mensagens devem estar em português
+  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 14.2, 14.5_
+
+- [x] 26. Criar template - Detalhes da Ordem Prestador
+  - Criar/atualizar arquivo templates/prestador/ver_ordem.html
+  - Exibir status visual com cor e ícone
+  - Exibir informações completas: título, descrição, cliente, valor, datas
+  - Exibir cálculo de valores
+  - Mostrar botões de ação contextual: Marcar como Concluído, Cancelar
+  - Quando status=servico_executado, mostrar mensagem "Aguardando confirmação do cliente"
+  - Exibir contador de tempo restante para confirmação automática
+  - Adicionar modais de confirmação
+  - Todos os textos, labels, alertas e mensagens devem estar em português
+  - _Requirements: 9.1, 9.4, 9.5, 14.2_
+
+- [x] 27. Criar template - Formulário de Contestação
+  - Criar/atualizar arquivo templates/cliente/contestar_ordem.html
+  - Exibir informações da ordem
+  - Campo de texto para motivo (textarea, mínimo 20 caracteres)
+  - Input de upload múltiplo para provas (accept: .jpg,.png,.pdf,.mp4)
+  - Preview dos arquivos selecionados com JavaScript
+  - Exibir informações sobre taxa de contestação (R$ 10,00)
+  - Exibir avisos sobre possíveis resultados
+  - Exibir prazo para contestar
+  - Checkbox de confirmação obrigatório
+  - Botão de submit com validação
+  - Todos os textos, labels, placeholders e avisos devem estar em português
+  - _Requirements: 7.2, 7.3, 7.4_
+
+- [x] 28. Criar template - Lista de Ordens Admin
+  - Criar arquivo templates/admin/ordens.html
+  - Exibir tabela com todas as ordens
+  - Colunas: ID, Cliente, Prestador, Valor, Status, Data Criação, Ações
+  - Implementar filtros por status, usuário, data
+  - Adicionar paginação
+  - Link para detalhes de cada ordem
+  - Destacar ordens contestadas
+  - Todos os textos, labels e cabeçalhos devem estar em português
+  - _Requirements: 10.3_
+
+- [x] 29. Criar template - Arbitragem de Contestação
+  - Criar arquivo templates/admin/arbitrar_contestacao.html
+  - Exibir detalhes completos da ordem
+  - Exibir declaração do cliente (dispute_client_statement)
+  - Exibir resposta do prestador (se houver)
+  - Exibir todas as provas enviadas (imagens, documentos)
+  - Implementar visualizador de imagens
+  - Formulário de decisão com radio buttons (Cliente / Prestador)
+  - Campo de texto para notas do admin
+  - Botão de submit com confirmação
+  - Todos os textos, labels e instruções devem estar em português
+  - _Requirements: 8.1, 8.2_
+
+- [x] 30. Criar template - Configuração de Taxas Admin
+  - Criar arquivo templates/admin/configuracoes_taxas.html
+  - Formulário com 3 campos: Taxa da Plataforma (%), Taxa de Contestação (R$), Taxa de Cancelamento (%)
+  - Exibir valores atuais
+  - Validação client-side (0-100% para percentuais, positivo para fixo)
+  - Avisos sobre impacto das alterações
+  - Informação de que novas taxas só aplicam para ordens futuras
+  - Botão de salvar com confirmação
+  - Todos os textos, labels, avisos e mensagens devem estar em português
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6_
+
+- [x] 31. Implementar sistema de notificações
+  - Criar/atualizar arquivo services/notification_service.py
+  - Implementar método notify_order_created()
+  - Implementar método notify_service_completed() com destaque para prazo de 36h
+  - Implementar método notify_confirmation_reminder() para lembrete após 24h
+  - Implementar método notify_auto_confirmed()
+  - Implementar método notify_order_cancelled()
+  - Implementar método notify_dispute_opened()
+  - Implementar método notify_dispute_resolved()
+  - Integrar notificações em todos os métodos do OrderManagementService
+  - Todas as mensagens de notificação devem estar em português
+  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 3.5, 5.5, 5.6_
+
+- [x] 32. Adicionar índices de banco de dados
+  - Criar migration para adicionar índices
+  - Adicionar índice em orders.status
+  - Adicionar índice em orders.confirmation_deadline
+  - Adicionar índice em orders.client_id
+  - Adicionar índice em orders.provider_id
+  - Adicionar índice em orders.created_at (DESC)
+  - _Requirements: 12.4_
+
+- [x] 33. Implementar validações de segurança
+  - Adicionar validação de propriedade da ordem em todas as rotas
+  - Implementar validação de tipos de arquivo no upload
+  - Implementar validação de tamanho de arquivo (10MB max)
+  - Implementar sanitização de nomes de arquivo
+  - Adicionar CSRF protection em todos os formulários
+  - Implementar rate limiting para ações críticas
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6_
+
+- [x] 34. Implementar logs e auditoria
+  - Adicionar logging detalhado em OrderManagementService
+  - Registrar todas as mudanças de status
+  - Registrar todas as transações financeiras
+  - Registrar todas as ações de cancelamento e contestação
+  - Adicionar IDs únicos para rastreabilidade
+  - Implementar log rotation
+  - _Requirements: 12.3, 12.5_
+
+- [x] 35. Criar documentação de deployment
+  - Criar arquivo DEPLOYMENT.md
+  - Documentar variáveis de ambiente necessárias
+  - Documentar configuração do cron job
+  - Documentar processo de migration
+  - Documentar seed de configurações iniciais
+  - Adicionar checklist de deployment
+  - _Requirements: 5.3_
+
+- [-] 36. Criar testes unitários do OrderManagementService
+  - Criar arquivo tests/test_order_management_service.py
+  - Testar create_order_from_invite()
+  - Testar mark_service_completed()
+  - Testar confirm_service()
+  - Testar auto_confirm_expired_orders()
+  - Testar cancel_order() com diferentes cenários
+  - Testar open_dispute()
+  - Testar resolve_dispute() para ambos os vencedores
+  - Testar validações de erro
+  - _Requirements: 12.1, 12.2_
+
+- [x] 37. Criar testes de integração
+  - Criar arquivo tests/test_order_flow_integration.py
+  - Testar fluxo completo: criação → conclusão → confirmação manual
+  - Testar fluxo de confirmação automática após 36h
+  - Testar fluxo de cancelamento com multas
+  - Testar fluxo de contestação e arbitragem
+  - Testar atualização de taxas e impacto em ordens
+  - _Requirements: 12.1_
+
+- [x] 38. Criar testes do ConfigService
+  - Criar arquivo tests/test_config_service.py
+  - Testar get de todas as taxas
+  - Testar set de taxas com validações
+  - Testar que ordens antigas mantêm taxas originais
+  - Testar cache de configurações
+  - _Requirements: 13.4, 13.7_

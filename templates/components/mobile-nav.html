@@ -1,0 +1,192 @@
+{# ==============================================================================
+   MOBILE NAVIGATION COMPONENT
+   Barra de navegação fixa no rodapé para dispositivos móveis
+   
+   Requirement 4: Navegação Simplificada
+   - Menu de navegação fixo no rodapé em mobile
+   - Ícones grandes e reconhecíveis
+   - Badge para notificações pendentes
+   - Destaque da página atual
+   
+   Usage:
+   {% include 'components/mobile-nav.html' %}
+   
+   Variables expected:
+   - active_role: 'cliente' or 'prestador'
+   - user_type: 'cliente' or 'prestador'
+   - pending_notifications: número de notificações pendentes (opcional)
+   - pending_invites: número de convites pendentes (opcional)
+   - pending_pre_orders: número de pré-ordens aguardando ação (opcional)
+   - pending_orders: número de ordens aguardando ação (opcional)
+   ============================================================================== #}
+
+{# Determinar qual página está ativa baseado na URL atual #}
+{% set current_path = request.path %}
+{% set is_dashboard = '/dashboard' in current_path %}
+{% set is_invites = '/convites' in current_path or '/convite' in current_path %}
+{% set is_pre_orders = '/pre-ordem' in current_path or '/pre_ordem' in current_path %}
+{% set is_orders = '/ordem' in current_path or '/order' in current_path %}
+{% set is_profile = '/perfil' in current_path or '/carteira' in current_path or '/transacoes' in current_path or '/saque' in current_path %}
+
+{# Calcular total de notificações pendentes #}
+{% set total_notifications = (pending_invites|default(0)) + (pending_pre_orders|default(0)) + (pending_orders|default(0)) %}
+
+<nav class="mobile-nav animate-in" role="navigation" aria-label="Navegação principal mobile">
+    <ul class="mobile-nav-list">
+        
+        {# Home / Dashboard #}
+        <li class="mobile-nav-item">
+            <a href="{{ url_for(user_type ~ '.dashboard') }}" 
+               class="mobile-nav-link {{ 'active' if is_dashboard else '' }}"
+               aria-label="Página inicial"
+               aria-current="{{ 'page' if is_dashboard else 'false' }}">
+                <span class="mobile-nav-icon">
+                    <i class="fas fa-home" aria-hidden="true"></i>
+                </span>
+                <span class="mobile-nav-label">Início</span>
+            </a>
+        </li>
+        
+        {# Convites #}
+        <li class="mobile-nav-item">
+            <a href="{{ url_for(user_type ~ '.convites') }}" 
+               class="mobile-nav-link {{ 'active' if is_invites else '' }}"
+               aria-label="Convites{% if pending_invites %} ({{ pending_invites }} pendentes){% endif %}"
+               aria-current="{{ 'page' if is_invites else 'false' }}">
+                <span class="mobile-nav-icon">
+                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                    {% if pending_invites and pending_invites > 0 %}
+                    <span class="mobile-nav-badge pulse" aria-label="{{ pending_invites }} convites pendentes">
+                        {{ pending_invites if pending_invites < 100 else '99+' }}
+                    </span>
+                    {% endif %}
+                </span>
+                <span class="mobile-nav-label">Convites</span>
+            </a>
+        </li>
+        
+        {# Pré-Ordens / Negociação #}
+        <li class="mobile-nav-item">
+            <a href="{{ url_for('pre_ordem.listar') }}" 
+               class="mobile-nav-link {{ 'active' if is_pre_orders else '' }}"
+               aria-label="Pré-Ordens{% if pending_pre_orders %} ({{ pending_pre_orders }} aguardando ação){% endif %}"
+               aria-current="{{ 'page' if is_pre_orders else 'false' }}">
+                <span class="mobile-nav-icon">
+                    <i class="fas fa-handshake" aria-hidden="true"></i>
+                    {% if pending_pre_orders and pending_pre_orders > 0 %}
+                    <span class="mobile-nav-badge pulse" aria-label="{{ pending_pre_orders }} pré-ordens aguardando ação">
+                        {{ pending_pre_orders if pending_pre_orders < 100 else '99+' }}
+                    </span>
+                    {% endif %}
+                </span>
+                <span class="mobile-nav-label">Negociação</span>
+            </a>
+        </li>
+        
+        {# Ordens #}
+        <li class="mobile-nav-item">
+            <a href="{{ url_for(user_type ~ '.ordens') if user_type == 'cliente' else url_for('prestador.minhas_ordens') }}" 
+               class="mobile-nav-link {{ 'active' if is_orders else '' }}"
+               aria-label="Ordens{% if pending_orders %} ({{ pending_orders }} aguardando ação){% endif %}"
+               aria-current="{{ 'page' if is_orders else 'false' }}">
+                <span class="mobile-nav-icon">
+                    <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                    {% if pending_orders and pending_orders > 0 %}
+                    <span class="mobile-nav-badge pulse" aria-label="{{ pending_orders }} ordens aguardando ação">
+                        {{ pending_orders if pending_orders < 100 else '99+' }}
+                    </span>
+                    {% endif %}
+                </span>
+                <span class="mobile-nav-label">Ordens</span>
+            </a>
+        </li>
+        
+        {# Perfil / Carteira #}
+        <li class="mobile-nav-item">
+            <a href="{{ url_for(user_type ~ '.carteira') }}" 
+               class="mobile-nav-link {{ 'active' if is_profile else '' }}"
+               aria-label="Perfil e Carteira"
+               aria-current="{{ 'page' if is_profile else 'false' }}">
+                <span class="mobile-nav-icon">
+                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                </span>
+                <span class="mobile-nav-label">Perfil</span>
+            </a>
+        </li>
+        
+    </ul>
+</nav>
+
+{# Script para adicionar classe ao body e melhorar feedback visual #}
+<script>
+(function() {
+    // Adicionar classe ao body para ajustar padding
+    function updateMobileNavState() {
+        if (window.innerWidth < 768) {
+            document.body.classList.add('has-mobile-nav');
+        } else {
+            document.body.classList.remove('has-mobile-nav');
+        }
+    }
+    
+    // Inicializar
+    updateMobileNavState();
+    
+    // Atualizar ao redimensionar
+    window.addEventListener('resize', updateMobileNavState);
+    
+    // Melhorar feedback visual ao tocar nos links
+    const navLinks = document.querySelectorAll('.mobile-nav-link');
+    navLinks.forEach(function(link) {
+        // Adicionar efeito de ripple ao tocar
+        link.addEventListener('touchstart', function(e) {
+            // Adicionar classe temporária para feedback visual
+            this.style.transform = 'scale(0.95)';
+        }, { passive: true });
+        
+        link.addEventListener('touchend', function(e) {
+            // Remover efeito após soltar
+            this.style.transform = '';
+        }, { passive: true });
+        
+        link.addEventListener('touchcancel', function(e) {
+            // Remover efeito se o toque for cancelado
+            this.style.transform = '';
+        }, { passive: true });
+    });
+    
+    // Destacar visualmente a página atual ao carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeLink = document.querySelector('.mobile-nav-link.active');
+        if (activeLink) {
+            // Scroll suave para garantir que o item ativo está visível
+            activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            
+            // Adicionar animação de destaque inicial
+            activeLink.style.animation = 'none';
+            setTimeout(function() {
+                activeLink.style.animation = '';
+            }, 10);
+        }
+    });
+    
+    // Adicionar indicador visual ao navegar
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            // Remover classe active de todos os links
+            navLinks.forEach(function(l) {
+                l.classList.remove('active');
+            });
+            
+            // Adicionar classe active ao link clicado
+            this.classList.add('active');
+            
+            // Feedback visual de navegação
+            this.style.opacity = '0.6';
+            setTimeout(function() {
+                link.style.opacity = '';
+            }, 200);
+        });
+    });
+})();
+</script>

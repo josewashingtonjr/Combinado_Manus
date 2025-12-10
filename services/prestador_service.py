@@ -12,48 +12,30 @@ class PrestadorService:
     @staticmethod
     def get_dashboard_data(user_id):
         """Retorna dados reais para o dashboard do prestador com terminologia em R$"""
+        from services.dashboard_data_service import DashboardDataService
+        
         user = User.query.get(user_id)
         if not user:
             raise ValueError("Usuário não encontrado")
         
-        # Obter informações da carteira (dados reais)
-        try:
-            wallet_info = WalletService.get_wallet_info(user_id)
-            saldo_atual = wallet_info['balance']
-            saldo_bloqueado = wallet_info['escrow_balance']
-            saldo_disponivel = saldo_atual  # Saldo disponível para saque
-        except Exception:
-            # Fallback se carteira não existir
-            WalletService.ensure_user_has_wallet(user_id)
-            saldo_atual = 0.0
-            saldo_bloqueado = 0.0
-            saldo_disponivel = 0.0
+        # Usar DashboardDataService para obter métricas completas
+        metrics = DashboardDataService.get_dashboard_metrics(user_id, 'prestador')
         
-        # Início do mês atual para filtros
-        inicio_mes = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # Obter ordens em aberto usando DashboardDataService
+        ordens_em_aberto = metrics['open_orders']
         
-        # Contar ordens ativas (aceitas pelo prestador)
-        ordens_ativas = Order.query.filter(
-            Order.provider_id == user_id,
-            Order.status.in_(['aceita', 'em_andamento'])
-        ).count()
+        # Obter fundos bloqueados detalhados
+        fundos_bloqueados = metrics['blocked_funds']
         
-        # Contar ordens concluídas no mês
-        ordens_concluidas_mes = Order.query.filter(
-            Order.provider_id == user_id,
-            Order.status == 'concluida',
-            Order.completed_at >= inicio_mes
-        ).count()
+        # Extrair informações de saldo
+        saldo_disponivel = metrics['balance']['available']
+        saldo_bloqueado = metrics['balance']['blocked']
+        saldo_total = metrics['balance']['total']
         
-        # Calcular ganhos do mês (transações de recebimento)
-        ganhos_mes_result = db.session.query(
-            func.sum(Transaction.amount)
-        ).filter(
-            Transaction.user_id == user_id,
-            Transaction.type == 'recebimento',
-            Transaction.created_at >= inicio_mes
-        ).scalar()
-        ganhos_mes = ganhos_mes_result or 0.0
+        # Estatísticas do mês
+        ordens_aceitas_mes = metrics['month_stats'].get('orders_accepted', 0)
+        ordens_concluidas_mes = metrics['month_stats'].get('orders_completed', 0)
+        ganhos_mes = metrics['month_stats'].get('total_received', 0.0)
         
         # Calcular ganhos totais
         ganhos_total_result = db.session.query(
@@ -64,26 +46,27 @@ class PrestadorService:
         ).scalar()
         ganhos_total = ganhos_total_result or 0.0
         
+        # Contar ordens ativas (aceita + em_andamento)
+        ordens_ativas = len([o for o in ordens_em_aberto if o['status'] in ['aceita', 'em_andamento']])
+        
         # Contar ordens disponíveis para aceitar (não aceitas por ninguém)
         ordens_disponiveis = Order.query.filter(
             Order.status == 'disponivel',
             Order.provider_id.is_(None)
         ).count()
         
-        # Buscar próximas ordens (ordens aceitas com data futura)
-        proximas_ordens_obj = Order.query.filter(
-            Order.provider_id == user_id,
-            Order.status.in_(['aceita', 'em_andamento'])
-        ).order_by(Order.created_at.desc()).limit(3).all()
-        
+        # Formatar próximas ordens (primeiras 3 ordens em aberto)
         proximas_ordens = []
-        for ordem in proximas_ordens_obj:
+        for ordem in ordens_em_aberto[:3]:
             proximas_ordens.append({
-                'titulo': ordem.title,
-                'data': ordem.created_at.strftime('%d/%m/%Y'),
-                'horario': ordem.created_at.strftime('%H:%M'),
-                'valor': ordem.value,
-                'status': ordem.status
+                'id': ordem['id'],
+                'titulo': ordem['title'],
+                'data': ordem['created_at'].strftime('%d/%m/%Y') if ordem['created_at'] else '',
+                'horario': ordem['created_at'].strftime('%H:%M') if ordem['created_at'] else '',
+                'valor': ordem['value'],
+                'status': ordem['status'],
+                'cliente': ordem['related_user_name'],
+                'prazo': ordem['service_deadline'].strftime('%d/%m/%Y') if ordem['service_deadline'] else ''
             })
         
         # Calcular média de avaliação (simulada por enquanto)
@@ -91,28 +74,26 @@ class PrestadorService:
         media_avaliacao = 4.5  # Simulado
         total_avaliacoes = ordens_concluidas_mes * 2  # Simulado
         
-        # Verificar alertas baseados em dados reais
+        # Converter alertas do DashboardDataService para formato legado
         alertas = []
+        
+        # Adicionar notificações de propostas
+        from services.notification_service import NotificationService
+        proposal_notifications = NotificationService.get_proposal_notifications_for_prestador(user_id)
+        alertas.extend(proposal_notifications)
+        
+        # Adicionar alertas do DashboardDataService
+        for alert in metrics['alerts']:
+            alertas.append({
+                'tipo': alert['type'],
+                'mensagem': alert['message']
+            })
         
         # Alerta de novas oportunidades
         if ordens_disponiveis > 0:
             alertas.append({
                 'tipo': 'info',
                 'mensagem': f'Há {ordens_disponiveis} novas oportunidades de trabalho disponíveis!'
-            })
-        
-        # Alerta de saldo disponível para saque
-        if saldo_disponivel >= 50.0:
-            alertas.append({
-                'tipo': 'success',
-                'mensagem': f'Você tem {saldo_disponivel:.2f} disponível para saque.'
-            })
-        
-        # Alerta de saldo baixo (menos de R$ 50,00)
-        if saldo_disponivel < 50.0:
-            alertas.append({
-                'tipo': 'warning',
-                'mensagem': 'Saldo baixo. Considere adicionar mais saldo à sua conta para aceitar novas ordens.'
             })
         
         # Alerta se não tem ordens ativas
@@ -122,9 +103,14 @@ class PrestadorService:
                 'mensagem': 'Você não tem ordens ativas. Que tal aceitar uma nova oportunidade?'
             })
         
+        # Buscar pré-ordens ativas
+        pre_orders_ativas = PrestadorService.get_active_pre_orders(user_id)
+        pre_orders_count = len(pre_orders_ativas)
+        pre_orders_needing_action = len([po for po in pre_orders_ativas if po['needs_action']])
+        
         dashboard_data = {
             # Valores em formato numérico (serão convertidos para R$ no template)
-            'saldo_atual': saldo_atual,
+            'saldo_atual': saldo_total,
             'saldo_disponivel': saldo_disponivel,
             'saldo_bloqueado': saldo_bloqueado,
             
@@ -148,7 +134,16 @@ class PrestadorService:
             # Métricas adicionais
             'taxa_conclusao': PrestadorService._calcular_taxa_conclusao(user_id),
             'ganho_medio_ordem': PrestadorService._calcular_ganho_medio_ordem(user_id),
-            'clientes_atendidos': PrestadorService._contar_clientes_atendidos(user_id)
+            'clientes_atendidos': PrestadorService._contar_clientes_atendidos(user_id),
+            
+            # Novos dados do DashboardDataService
+            'ordens_em_aberto': ordens_em_aberto,
+            'fundos_bloqueados_detalhados': fundos_bloqueados['by_order'],
+            
+            # Pré-ordens
+            'pre_orders_ativas': pre_orders_ativas,
+            'pre_orders_count': pre_orders_count,
+            'pre_orders_needing_action': pre_orders_needing_action
         }
         
         return dashboard_data
@@ -211,6 +206,29 @@ class PrestadorService:
         }
         
         return wallet_data
+    
+    @staticmethod
+    def get_open_orders_for_provider(user_id):
+        """
+        Retorna ordens em aberto para o prestador usando DashboardDataService
+        
+        Args:
+            user_id (int): ID do prestador
+            
+        Returns:
+            list: Lista formatada de ordens em aberto para exibição no template
+        """
+        from services.dashboard_data_service import DashboardDataService
+        
+        user = User.query.get(user_id)
+        if not user:
+            raise ValueError('Usuário não encontrado')
+        
+        # Usar DashboardDataService para obter ordens em aberto
+        open_orders = DashboardDataService.get_open_orders(user_id, 'prestador')
+        
+        # Formatar para template (já vem formatado do DashboardDataService)
+        return open_orders
     
     @staticmethod
     def get_provider_orders(user_id, page=1, status_filter='todas', per_page=20):
@@ -381,3 +399,62 @@ class PrestadorService:
         # - Avaliações
         
         return []
+    
+    @staticmethod
+    def get_active_pre_orders(user_id):
+        """
+        Retorna pré-ordens ativas do prestador
+        
+        Args:
+            user_id (int): ID do prestador
+            
+        Returns:
+            list: Lista de pré-ordens ativas formatadas
+        """
+        from models import PreOrder, PreOrderStatus, User
+        
+        # Buscar pré-ordens ativas (não convertidas, canceladas ou expiradas)
+        active_statuses = [
+            PreOrderStatus.EM_NEGOCIACAO.value,
+            PreOrderStatus.AGUARDANDO_RESPOSTA.value,
+            PreOrderStatus.PRONTO_CONVERSAO.value
+        ]
+        
+        pre_orders = PreOrder.query.filter(
+            PreOrder.provider_id == user_id,
+            PreOrder.status.in_(active_statuses)
+        ).order_by(PreOrder.updated_at.desc()).all()
+        
+        # Formatar para exibição
+        formatted_pre_orders = []
+        for po in pre_orders:
+            # Determinar se precisa de ação do prestador
+            needs_action = False
+            if po.has_active_proposal:
+                proposal = po.get_active_proposal()
+                if proposal and proposal.proposed_by != user_id:
+                    needs_action = True
+            elif po.status == PreOrderStatus.EM_NEGOCIACAO.value and not po.provider_accepted_terms:
+                needs_action = True
+            
+            formatted_pre_orders.append({
+                'id': po.id,
+                'title': po.title,
+                'current_value': float(po.current_value),
+                'original_value': float(po.original_value),
+                'status': po.status,
+                'status_display': po.status_display,
+                'status_color_class': po.status_color_class,
+                'client_name': po.client.nome if po.client else 'Desconhecido',
+                'client_id': po.client_id,
+                'has_active_proposal': po.has_active_proposal,
+                'needs_action': needs_action,
+                'client_accepted_terms': po.client_accepted_terms,
+                'provider_accepted_terms': po.provider_accepted_terms,
+                'days_until_expiration': po.days_until_expiration,
+                'is_near_expiration': po.is_near_expiration,
+                'updated_at': po.updated_at,
+                'created_at': po.created_at
+            })
+        
+        return formatted_pre_orders

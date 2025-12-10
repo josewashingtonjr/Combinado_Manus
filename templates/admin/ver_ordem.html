@@ -1,0 +1,386 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Ordem #{{ order.id }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{{ url_for('admin.ordens') }}" class="btn btn-outline-secondary mb-3">
+                <i class="fas fa-arrow-left"></i> Voltar para Lista de Ordens
+            </a>
+            <h2>Ordem #{{ order.id }}</h2>
+            <p class="text-muted">Detalhes completos da ordem</p>
+        </div>
+    </div>
+
+    <!-- Status e Informações Principais -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Informações da Ordem</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Título:</strong><br>
+                            {{ order.title }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong><br>
+                            {% if order.status == 'aguardando_execucao' %}
+                            <span class="badge bg-warning text-dark fs-6">Aguardando Execução</span>
+                            {% elif order.status == 'servico_executado' %}
+                            <span class="badge bg-info fs-6">Serviço Executado</span>
+                            {% elif order.status == 'concluida' %}
+                            <span class="badge bg-success fs-6">Concluída</span>
+                            {% elif order.status == 'cancelada' %}
+                            <span class="badge bg-secondary fs-6">Cancelada</span>
+                            {% elif order.status == 'contestada' %}
+                            <span class="badge bg-danger fs-6">Contestada</span>
+                            {% elif order.status == 'resolvida' %}
+                            <span class="badge bg-primary fs-6">Resolvida</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Descrição:</strong><br>
+                            <p class="mt-2">{{ order.description }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Cliente:</strong><br>
+                            {% if order.client %}
+                            {{ order.client.nome }}<br>
+                            <small class="text-muted">{{ order.client.email }}</small><br>
+                            <small class="text-muted">ID: {{ order.client.id }}</small>
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Prestador:</strong><br>
+                            {% if order.provider %}
+                            {{ order.provider.nome }}<br>
+                            <small class="text-muted">{{ order.provider.email }}</small><br>
+                            <small class="text-muted">ID: {{ order.provider.id }}</small>
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Valor do Serviço:</strong><br>
+                            <span class="fs-5 text-success">R$ {{ "%.2f"|format(order.value) }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Prazo de Entrega:</strong><br>
+                            {{ order.service_deadline.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+
+                    {% if order.platform_fee %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Taxa da Plataforma:</strong><br>
+                            R$ {{ "%.2f"|format(order.platform_fee) }}
+                            {% if order.platform_fee_percentage %}
+                            ({{ "%.2f"|format(order.platform_fee_percentage) }}%)
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Valor Líquido Prestador:</strong><br>
+                            R$ {{ "%.2f"|format(order.value - order.platform_fee) }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Datas</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Criada em:</strong><br>{{ order.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    
+                    {% if order.accepted_at %}
+                    <p><strong>Aceita em:</strong><br>{{ order.accepted_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% endif %}
+                    
+                    {% if order.completed_at %}
+                    <p><strong>Concluída em:</strong><br>{{ order.completed_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% endif %}
+                    
+                    {% if order.confirmed_at %}
+                    <p><strong>Confirmada em:</strong><br>{{ order.confirmed_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% if order.auto_confirmed %}
+                    <span class="badge bg-info">Confirmação Automática</span>
+                    {% endif %}
+                    {% endif %}
+                    
+                    {% if order.cancelled_at %}
+                    <p><strong>Cancelada em:</strong><br>{{ order.cancelled_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% endif %}
+                    
+                    {% if order.status == 'servico_executado' and order.confirmation_deadline %}
+                    <hr>
+                    <p><strong>Prazo para Confirmação:</strong><br>{{ order.confirmation_deadline.strftime('%d/%m/%Y %H:%M') }}</p>
+                    {% if hours_remaining is not none %}
+                    <p>
+                        <strong>Tempo Restante:</strong><br>
+                        {% if hours_remaining > 0 %}
+                        <span class="{% if hours_remaining < 12 %}text-danger{% else %}text-warning{% endif %}">
+                            {{ "%.1f"|format(hours_remaining) }} horas
+                        </span>
+                        {% else %}
+                        <span class="text-danger">Expirado</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações de Cancelamento -->
+    {% if order.status == 'cancelada' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Informações de Cancelamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Cancelado por:</strong><br>
+                            {% if order.cancelled_by_user %}
+                            {{ order.cancelled_by_user.nome }} ({{ order.cancelled_by_user.email }})
+                            {% else %}
+                            ID: {{ order.cancelled_by }}
+                            {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Multa de Cancelamento:</strong><br>
+                            R$ {{ "%.2f"|format(order.cancellation_fee) }}
+                            {% if order.cancellation_fee_percentage %}
+                            ({{ "%.2f"|format(order.cancellation_fee_percentage) }}%)
+                            {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <p><strong>Motivo:</strong><br>{{ order.cancellation_reason }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Informações de Contestação -->
+    {% if order.status in ['contestada', 'resolvida'] %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Informações de Contestação</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Aberta por:</strong><br>
+                            {% if order.dispute_opener %}
+                            {{ order.dispute_opener.nome }} ({{ order.dispute_opener.email }})
+                            {% else %}
+                            Cliente (ID: {{ order.dispute_opened_by }})
+                            {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Data de Abertura:</strong><br>
+                            {{ order.dispute_opened_at.strftime('%d/%m/%Y %H:%M') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <p><strong>Declaração do Cliente:</strong><br>
+                    {{ order.dispute_client_statement or order.dispute_reason }}
+                    </p>
+
+                    {% if order.dispute_evidence_urls %}
+                    <p><strong>Provas Anexadas:</strong></p>
+                    <ul>
+                        {% for evidence in order.dispute_evidence_urls %}
+                        <li>
+                            <a href="{{ evidence.url }}" target="_blank">{{ evidence.filename }}</a>
+                            ({{ "%.2f"|format(evidence.size / 1024) }} KB)
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    {% if order.status == 'resolvida' %}
+                    <hr>
+                    <div class="alert alert-info">
+                        <h6>Resolução da Disputa</h6>
+                        <p><strong>Vencedor:</strong> 
+                        {% if order.dispute_winner == 'client' %}
+                        <span class="badge bg-primary">Cliente</span>
+                        {% else %}
+                        <span class="badge bg-success">Prestador</span>
+                        {% endif %}
+                        </p>
+                        <p><strong>Resolvida em:</strong> {{ order.dispute_resolved_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                        {% if order.dispute_admin_notes %}
+                        <p><strong>Notas do Admin:</strong><br>{{ order.dispute_admin_notes }}</p>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <hr>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Esta contestação está pendente de resolução.
+                        <a href="{{ url_for('admin.analisar_contestacao', order_id=order.id) }}" class="btn btn-sm btn-warning ms-2">
+                            Analisar Contestação
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Convite Relacionado -->
+    {% if invite %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Convite Relacionado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>ID do Convite:</strong> {{ invite.id }}</p>
+                            <p><strong>Valor Original:</strong> R$ {{ "%.2f"|format(invite.original_value) }}</p>
+                            {% if invite.effective_value and invite.effective_value != invite.original_value %}
+                            <p><strong>Valor Efetivo:</strong> R$ {{ "%.2f"|format(invite.effective_value) }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status do Convite:</strong> {{ invite.status }}</p>
+                            <p><strong>Criado em:</strong> {{ invite.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.ver_convite', invite_id=invite.id) }}" class="btn btn-sm btn-outline-primary">
+                        Ver Detalhes do Convite
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Transações -->
+    {% if transactions %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Transações Relacionadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Data</th>
+                                    <th>Usuário</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.transaction_id }}</td>
+                                    <td>{{ transaction.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if transaction.user %}
+                                        {{ transaction.user.nome }}
+                                        {% else %}
+                                        ID: {{ transaction.user_id }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ transaction.type }}</td>
+                                    <td class="{% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        R$ {{ "%.2f"|format(transaction.amount) }}
+                                    </td>
+                                    <td>{{ transaction.description }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Taxas Aplicadas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Taxas Aplicadas na Criação</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Taxa da Plataforma:</strong><br>
+                            {% if order.platform_fee_percentage_at_creation %}
+                            {{ "%.2f"|format(order.platform_fee_percentage_at_creation) }}%
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Taxa de Contestação:</strong><br>
+                            {% if order.contestation_fee_at_creation %}
+                            R$ {{ "%.2f"|format(order.contestation_fee_at_creation) }}
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Taxa de Cancelamento:</strong><br>
+                            {% if order.cancellation_fee_percentage_at_creation %}
+                            {{ "%.2f"|format(order.cancellation_fee_percentage_at_creation) }}%
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

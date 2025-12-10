@@ -6,6 +6,9 @@ from services.auth_service import login_required, prestador_required, AuthServic
 from services.prestador_service import PrestadorService
 from services.invite_service import InviteService
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 prestador_bp = Blueprint('prestador', __name__, url_prefix='/prestador')
 
@@ -67,10 +70,15 @@ def ordens(user):
     
     orders = PrestadorService.get_provider_orders(user.id, page, status_filter)
     
+    # Buscar estatísticas para o dashboard
+    from services.order_management_service import OrderManagementService
+    statistics = OrderManagementService.get_order_statistics(user.id, 'prestador')
+    
     return render_template('prestador/ordens.html', 
                          user=user, 
                          orders=orders,
-                         status_filter=status_filter)
+                         status_filter=status_filter,
+                         statistics=statistics)
 
 @prestador_bp.route('/ordens/disponiveis')
 @user_loader_required
@@ -261,8 +269,17 @@ def ver_convite(user, token):
     try:
         invite = InviteService.get_invite_by_token(token)
         
-        # Verificar se o convite é para este prestador
-        if invite.invited_phone != user.phone:
+        # Verificar se o convite é para este prestador OU se ele tem o token na sessão (fluxo de aceitação)
+        has_session_token = session.get('invite_token') == token
+        is_invited_phone = invite.invited_phone == user.phone
+        
+        # Verificar se o usuário é o cliente do convite
+        # Se for, redirecionar para a view do cliente
+        if 'cliente' in user.roles and invite.client_id == user.id:
+            flash('Este convite deve ser visualizado na área do cliente.', 'info')
+            return redirect(url_for('cliente.ver_convite', invite_id=invite.id))
+        
+        if not (is_invited_phone or has_session_token):
             flash('Convite não encontrado.', 'error')
             return redirect(url_for('prestador.convites'))
         
@@ -281,48 +298,81 @@ def ver_convite(user, token):
 @prestador_bp.route('/convites/<token>/aceitar', methods=['POST'])
 @user_loader_required
 def aceitar_convite(user, token):
-    """Aceitar um convite com possibilidade de alteração de termos"""
+    """Aceitar um convite como prestador"""
     
     if 'prestador' not in user.roles:
         flash('Acesso negado.', 'error')
         return redirect(url_for('auth.user_login'))
     
     try:
-        # Obter dados do formulário
-        final_value = request.form.get('final_value')
-        new_delivery_date_str = request.form.get('new_delivery_date')
+        # Obter o convite pelo token
+        invite = InviteService.get_invite_by_token(token)
         
-        # Converter valores se fornecidos
-        final_value = float(final_value) if final_value else None
-        new_delivery_date = None
+        # Usar o novo método de aceitação do InviteService
+        result = InviteService.accept_invite_as_provider(invite.id, user.id)
         
-        if new_delivery_date_str:
-            try:
-                new_delivery_date = datetime.strptime(new_delivery_date_str, '%Y-%m-%d')
-                if new_delivery_date <= datetime.now():
-                    flash('Nova data de entrega deve ser futura.', 'error')
-                    return redirect(url_for('prestador.ver_convite', token=token))
-            except ValueError:
-                flash('Data de entrega inválida.', 'error')
-                return redirect(url_for('prestador.ver_convite', token=token))
-        
-        # Aceitar o convite
-        result = InviteService.accept_invite(
-            token=token,
-            provider_id=user.id,
-            final_value=final_value,
-            new_delivery_date=new_delivery_date
+        # Verificar se a pré-ordem foi criada automaticamente
+        if result.get('pre_order_created'):
+            pre_order_id = result.get('pre_order_id')
+            flash(f'Convite aceito com sucesso! Pré-ordem #{pre_order_id} criada. '
+                  f'Você pode negociar os termos antes de confirmar.', 'success')
+            # Redirecionar para a página de detalhes da pré-ordem
+            return redirect(url_for('pre_ordem.ver_detalhes', pre_order_id=pre_order_id))
+        elif result.get('order_created'):
+            # Fallback para ordem direta (caso legado)
+            order_id = result.get('order_id')
+            flash(f'Convite aceito com sucesso! Ordem #{order_id} criada automaticamente. '
+                  f'Os valores foram bloqueados em garantia.', 'success')
+            return redirect(url_for('prestador.ordens'))
+        else:
+            # Aguardando aceitação do cliente
+            flash('Convite aceito com sucesso! Aguardando aceitação do cliente para criar a pré-ordem.', 'info')
+            return redirect(url_for('prestador.convites'))
+    
+    except Exception as e:
+        # Importar exceções personalizadas
+        from services.exceptions import (
+            InsufficientBalanceError,
+            OrderCreationError,
+            EscrowBlockError,
+            InviteValidationError
         )
         
-        flash('Convite aceito com sucesso! O cliente será notificado.', 'success')
-        return redirect(url_for('prestador.convites'))
-        
-    except ValueError as e:
-        flash(str(e), 'error')
-    except Exception as e:
-        flash(f'Erro ao aceitar convite: {str(e)}', 'error')
-    
-    return redirect(url_for('prestador.ver_convite', token=token))
+        # Tratamento específico por tipo de erro
+        # Requirements: 7.4, 8.3, 8.4
+        if isinstance(e, InsufficientBalanceError):
+            # Erro de saldo insuficiente - mensagem clara com valores
+            # Requirements: 7.4, 8.3, 8.4
+            flash(f'{e.message}', 'error')
+            flash('Você pode adicionar saldo através do menu "Solicitar Tokens".', 'info')
+            return redirect(url_for('prestador.ver_convite', token=token))
+            
+        elif isinstance(e, OrderCreationError):
+            # Erro na criação da ordem - convite permanece aceito
+            # Requirements: 7.1, 7.2, 7.3, 7.4
+            flash(f'{e.message}', 'error')
+            flash('Seu convite permanece aceito. Você pode tentar novamente em alguns instantes.', 'info')
+            return redirect(url_for('prestador.convites'))
+            
+        elif isinstance(e, EscrowBlockError):
+            # Erro no bloqueio de escrow - operação cancelada
+            # Requirements: 7.2, 7.5
+            flash(f'{e.message}', 'error')
+            flash('Seu convite permanece aceito. Nenhum valor foi debitado.', 'info')
+            return redirect(url_for('prestador.convites'))
+            
+        elif isinstance(e, InviteValidationError):
+            # Erro de validação do convite
+            # Requirements: 7.4
+            flash(f'Não foi possível aceitar o convite: {e.message}', 'error')
+            return redirect(url_for('prestador.ver_convite', token=token))
+            
+        else:
+            # Erro genérico
+            # Requirements: 7.4
+            error_message = str(e)
+            flash(f'Erro ao aceitar convite: {error_message}. Por favor, tente novamente.', 'error')
+            return redirect(url_for('prestador.ver_convite', token=token))
 
 @prestador_bp.route('/convites/<token>/recusar', methods=['POST'])
 @login_required
@@ -335,11 +385,14 @@ def recusar_convite(token):
         return redirect(url_for('auth.user_login'))
     
     try:
-        reason = request.form.get('reason', '')
+        reason = request.form.get('reason', '') or request.form.get('rejection_reason', '')
+        
+        # Buscar convite pelo token
+        invite = InviteService.get_invite_by_token(token)
         
         # Recusar o convite
         result = InviteService.reject_invite(
-            token=token,
+            invite=invite,
             provider_id=user.id,
             reason=reason
         )
@@ -357,7 +410,19 @@ def recusar_convite(token):
 @prestador_bp.route('/convites/<token>/alterar-termos', methods=['POST'])
 @login_required
 def alterar_termos_convite(token):
-    """Propor alterações nos termos do convite"""
+    """
+    DEPRECATED: Esta rota foi descontinuada.
+    Negociações de valor agora são feitas na tela de pré-ordem.
+    
+    Mantida apenas para compatibilidade - redireciona para o convite com mensagem informativa.
+    """
+    flash('Para negociar valores, primeiro aceite o convite. A negociação será feita na pré-ordem.', 'info')
+    return redirect(url_for('prestador.ver_convite', token=token))
+
+@prestador_bp.route('/convites/<int:invite_id>/excluir', methods=['POST'])
+@login_required
+def excluir_convite(invite_id):
+    """Excluir um convite (apenas se já foi finalizado)"""
     user = AuthService.get_current_user()
     
     if 'prestador' not in user.roles:
@@ -365,46 +430,44 @@ def alterar_termos_convite(token):
         return redirect(url_for('auth.user_login'))
     
     try:
-        # Obter dados do formulário
-        new_value = request.form.get('new_value')
-        new_delivery_date_str = request.form.get('new_delivery_date')
+        from models import Invite, db
+        invite = Invite.query.get_or_404(invite_id)
         
-        # Converter valores
-        new_value = float(new_value) if new_value else None
-        new_delivery_date = None
+        # Verificar se o convite foi enviado para este prestador
+        if invite.invited_phone != user.phone:
+            flash('Convite não encontrado.', 'error')
+            return redirect(url_for('prestador.convites'))
         
-        if new_delivery_date_str:
-            try:
-                new_delivery_date = datetime.strptime(new_delivery_date_str, '%Y-%m-%d')
-                if new_delivery_date <= datetime.now():
-                    flash('Nova data de entrega deve ser futura.', 'error')
-                    return redirect(url_for('prestador.ver_convite', token=token))
-            except ValueError:
-                flash('Data de entrega inválida.', 'error')
-                return redirect(url_for('prestador.ver_convite', token=token))
+        # Verificar se o convite pode ser excluído
+        # Prestador pode excluir apenas convites finalizados (para limpar a lista)
+        if invite.status == 'convertido':
+            flash('Convites já convertidos em ordens não podem ser excluídos.', 'error')
+            return redirect(url_for('prestador.convites'))
         
-        # Validar se pelo menos um campo foi alterado
-        if new_value is None and new_delivery_date is None:
-            flash('Você deve alterar pelo menos o valor ou a data de entrega.', 'error')
-            return redirect(url_for('prestador.ver_convite', token=token))
+        if invite.status == 'pendente':
+            flash('Convites pendentes não podem ser excluídos. Responda o convite primeiro.', 'warning')
+            return redirect(url_for('prestador.convites'))
         
-        # Alterar termos
-        result = InviteService.update_invite_terms(
-            token=token,
-            provider_id=user.id,
-            new_value=new_value,
-            new_delivery_date=new_delivery_date
-        )
+        if invite.status == 'proposta_enviada':
+            flash('Convites com proposta pendente não podem ser excluídos. Aguarde resposta do cliente.', 'warning')
+            return redirect(url_for('prestador.convites'))
         
-        flash('Termos alterados com sucesso! O cliente será notificado das mudanças.', 'success')
-        return redirect(url_for('prestador.ver_convite', token=token))
+        # Salvar informações para mensagem
+        service_title = invite.service_title
+        
+        # Excluir o convite
+        db.session.delete(invite)
+        db.session.commit()
+        
+        flash(f'Convite "{service_title}" excluído com sucesso.', 'success')
+        return redirect(url_for('prestador.convites'))
         
     except ValueError as e:
         flash(str(e), 'error')
     except Exception as e:
-        flash(f'Erro ao alterar termos: {str(e)}', 'error')
+        flash(f'Erro ao excluir convite: {str(e)}', 'error')
     
-    return redirect(url_for('prestador.ver_convite', token=token))
+    return redirect(url_for('prestador.convites'))
 
 # ==============================================================================
 #  SOLICITAÇÃO DE TOKENS (ADICIONAR SALDO)
@@ -477,3 +540,113 @@ def processar_solicitacao_tokens(user):
         flash(f'Erro ao processar solicitação: {str(e)}', 'error')
     
     return redirect(url_for('prestador.dashboard'))
+
+@prestador_bp.route('/convites/criar')
+@user_loader_required
+def criar_convite(user):
+    """Formulário para criar convite (prestador propondo serviço)"""
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    return render_template('prestador/criar_convite.html', user=user)
+
+@prestador_bp.route('/convites/criar', methods=['POST'])
+@user_loader_required
+def processar_criar_convite(user):
+    """Processar criação de convite pelo prestador"""
+    if 'prestador' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        # Obter dados do formulário
+        client_email = request.form.get('client_email', '').strip()
+        service_title = request.form.get('service_title', '').strip()
+        service_description = request.form.get('service_description', '').strip()
+        service_category = request.form.get('service_category', '').strip()
+        # Manter como string para converter para Decimal no serviço
+        proposed_value = request.form.get('proposed_value', '0')
+        delivery_date_str = request.form.get('delivery_date', '')
+        
+        # Validações básicas
+        if not client_email:
+            flash('Email do cliente é obrigatório.', 'error')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        if not service_title:
+            flash('Título do serviço é obrigatório.', 'error')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        if not service_description:
+            flash('Descrição do serviço é obrigatória.', 'error')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        # Validar e converter valor
+        try:
+            proposed_value_float = float(proposed_value)
+            if proposed_value_float <= 0:
+                flash('Valor do serviço deve ser maior que zero.', 'error')
+                return redirect(url_for('prestador.criar_convite'))
+        except (ValueError, TypeError):
+            flash('Valor do serviço inválido.', 'error')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        # Converter data de entrega
+        try:
+            delivery_date = datetime.strptime(delivery_date_str, '%Y-%m-%d')
+            if delivery_date <= datetime.now():
+                flash('Data de entrega deve ser futura.', 'error')
+                return redirect(url_for('prestador.criar_convite'))
+        except ValueError:
+            flash('Data de entrega inválida.', 'error')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        # Verificar se o cliente existe no sistema
+        from models import User
+        client = User.query.filter_by(email=client_email).first()
+        
+        if not client:
+            flash(f'Cliente com email {client_email} não encontrado no sistema. '
+                  f'Convide-o a se cadastrar primeiro.', 'warning')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        if 'cliente' not in client.roles:
+            flash(f'O usuário {client_email} não tem papel de cliente no sistema.', 'error')
+            return redirect(url_for('prestador.criar_convite'))
+        
+        # Criar o convite (prestador propondo serviço para cliente)
+        # Usamos o InviteService mas invertendo a lógica
+        result = InviteService.create_invite(
+            client_id=client.id,  # Cliente que vai receber
+            invited_phone=user.phone,  # Prestador que está propondo (para rastreamento)
+            service_title=service_title,
+            service_description=service_description,
+            original_value=proposed_value,
+            delivery_date=delivery_date,
+            service_category=service_category
+        )
+        
+        # Marcar que o prestador já aceitou (pois ele é o criador da proposta)
+        # Assim, quando o cliente aceitar, a pré-ordem será criada automaticamente
+        from models import Invite, db
+        invite = Invite.query.get(result['invite_id'])
+        if invite:
+            invite.provider_accepted = True
+            invite.provider_accepted_at = datetime.utcnow()
+            db.session.commit()
+            
+            logger.info(
+                f"Convite {invite.id} criado pelo prestador {user.id} ({user.nome}). "
+                f"provider_accepted marcado como True automaticamente."
+            )
+        
+        flash(f'Proposta de serviço enviada com sucesso para {client_email}!', 'success')
+        return redirect(url_for('prestador.convites'))
+        
+    except ValueError as e:
+        flash(str(e), 'error')
+    except Exception as e:
+        flash(f'Erro ao criar proposta: {str(e)}', 'error')
+    
+    return redirect(url_for('prestador.criar_convite'))

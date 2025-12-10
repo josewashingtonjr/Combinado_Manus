@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Responsividade - Menus Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        
+        .viewport-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            z-index: 9999;
+            font-weight: bold;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .test-section h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        
+        /* Simulação do menu lateral */
+        .sidebar {
+            background-color: #343a40;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        
+        .sidebar .list-group-item {
+            background-color: transparent;
+            border: none;
+            color: #fff;
+            padding: 12px 20px;
+        }
+        
+        .sidebar .list-group-item:hover {
+            background-color: #495057;
+        }
+        
+        .sidebar .collapse a {
+            padding-left: 40px;
+            display: block;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            color: #adb5bd;
+            text-decoration: none;
+        }
+        
+        .sidebar .collapse a:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                width: 250px;
+                transition: left 0.3s;
+                z-index: 1000;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .mobile-toggle {
+                display: block !important;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-toggle {
+                display: none !important;
+            }
+        }
+        
+        .mobile-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1001;
+        }
+        
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .test-result.pass {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .test-result.fail {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-indicator" id="viewportIndicator">
+        <span id="viewportSize"></span>
+    </div>
+    
+    <button class="btn btn-primary mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i> Menu
+    </button>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 d-none d-md-block sidebar" id="sidebar">
+                <div class="list-group">
+                    <!-- Dashboard -->
+                    <a href="#" class="list-group-item">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    
+                    <!-- Configurações -->
+                    <div class="list-group-item p-0">
+                        <a data-bs-toggle="collapse" href="#menuConfig" class="list-group-item">
+                            <i class="fas fa-cogs"></i> Configurações
+                        </a>
+                        <div class="collapse" id="menuConfig">
+                            <a href="#"><i class="fas fa-percentage"></i> Taxas do Sistema</a>
+                            <a href="#"><i class="fas fa-shield-alt"></i> Segurança</a>
+                            <a href="#"><i class="fas fa-key"></i> Alterar Senha</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Relatórios -->
+                    <div class="list-group-item p-0">
+                        <a data-bs-toggle="collapse" href="#menuRelatorios" class="list-group-item">
+                            <i class="fas fa-chart-bar"></i> Relatórios
+                        </a>
+                        <div class="collapse" id="menuRelatorios">
+                            <a href="#"><i class="fas fa-chart-line"></i> Financeiro</a>
+                            <a href="#"><i class="fas fa-users"></i> Usuários</a>
+                            <a href="#"><i class="fas fa-file-contract"></i> Contratos</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Convites -->
+                    <div class="list-group-item p-0">
+                        <a data-bs-toggle="collapse" href="#menuConvites" class="list-group-item">
+                            <i class="fas fa-envelope"></i> Convites
+                        </a>
+                        <div class="collapse" id="menuConvites">
+                            <a href="#"><i class="fas fa-list"></i> Todos</a>
+                            <a href="#"><i class="fas fa-clock"></i> Pendentes</a>
+                            <a href="#"><i class="fas fa-check"></i> Aceitos</a>
+                            <a href="#"><i class="fas fa-times"></i> Recusados</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Ordens -->
+                    <div class="list-group-item p-0">
+                        <a data-bs-toggle="collapse" href="#menuOrdens" class="list-group-item">
+                            <i class="fas fa-clipboard-list"></i> Ordens
+                        </a>
+                        <div class="collapse" id="menuOrdens">
+                            <a href="#"><i class="fas fa-list"></i> Todas</a>
+                            <a href="#"><i class="fas fa-clock"></i> Aguardando</a>
+                            <a href="#"><i class="fas fa-hourglass-half"></i> Executadas</a>
+                            <a href="#"><i class="fas fa-check-circle"></i> Concluídas</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Contestações -->
+                    <div class="list-group-item p-0">
+                        <a data-bs-toggle="collapse" href="#menuContestacoes" class="list-group-item">
+                            <i class="fas fa-exclamation-triangle"></i> Contestações
+                        </a>
+                        <div class="collapse" id="menuContestacoes">
+                            <a href="#"><i class="fas fa-list"></i> Todas</a>
+                            <a href="#"><i class="fas fa-clock"></i> Pendentes</a>
+                            <a href="#"><i class="fas fa-search"></i> Em Análise</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Conteúdo Principal -->
+            <div class="col-md-10">
+                <div class="container mt-4">
+                    <h1>Teste de Responsividade - Menus Administrativos</h1>
+                    <p class="lead">Este documento testa a responsividade dos menus em diferentes resoluções.</p>
+                    
+                    <!-- Desktop 1920x1080 -->
+                    <div class="test-section">
+                        <h3><i class="fas fa-desktop"></i> Desktop 1920x1080</h3>
+                        <p><strong>Requisitos:</strong></p>
+                        <ul>
+                            <li>Menu lateral deve estar sempre visível</li>
+                            <li>Todos os submenus devem ser acessíveis</li>
+                            <li>Ícones e textos devem estar alinhados</li>
+                            <li>Hover effects devem funcionar</li>
+                        </ul>
+                        <div id="test-desktop-1920" class="test-result">
+                            <button class="btn btn-primary" onclick="testDesktop1920()">Executar Teste</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop 1366x768 -->
+                    <div class="test-section">
+                        <h3><i class="fas fa-laptop"></i> Desktop 1366x768</h3>
+                        <p><strong>Requisitos:</strong></p>
+                        <ul>
+                            <li>Menu lateral deve estar visível</li>
+                            <li>Conteúdo não deve ser cortado</li>
+                            <li>Scroll vertical deve funcionar se necessário</li>
+                        </ul>
+                        <div id="test-desktop-1366" class="test-result">
+                            <button class="btn btn-primary" onclick="testDesktop1366()">Executar Teste</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tablet 768x1024 -->
+                    <div class="test-section">
+                        <h3><i class="fas fa-tablet-alt"></i> Tablet 768x1024</h3>
+                        <p><strong>Requisitos:</strong></p>
+                        <ul>
+                            <li>Menu lateral deve colapsar ou ser acessível via botão</li>
+                            <li>Conteúdo principal deve ocupar toda a largura</li>
+                            <li>Touch interactions devem funcionar</li>
+                        </ul>
+                        <div id="test-tablet" class="test-result">
+                            <button class="btn btn-primary" onclick="testTablet()">Executar Teste</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile 375x667 -->
+                    <div class="test-section">
+                        <h3><i class="fas fa-mobile-alt"></i> Mobile 375x667</h3>
+                        <p><strong>Requisitos:</strong></p>
+                        <ul>
+                            <li>Menu lateral deve estar oculto por padrão</li>
+                            <li>Botão de menu (hamburger) deve estar visível</li>
+                            <li>Menu deve abrir em overlay ao clicar no botão</li>
+                            <li>Conteúdo deve ser responsivo e legível</li>
+                        </ul>
+                        <div id="test-mobile" class="test-result">
+                            <button class="btn btn-primary" onclick="testMobile()">Executar Teste</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Instruções de Teste Manual -->
+                    <div class="test-section">
+                        <h3><i class="fas fa-clipboard-check"></i> Instruções de Teste Manual</h3>
+                        <ol>
+                            <li>Abra as ferramentas de desenvolvedor do navegador (F12)</li>
+                            <li>Ative o modo de dispositivo responsivo (Ctrl+Shift+M no Chrome/Firefox)</li>
+                            <li>Teste cada resolução listada acima</li>
+                            <li>Verifique se:
+                                <ul>
+                                    <li>O menu lateral aparece/desaparece conforme esperado</li>
+                                    <li>Todos os links são clicáveis</li>
+                                    <li>Os submenus expandem/colapsam corretamente</li>
+                                    <li>Não há overflow horizontal indesejado</li>
+                                    <li>O conteúdo é legível em todas as resoluções</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                    
+                    <!-- Checklist de Validação -->
+                    <div class="test-section">
+                        <h3><i class="fas fa-tasks"></i> Checklist de Validação</h3>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check1">
+                            <label class="form-check-label" for="check1">
+                                Menu lateral visível em desktop (>768px)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check2">
+                            <label class="form-check-label" for="check2">
+                                Menu lateral oculto em mobile (<768px)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check3">
+                            <label class="form-check-label" for="check3">
+                                Botão de menu (hamburger) visível em mobile
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check4">
+                            <label class="form-check-label" for="check4">
+                                Submenus expandem/colapsam corretamente
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check5">
+                            <label class="form-check-label" for="check5">
+                                Sem overflow horizontal em nenhuma resolução
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check6">
+                            <label class="form-check-label" for="check6">
+                                Todos os ícones e textos estão alinhados
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check7">
+                            <label class="form-check-label" for="check7">
+                                Hover effects funcionam em desktop
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="check8">
+                            <label class="form-check-label" for="check8">
+                                Touch interactions funcionam em mobile/tablet
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Atualizar indicador de viewport
+        function updateViewportIndicator() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            document.getElementById('viewportSize').textContent = `${width}x${height}`;
+        }
+        
+        window.addEventListener('resize', updateViewportIndicator);
+        updateViewportIndicator();
+        
+        // Toggle sidebar em mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+        
+        // Funções de teste
+        function testDesktop1920() {
+            const result = document.getElementById('test-desktop-1920');
+            const width = window.innerWidth;
+            
+            if (width >= 1920) {
+                result.className = 'test-result pass';
+                result.innerHTML = '<i class="fas fa-check-circle"></i> PASS: Resolução adequada para teste desktop 1920x1080';
+            } else {
+                result.className = 'test-result fail';
+                result.innerHTML = `<i class="fas fa-times-circle"></i> FAIL: Resolução atual (${width}px) é menor que 1920px. Ajuste a janela do navegador.`;
+            }
+        }
+        
+        function testDesktop1366() {
+            const result = document.getElementById('test-desktop-1366');
+            const width = window.innerWidth;
+            
+            if (width >= 1366 && width < 1920) {
+                result.className = 'test-result pass';
+                result.innerHTML = '<i class="fas fa-check-circle"></i> PASS: Resolução adequada para teste desktop 1366x768';
+            } else {
+                result.className = 'test-result fail';
+                result.innerHTML = `<i class="fas fa-times-circle"></i> FAIL: Resolução atual (${width}px) não está entre 1366px e 1920px. Ajuste a janela do navegador.`;
+            }
+        }
+        
+        function testTablet() {
+            const result = document.getElementById('test-tablet');
+            const width = window.innerWidth;
+            
+            if (width >= 768 && width < 1024) {
+                result.className = 'test-result pass';
+                result.innerHTML = '<i class="fas fa-check-circle"></i> PASS: Resolução adequada para teste tablet 768x1024';
+            } else {
+                result.className = 'test-result fail';
+                result.innerHTML = `<i class="fas fa-times-circle"></i> FAIL: Resolução atual (${width}px) não está entre 768px e 1024px. Use o modo responsivo do navegador.`;
+            }
+        }
+        
+        function testMobile() {
+            const result = document.getElementById('test-mobile');
+            const width = window.innerWidth;
+            
+            if (width <= 375) {
+                result.className = 'test-result pass';
+                result.innerHTML = '<i class="fas fa-check-circle"></i> PASS: Resolução adequada para teste mobile 375x667';
+            } else {
+                result.className = 'test-result fail';
+                result.innerHTML = `<i class="fas fa-times-circle"></i> FAIL: Resolução atual (${width}px) é maior que 375px. Use o modo responsivo do navegador.`;
+            }
+        }
+    </script>
+</body>
+</html>

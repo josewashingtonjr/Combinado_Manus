@@ -170,6 +170,10 @@
                                 <span class="badge bg-success">
                                     <i class="fas fa-check me-1"></i>Aceito
                                 </span>
+                            {% elif invite.status == 'convertido_pre_ordem' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-handshake me-1"></i>Pré-Ordem
+                                </span>
                             {% elif invite.status == 'recusado' %}
                                 <span class="badge bg-danger">
                                     <i class="fas fa-times me-1"></i>Recusado
@@ -191,18 +195,43 @@
                                    class="btn btn-outline-primary" title="Ver Detalhes">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                {% if invite.status == 'pendente' %}
+                                {% if invite.status == 'pendente' and not invite.is_counter_proposal %}
                                 <button type="button" class="btn btn-outline-info" 
                                         onclick="copyInviteLink('{{ invite.invite_link }}')" 
                                         title="Copiar Link do Convite">
                                     <i class="fas fa-link"></i>
                                 </button>
                                 {% endif %}
-                                {% if invite.status == 'aceito' %}
-                                <form method="POST" action="{{ url_for('cliente.converter_convite', invite_id=invite.id) }}" 
-                                      class="d-inline" onsubmit="return confirm('Deseja converter este convite em ordem de serviço?')">
-                                    <button type="submit" class="btn btn-outline-success" title="Converter em Ordem">
-                                        <i class="fas fa-exchange-alt"></i>
+                                {% if invite.status == 'pendente' and invite.is_counter_proposal %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-reply me-1"></i>Aguardando Resposta
+                                </span>
+                                {% endif %}
+                                {% if invite.status == 'convertido_pre_ordem' and invite.pre_order %}
+                                <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=invite.pre_order.id) }}" 
+                                   class="btn btn-success btn-sm" title="Ver Pré-Ordem">
+                                    <i class="fas fa-handshake me-1"></i>Pré-Ordem
+                                </a>
+                                {% endif %}
+                                {% if invite.status == 'convertido' %}
+                                <a href="{{ url_for('cliente.ordens') }}" 
+                                   class="btn btn-outline-primary btn-sm" title="Ver Ordens de Serviço">
+                                    <i class="fas fa-eye me-1"></i>Ver Ordens
+                                </a>
+                                {% endif %}
+                                {% if invite.status == 'recusado' %}
+                                <button type="button" class="btn btn-outline-warning" 
+                                        onclick="showRecreateModal({{ invite.id }}, &quot;{{ invite.service_title }}&quot;, &quot;{{ invite.rejection_reason or '' }}&quot;)" 
+                                        title="Recriar Convite">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                {% endif %}
+                                {% if invite.status in ['recusado', 'expirado', 'aceito'] %}
+                                <form method="POST" action="{{ url_for('cliente.excluir_convite', invite_id=invite.id) }}" 
+                                      class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este convite? Esta ação não pode ser desfeita.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-outline-danger" title="Excluir Convite">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
                                 {% endif %}
@@ -252,6 +281,80 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Recriar Convite Rejeitado -->
+<div class="modal fade" id="recreateInviteModal" tabindex="-1" aria-labelledby="recreateInviteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="recreateInviteModalLabel">
+                    <i class="fas fa-redo me-2"></i>Recriar Convite Rejeitado
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Informações sobre a rejeição -->
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle me-2"></i>Sobre a Rejeição
+                    </h6>
+                    <p class="mb-2"><strong>Convite rejeitado:</strong> <span id="rejectedServiceTitle"></span></p>
+                    <div id="rejectionReasonContainer" style="display: none;">
+                        <p class="mb-0"><strong>Motivo informado pelo prestador:</strong></p>
+                        <blockquote class="blockquote-footer mt-1">
+                            <span id="rejectionReasonText"></span>
+                        </blockquote>
+                    </div>
+                    <div id="noRejectionReason" style="display: none;">
+                        <p class="mb-0 text-muted">O prestador não informou um motivo específico para a rejeição.</p>
+                    </div>
+                </div>
+                
+                <!-- Opções para recriar -->
+                <div class="mb-4">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>O que você gostaria de fazer?</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-copy fa-2x text-primary mb-2"></i>
+                                    <h6>Recriar Igual</h6>
+                                    <p class="small text-muted">Criar um novo convite com as mesmas informações para enviar a outro prestador</p>
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="recreateInviteExact()">
+                                        <i class="fas fa-plus me-1"></i>Recriar Igual
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-edit fa-2x text-success mb-2"></i>
+                                    <h6>Recriar Modificado</h6>
+                                    <p class="small text-muted">Ajustar valor, prazo ou descrição baseado no feedback recebido</p>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="recreateInviteModified()">
+                                        <i class="fas fa-edit me-1"></i>Modificar e Recriar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dicas baseadas no motivo da rejeição -->
+                <div id="rejectionTips" class="alert alert-light" style="display: none;">
+                    <h6><i class="fas fa-tips text-info me-2"></i>Dicas baseadas na rejeição:</h6>
+                    <ul id="tipsList" class="mb-0"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -292,9 +395,91 @@ setInterval(function() {
     location.reload();
 }, 30000);
 
+// Variável global para armazenar ID do convite sendo recriado
+let currentInviteId = null;
+
+// Função para mostrar modal de recriar convite
+function showRecreateModal(inviteId, serviceTitle, rejectionReason) {
+    currentInviteId = inviteId;
+    
+    // Preencher informações do modal
+    document.getElementById('rejectedServiceTitle').textContent = serviceTitle;
+    
+    // Mostrar motivo da rejeição se existir
+    if (rejectionReason && rejectionReason.trim() !== '') {
+        document.getElementById('rejectionReasonText').textContent = rejectionReason;
+        document.getElementById('rejectionReasonContainer').style.display = 'block';
+        document.getElementById('noRejectionReason').style.display = 'none';
+        
+        // Mostrar dicas baseadas no motivo
+        showRejectionTips(rejectionReason);
+    } else {
+        document.getElementById('rejectionReasonContainer').style.display = 'none';
+        document.getElementById('noRejectionReason').style.display = 'block';
+        document.getElementById('rejectionTips').style.display = 'none';
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('recreateInviteModal'));
+    modal.show();
+}
+
+// Função para mostrar dicas baseadas no motivo da rejeição
+function showRejectionTips(rejectionReason) {
+    const reason = rejectionReason.toLowerCase();
+    const tipsList = document.getElementById('tipsList');
+    const tipsContainer = document.getElementById('rejectionTips');
+    
+    let tips = [];
+    
+    if (reason.includes('disponibilidade') || reason.includes('data') || reason.includes('prazo')) {
+        tips.push('Considere aumentar o prazo de entrega para dar mais flexibilidade');
+        tips.push('Verifique se a data não coincide com feriados ou fins de semana');
+    }
+    
+    if (reason.includes('valor') || reason.includes('preço') || reason.includes('inadequado')) {
+        tips.push('Considere ajustar o valor oferecido baseado no feedback');
+        tips.push('Pesquise preços de mercado para este tipo de serviço');
+    }
+    
+    if (reason.includes('localização') || reason.includes('distante') || reason.includes('longe')) {
+        tips.push('Procure prestadores mais próximos da sua região');
+        tips.push('Considere oferecer ajuda de custo para deslocamento');
+    }
+    
+    if (reason.includes('especialidade') || reason.includes('tipo') || reason.includes('serviço')) {
+        tips.push('Procure prestadores especializados neste tipo de serviço');
+        tips.push('Revise a descrição para ser mais específica sobre o que precisa');
+    }
+    
+    if (tips.length > 0) {
+        tipsList.innerHTML = tips.map(tip => `<li>${tip}</li>`).join('');
+        tipsContainer.style.display = 'block';
+    } else {
+        tipsContainer.style.display = 'none';
+    }
+}
+
+// Função para recriar convite exatamente igual
+function recreateInviteExact() {
+    if (currentInviteId) {
+        // Redirecionar para criar convite com parâmetros do convite rejeitado
+        window.location.href = `{{ url_for('cliente.criar_convite') }}?copy_from=${currentInviteId}`;
+    }
+}
+
+// Função para recriar convite com modificações
+function recreateInviteModified() {
+    if (currentInviteId) {
+        // Redirecionar para criar convite com parâmetros do convite rejeitado para edição
+        window.location.href = `{{ url_for('cliente.criar_convite') }}?copy_from=${currentInviteId}&edit=true`;
+    }
+}
+
 // Função para copiar link do convite
 function copyInviteLink(link) {
-    const fullLink = window.location.origin + link;
+    // Verificar se o link já é completo (começa com http)
+    const fullLink = link.startsWith('http') ? link : window.location.origin + link;
     navigator.clipboard.writeText(fullLink).then(function() {
         // Mostrar toast de sucesso
         const toast = document.createElement('div');

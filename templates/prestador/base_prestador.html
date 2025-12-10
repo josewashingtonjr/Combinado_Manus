@@ -24,7 +24,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('prestador.ordens') }}">
+                    <a class="nav-link" href="{{ url_for('order.listar_ordens') }}">
                         <i class="fas fa-clipboard-list me-1"></i>Minhas Ordens
                     </a>
                 </li>
@@ -104,7 +104,7 @@
                     <a href="{{ url_for('prestador.carteira') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-wallet me-2"></i>Carteira
                     </a>
-                    <a href="{{ url_for('prestador.ordens') }}" class="list-group-item list-group-item-action">
+                    <a href="{{ url_for('order.listar_ordens') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-clipboard-list me-2"></i>Minhas Ordens
                     </a>
                     <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="list-group-item list-group-item-action">
@@ -112,6 +112,14 @@
                     </a>
                     <a href="{{ url_for('prestador.convites') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-envelope-open-text me-2"></i>Convites Recebidos
+                    </a>
+                    <a href="{{ url_for('prestador.dashboard') }}#pre-ordens" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-handshake me-2"></i>Pré-Ordens</span>
+                        {% if data and data.pre_orders_needing_action > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ data.pre_orders_needing_action }}</span>
+                        {% elif data and data.pre_orders_count > 0 %}
+                        <span class="badge bg-info rounded-pill">{{ data.pre_orders_count }}</span>
+                        {% endif %}
                     </a>
                     <a href="{{ url_for('prestador.ganhos') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-chart-line me-2"></i>Ganhos
@@ -215,4 +223,10 @@
     color: #212529;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Mobile Navigation Component -->
+{% include 'components/mobile-nav.html' %}
+{{ super() }}
 {% endblock %}

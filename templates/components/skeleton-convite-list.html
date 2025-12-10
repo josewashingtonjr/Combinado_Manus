@@ -1,0 +1,30 @@
+{# 
+  Skeleton Loading - Lista de Convites
+  Componente de skeleton para lista de convites
+  Requirements: 8.2
+  
+  Parâmetros:
+  - count: número de itens skeleton (padrão: 3)
+#}
+
+{% set skeleton_count = count|default(3) %}
+
+<div class="skeleton-convites-list" role="status" aria-busy="true" aria-label="Carregando lista de convites...">
+    {% for i in range(skeleton_count) %}
+    <div class="skeleton-convite-list-item">
+        <div class="skeleton skeleton-convite-list-icon"></div>
+        
+        <div class="skeleton-convite-list-content">
+            <div class="skeleton skeleton-text-title"></div>
+            <div class="skeleton skeleton-text-subtitle"></div>
+            <div class="skeleton skeleton-text-short"></div>
+        </div>
+
+        <div class="skeleton-convite-list-actions">
+            <div class="skeleton skeleton-button-small"></div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <span class="sr-only">Carregando {{ skeleton_count }} convites...</span>
+</div>

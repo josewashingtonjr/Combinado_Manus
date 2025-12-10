@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste da Logo - Sistema Combinado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .logo-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo-test {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+        }
+        .logo-test h3 {
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+        .logo-test img {
+            max-width: 100%;
+            height: auto;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #2196f3;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <h1 style="color: #1e3a8a; margin-bottom: 30px;">Teste da Logo do Sistema</h1>
+        
+        <div class="logo-test">
+            <h3>Logo Principal (SVG)</h3>
+            <img src="static/images/logo.svg" alt="Logo Sistema Combinado" style="max-height: 120px;">
+        </div>
+        
+        <div class="logo-test">
+            <h3>Logo Simples (SVG)</h3>
+            <img src="static/images/logo-simple.svg" alt="Logo Sistema Combinado Simples" style="max-height: 80px;">
+        </div>
+        
+        <div class="logo-test">
+            <h3>Logo Fallback (PNG)</h3>
+            <img src="static/images/logo.png" alt="Logo Sistema Combinado PNG" style="max-height: 80px;">
+        </div>
+    </div>
+    
+    <div class="info">
+        <h3 style="color: #1565c0; margin-top: 0;">Informações da Logo</h3>
+        <ul style="color: #333; line-height: 1.6;">
+            <li><strong>Logo Principal:</strong> SVG vetorial com aperto de mãos detalhado</li>
+            <li><strong>Logo Simples:</strong> Versão simplificada para uso em espaços menores</li>
+            <li><strong>Logo PNG:</strong> Fallback para compatibilidade com navegadores antigos</li>
+            <li><strong>Cores:</strong> Azul marinho (#1e3a8a) sobre fundo claro</li>
+            <li><strong>Conceito:</strong> Aperto de mãos representando acordos e parcerias</li>
+        </ul>
+    </div>
+    
+    <script>
+        // Verificar se as logos carregaram
+        document.addEventListener('DOMContentLoaded', function() {
+            const logos = document.querySelectorAll('img');
+            logos.forEach((logo, index) => {
+                logo.addEventListener('load', function() {
+                    console.log(`Logo ${index + 1} carregada com sucesso:`, this.src);
+                });
+                
+                logo.addEventListener('error', function() {
+                    console.error(`Erro ao carregar logo ${index + 1}:`, this.src);
+                    this.style.border = '2px solid red';
+                    this.alt = 'Erro ao carregar logo';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

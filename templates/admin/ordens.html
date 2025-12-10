@@ -1,0 +1,410 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Gestão de Ordens - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-clipboard-list me-2"></i>Gestão de Ordens</h2>
+    <div>
+        <a href="{{ url_for('admin.relatorios') }}" class="btn btn-outline-primary">
+            <i class="fas fa-chart-bar me-1"></i>Relatórios
+        </a>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar alerta"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-2 mb-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h4 class="text-primary mb-1">{{ stats.total }}</h4>
+                <p class="text-muted mb-0 small">Total de Ordens</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h4 class="text-warning mb-1">{{ stats.aguardando_execucao }}</h4>
+                <p class="text-muted mb-0 small">Aguardando</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h4 class="text-info mb-1">{{ stats.servico_executado }}</h4>
+                <p class="text-muted mb-0 small">Executadas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h4 class="text-success mb-1">{{ stats.concluida }}</h4>
+                <p class="text-muted mb-0 small">Concluídas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card border-secondary">
+            <div class="card-body text-center">
+                <h4 class="text-secondary mb-1">{{ stats.cancelada }}</h4>
+                <p class="text-muted mb-0 small">Canceladas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h4 class="text-danger mb-1">{{ stats.contestada }}</h4>
+                <p class="text-muted mb-0 small">Contestadas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('admin.ordens') }}" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">Todos os Status</option>
+                    <option value="aguardando_execucao" {% if status_filter == 'aguardando_execucao' %}selected{% endif %}>
+                        Aguardando Execução
+                    </option>
+                    <option value="servico_executado" {% if status_filter == 'servico_executado' %}selected{% endif %}>
+                        Serviço Executado
+                    </option>
+                    <option value="concluida" {% if status_filter == 'concluida' %}selected{% endif %}>
+                        Concluída
+                    </option>
+                    <option value="cancelada" {% if status_filter == 'cancelada' %}selected{% endif %}>
+                        Cancelada
+                    </option>
+                    <option value="contestada" {% if status_filter == 'contestada' %}selected{% endif %}>
+                        Contestada
+                    </option>
+                    <option value="resolvida" {% if status_filter == 'resolvida' %}selected{% endif %}>
+                        Resolvida
+                    </option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="user_id" class="form-label">Usuário</label>
+                <select name="user_id" id="user_id" class="form-select">
+                    <option value="">Todos os Usuários</option>
+                    {% for user in top_users %}
+                        <option value="{{ user.id }}" {% if user_id_filter == user.id %}selected{% endif %}>
+                            {{ user.nome }} ({{ user.order_count }} ordens)
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="date_from" class="form-label">Data Inicial</label>
+                <input type="date" name="date_from" id="date_from" class="form-control" 
+                       value="{{ date_from }}">
+            </div>
+            
+            <div class="col-md-2">
+                <label for="date_to" class="form-label">Data Final</label>
+                <input type="date" name="date_to" id="date_to" class="form-control" 
+                       value="{{ date_to }}">
+            </div>
+            
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i>Filtrar
+                </button>
+            </div>
+        </form>
+        
+        {% if status_filter or user_id_filter or date_from or date_to %}
+        <div class="mt-3">
+            <a href="{{ url_for('admin.ordens') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-times me-1"></i>Limpar Filtros
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Tabela de Ordens -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Prestador</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Data Criação</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if ordens.items %}
+                        {% for ordem in ordens.items %}
+                        <tr {% if ordem.status == 'contestada' %}class="table-danger"{% endif %}>
+                            <td>
+                                <strong>#{{ ordem.id }}</strong>
+                                {% if ordem.status == 'contestada' %}
+                                    <i class="fas fa-exclamation-triangle text-danger ms-1" 
+                                       title="Ordem Contestada"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ ordem.client.nome if ordem.client else 'N/A' }}</strong>
+                                </div>
+                                <small class="text-muted">{{ ordem.client.email if ordem.client else '' }}</small>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ ordem.provider.nome if ordem.provider else 'N/A' }}</strong>
+                                </div>
+                                <small class="text-muted">{{ ordem.provider.email if ordem.provider else '' }}</small>
+                            </td>
+                            <td>
+                                <strong>R$ {{ "%.2f"|format(ordem.valor) }}</strong>
+                            </td>
+                            <td>
+                                {% if ordem.status == 'aguardando_execucao' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-clock me-1"></i>Aguardando Execução
+                                    </span>
+                                {% elif ordem.status == 'servico_executado' %}
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-hourglass-half me-1"></i>Serviço Executado
+                                    </span>
+                                {% elif ordem.status == 'concluida' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Concluída
+                                    </span>
+                                {% elif ordem.status == 'cancelada' %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-times-circle me-1"></i>Cancelada
+                                    </span>
+                                {% elif ordem.status == 'contestada' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Contestada
+                                    </span>
+                                {% elif ordem.status == 'resolvida' %}
+                                    <span class="badge bg-dark">
+                                        <i class="fas fa-gavel me-1"></i>Resolvida
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ ordem.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>{{ ordem.created_at.strftime('%d/%m/%Y') if ordem.created_at else '-' }}</div>
+                                <small class="text-muted">{{ ordem.created_at.strftime('%H:%M') if ordem.created_at else '' }}</small>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ url_for('admin.ver_ordem', order_id=ordem.id) }}" 
+                                   class="btn btn-sm btn-primary" 
+                                   title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if ordem.status == 'contestada' %}
+                                    <a href="{{ url_for('admin.ver_contestacao', order_id=ordem.id) }}" 
+                                       class="btn btn-sm btn-danger" 
+                                       title="Analisar Contestação">
+                                        <i class="fas fa-gavel"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted mb-0">Nenhuma ordem encontrada</p>
+                                {% if status_filter or user_id_filter or date_from or date_to %}
+                                    <small class="text-muted">Tente ajustar os filtros</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginação -->
+        {% if ordens.pages > 1 %}
+        <nav aria-label="Navegação de páginas">
+            <ul class="pagination justify-content-center mb-0">
+                {% if ordens.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.ordens', page=ordens.prev_num, status=status_filter, user_id=user_id_filter, date_from=date_from, date_to=date_to) }}">
+                            <i class="fas fa-chevron-left me-1"></i>Anterior
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-left me-1"></i>Anterior
+                        </span>
+                    </li>
+                {% endif %}
+                
+                {% for page_num in ordens.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {{ 'active' if page_num == ordens.page else '' }}">
+                            <a class="page-link" href="{{ url_for('admin.ordens', page=page_num, status=status_filter, user_id=user_id_filter, date_from=date_from, date_to=date_to) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if ordens.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.ordens', page=ordens.next_num, status=status_filter, user_id=user_id_filter, date_from=date_from, date_to=date_to) }}">
+                            Próximo<i class="fas fa-chevron-right ms-1"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            Próximo<i class="fas fa-chevron-right ms-1"></i>
+                        </span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <div class="text-center mt-3">
+            <small class="text-muted">
+                Página {{ ordens.page }} de {{ ordens.pages }} 
+                ({{ ordens.total }} ordem{{ 's' if ordens.total != 1 else '' }} no total)
+            </small>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Legenda de Status -->
+<div class="card mt-4">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Legenda de Status</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-warning text-dark me-2">
+                    <i class="fas fa-clock me-1"></i>Aguardando Execução
+                </span>
+                <small class="text-muted">Ordem criada, aguardando prestador executar</small>
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-info me-2">
+                    <i class="fas fa-hourglass-half me-1"></i>Serviço Executado
+                </span>
+                <small class="text-muted">Prestador marcou como concluído, aguardando confirmação</small>
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-success me-2">
+                    <i class="fas fa-check-circle me-1"></i>Concluída
+                </span>
+                <small class="text-muted">Ordem finalizada com sucesso</small>
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-secondary me-2">
+                    <i class="fas fa-times-circle me-1"></i>Cancelada
+                </span>
+                <small class="text-muted">Ordem cancelada por uma das partes</small>
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-danger me-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Contestada
+                </span>
+                <small class="text-muted">Cliente abriu contestação, requer arbitragem</small>
+            </div>
+            <div class="col-md-4 mb-2">
+                <span class="badge bg-dark me-2">
+                    <i class="fas fa-gavel me-1"></i>Resolvida
+                </span>
+                <small class="text-muted">Contestação resolvida pelo admin</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table-danger {
+    background-color: #f8d7da !important;
+}
+
+.table-danger:hover {
+    background-color: #f5c2c7 !important;
+}
+
+.badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+
+.card-body .table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pagination .page-link {
+    color: #0d6efd;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atualizar automaticamente a cada 60 segundos se houver ordens contestadas
+const contestadasCount = {{ stats.contestada }};
+if (contestadasCount > 0) {
+    setInterval(function() {
+        // Recarregar apenas se ainda estivermos na página de ordens
+        if (window.location.pathname.includes('/admin/ordens')) {
+            location.reload();
+        }
+    }, 60000); // 60 segundos
+}
+</script>
+{% endblock %}

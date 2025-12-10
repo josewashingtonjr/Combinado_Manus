@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Pré-Ordem Expirando{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> ATENÇÃO: Pré-Ordem Expirando em Breve!
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">⚠️ Prazo de negociação terminando!</h5>
+                        <hr>
+                        <p class="mb-0">
+                            A pré-ordem #{{ pre_order.id }} expirará em <strong>{{ hours_remaining }} horas</strong>.
+                            Se não houver acordo até lá, a pré-ordem será cancelada automaticamente.
+                        </p>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Informações da Pré-Ordem</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Serviço:</strong> {{ pre_order.title }}</li>
+                                <li><strong>Valor Atual:</strong> <span class="fw-bold">R$ {{ "%.2f"|format(pre_order.current_value) }}</span></li>
+                                {% if user_type == 'cliente' %}
+                                <li><strong>Prestador:</strong> {{ other_party_name }}</li>
+                                {% else %}
+                                <li><strong>Cliente:</strong> {{ other_party_name }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-danger">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">⏰ Prazo de Expiração</h5>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="flex-grow-1">
+                                    <p class="mb-1"><strong>Tempo Restante:</strong></p>
+                                    <p class="fs-3 fw-bold text-danger mb-0">{{ hours_remaining }} horas</p>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <p class="mb-1"><strong>Expira em:</strong></p>
+                                    <p class="fs-5 fw-bold text-danger mb-0">
+                                        {{ pre_order.expires_at.strftime('%d/%m/%Y às %H:%M') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert">
+                        <h6><i class="fas fa-exclamation-circle"></i> O que acontece se expirar:</h6>
+                        <ul class="mb-0">
+                            <li>A pré-ordem será <strong>cancelada automaticamente</strong></li>
+                            <li>Nenhuma ordem será criada</li>
+                            <li>Nenhum valor será bloqueado</li>
+                            <li>Será necessário criar um novo convite para retomar a negociação</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-success border-success" role="alert">
+                        <h6><i class="fas fa-check-circle"></i> Como evitar a expiração:</h6>
+                        <ul class="mb-0">
+                            {% if pre_order.status == 'em_negociacao' %}
+                            <li><strong>Aceite os termos atuais</strong> se estiver satisfeito com as condições</li>
+                            <li>Faça uma proposta final se ainda quiser negociar</li>
+                            <li>Entre em contato com {{ other_party_name }} para agilizar a negociação</li>
+                            {% elif pre_order.status == 'aguardando_resposta' %}
+                            <li><strong>Responda à proposta pendente</strong> o mais rápido possível</li>
+                            <li>Aceite se concordar com os termos propostos</li>
+                            <li>Rejeite e faça uma contraproposta se necessário</li>
+                            {% else %}
+                            <li>Aguarde a outra parte aceitar os termos</li>
+                            <li>Entre em contato com {{ other_party_name }} para lembrar do prazo</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i> <strong>Status Atual:</strong> 
+                        <span class="badge bg-warning text-dark">{{ pre_order.status|replace('_', ' ')|title }}</span>
+                        {% if pre_order.client_accepted_terms and pre_order.provider_accepted_terms %}
+                        <br><span class="text-success">✅ Ambas as partes aceitaram os termos - conversão pendente</span>
+                        {% elif pre_order.client_accepted_terms %}
+                        <br><span class="text-warning">⏳ Cliente aceitou - aguardando prestador</span>
+                        {% elif pre_order.provider_accepted_terms %}
+                        <br><span class="text-warning">⏳ Prestador aceitou - aguardando cliente</span>
+                        {% else %}
+                        <br><span class="text-danger">❌ Nenhuma parte aceitou os termos ainda</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=pre_order.id) }}" 
+                           class="btn btn-danger btn-lg pulse-animation">
+                            <i class="fas fa-bolt"></i> AGIR AGORA - Ver Pré-Ordem
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pulse-animation {
+    animation: pulse 1.5s infinite;
+}
+</style>
+{% endblock %}

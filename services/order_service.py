@@ -1,16 +1,172 @@
 #!/usr/bin/env python3.11
 # -*- coding: utf-8 -*-
 
-from models import db, User, Order
+from models import db, User, Order, OrderStatusHistory, Invite
 from services.wallet_service import WalletService
-from datetime import datetime
+from services.order_status_validator import OrderStatusValidator
+from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
+from flask import request
 
 class OrderService:
     """Serviço para gerenciar ordens de serviço seguindo arquitetura de escrow"""
+    
+    @staticmethod
+    def _change_order_status(order_id, new_status, user_id=None, admin_id=None, reason=None):
+        """
+        Método auxiliar para mudança de status com validação e histórico
+        
+        Args:
+            order_id (int): ID da ordem
+            new_status (str): Novo status desejado
+            user_id (int, optional): ID do usuário fazendo a mudança
+            admin_id (int, optional): ID do admin fazendo a mudança
+            reason (str, optional): Motivo da mudança
+            
+        Returns:
+            dict: Resultado da operação com sucesso/erro
+        """
+        try:
+            # Buscar ordem atual
+            order = Order.query.get(order_id)
+            if not order:
+                return {
+                    'success': False,
+                    'error': f"Ordem {order_id} não encontrada",
+                    'error_code': 'ORDER_NOT_FOUND'
+                }
+            
+            current_status = order.status
+            
+            # Validar transição usando OrderStatusValidator
+            validation_result = OrderStatusValidator.validate_transition(
+                order_id=order_id,
+                current_status=current_status,
+                new_status=new_status,
+                user_id=user_id,
+                admin_id=admin_id,
+                reason=reason
+            )
+            
+            if not validation_result['valid']:
+                return {
+                    'success': False,
+                    'error': validation_result['error'],
+                    'error_code': validation_result.get('error_code', 'VALIDATION_FAILED'),
+                    'valid_transitions': validation_result.get('valid_transitions', [])
+                }
+            
+            # Realizar mudança de status
+            order.status = new_status
+            
+            # Registrar no histórico
+            OrderService._record_status_change(
+                order_id=order_id,
+                previous_status=current_status,
+                new_status=new_status,
+                user_id=user_id,
+                admin_id=admin_id,
+                reason=reason
+            )
+            
+            # Commit das mudanças
+            db.session.commit()
+            
+            return {
+                'success': True,
+                'previous_status': current_status,
+                'new_status': new_status,
+                'message': validation_result.get('message', f'Status alterado para {new_status}'),
+                'description': validation_result.get('description', '')
+            }
+            
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                'success': False,
+                'error': f"Erro no banco de dados: {str(e)}",
+                'error_code': 'DATABASE_ERROR'
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {
+                'success': False,
+                'error': f"Erro interno: {str(e)}",
+                'error_code': 'INTERNAL_ERROR'
+            }
+    
+    @staticmethod
+    def _record_status_change(order_id, previous_status, new_status, user_id=None, admin_id=None, reason=None):
+        """
+        Registra mudança de status no histórico
+        
+        Args:
+            order_id (int): ID da ordem
+            previous_status (str): Status anterior
+            new_status (str): Novo status
+            user_id (int, optional): ID do usuário
+            admin_id (int, optional): ID do admin
+            reason (str, optional): Motivo da mudança
+        """
+        try:
+            # Capturar informações da requisição se disponível
+            ip_address = None
+            user_agent = None
+            
+            if request:
+                ip_address = request.remote_addr
+                user_agent = request.headers.get('User-Agent', '')[:255]  # Limitar tamanho
+            
+            # Criar registro no histórico
+            history_record = OrderStatusHistory(
+                order_id=order_id,
+                previous_status=previous_status,
+                new_status=new_status,
+                changed_by_user_id=user_id,
+                changed_by_admin_id=admin_id,
+                reason=reason,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            
+            db.session.add(history_record)
+            
+        except Exception as e:
+            # Não falhar a operação principal por erro de histórico
+            print(f"Erro ao registrar histórico de status: {str(e)}")
+    
+    @staticmethod
+    def get_order_status_history(order_id):
+        """
+        Retorna o histórico de mudanças de status de uma ordem
+        
+        Args:
+            order_id (int): ID da ordem
+            
+        Returns:
+            list: Lista de mudanças de status ordenada por data
+        """
+        try:
+            history = OrderStatusHistory.query.filter_by(order_id=order_id)\
+                                            .order_by(OrderStatusHistory.created_at.desc())\
+                                            .all()
+            
+            return [{
+                'id': record.id,
+                'previous_status': record.previous_status,
+                'new_status': record.new_status,
+                'changed_by_user_id': record.changed_by_user_id,
+                'changed_by_admin_id': record.changed_by_admin_id,
+                'reason': record.reason,
+                'created_at': record.created_at,
+                'ip_address': record.ip_address
+            } for record in history]
+            
+        except Exception as e:
+            return []
 
     @staticmethod
-    def create_order(client_id, title, description, value):
+    def create_order(client_id, title, description, value, invite_id=None, proposal_id=None):
         """
         Cria uma nova ordem de serviço com bloqueio automático de tokens em escrow
         
@@ -19,6 +175,7 @@ class OrderService:
         2. Criar ordem com status 'disponivel'
         3. Transferir tokens do saldo→escrow (transfer_to_escrow)
         4. Registrar transação de bloqueio
+        5. Incluir histórico de proposta se aplicável
         """
         if value <= 0:
             raise ValueError("O valor da ordem deve ser positivo")
@@ -29,35 +186,85 @@ class OrderService:
         except Exception as e:
             raise ValueError(f"Erro ao verificar carteira do cliente: {str(e)}")
 
+        # Se há um convite associado, usar o valor efetivo
+        effective_value = value
+        proposal_history = None
+        
+        if invite_id:
+            from models import Invite, Proposal
+            invite = Invite.query.get(invite_id)
+            if invite:
+                # Se o convite foi convertido para pré-ordem, usar o valor passado
+                # (que vem da pré-ordem com valor negociado)
+                # Caso contrário, usar valor efetivo do convite
+                if invite.status != 'convertido_pre_ordem':
+                    effective_value = invite.current_value
+                
+                # Se há uma proposta aceita, incluir no histórico
+                if invite.current_proposal_id:
+                    proposal = Proposal.query.get(invite.current_proposal_id)
+                    if proposal and proposal.status == 'accepted':
+                        proposal_history = {
+                            'proposal_id': proposal.id,
+                            'original_value': float(proposal.original_value),
+                            'proposed_value': float(proposal.proposed_value),
+                            'justification': proposal.justification,
+                            'created_at': proposal.created_at.isoformat(),
+                            'responded_at': proposal.responded_at.isoformat() if proposal.responded_at else None
+                        }
+
         # Verificar se o cliente tem saldo suficiente para o escrow
         try:
-            if not WalletService.has_sufficient_balance(client_id, value):
+            if not WalletService.has_sufficient_balance(client_id, effective_value):
                 current_balance = WalletService.get_wallet_balance(client_id)
-                raise ValueError(f"Saldo insuficiente para criar a ordem. Saldo atual: R$ {current_balance:.2f}, valor necessário: R$ {value:.2f}")
+                raise ValueError(f"Saldo insuficiente para criar a ordem. Saldo atual: R$ {current_balance:.2f}, valor necessário: R$ {effective_value:.2f}")
         except Exception as e:
             raise ValueError(f"Erro ao verificar saldo: {str(e)}")
 
         try:
+            # Determinar service_deadline
+            # Se há convite, usar a data de entrega do convite
+            service_deadline = None
+            if invite_id:
+                invite = Invite.query.get(invite_id)
+                if invite:
+                    service_deadline = invite.delivery_date
+            
+            # Se não há convite ou data, usar 7 dias a partir de agora
+            if not service_deadline:
+                service_deadline = datetime.utcnow() + timedelta(days=7)
+            
             # Criar ordem com status inicial 'disponivel'
             order = Order(
                 client_id=client_id,
                 title=title,
                 description=description,
-                value=value,
+                value=effective_value,  # Usar valor efetivo
                 status='disponivel',
-                created_at=datetime.utcnow()
+                created_at=datetime.utcnow(),
+                service_deadline=service_deadline,
+                invite_id=invite_id  # Referência ao convite se aplicável
             )
+            
+            # Adicionar histórico de proposta como metadados se existir
+            if proposal_history:
+                # Armazenar histórico no campo de descrição ou criar campo específico
+                order.description = f"{description}\n\n--- Histórico da Proposta ---\nValor Original: R$ {proposal_history['original_value']:.2f}\nValor Proposto: R$ {proposal_history['proposed_value']:.2f}\nJustificativa: {proposal_history['justification']}"
+            
             db.session.add(order)
             db.session.flush()  # Para obter o ID da ordem antes do commit
 
-            # Transferir valor para escrow (saldo→escrow)
+            # Transferir valor efetivo para escrow (saldo→escrow)
             # Tokens não saem do sistema, apenas mudam de estado
-            escrow_result = WalletService.transfer_to_escrow(client_id, value, order.id)
+            escrow_result = WalletService.transfer_to_escrow(client_id, effective_value, order.id)
             
             db.session.commit()
 
             return {
                 'order': order,
+                'effective_value': effective_value,
+                'original_value': value,
+                'proposal_history': proposal_history,
                 'escrow_transaction_id': escrow_result['transaction_id'],
                 'new_balance': escrow_result['new_balance'],
                 'new_escrow_balance': escrow_result['new_escrow_balance']
@@ -86,9 +293,6 @@ class OrderService:
         if not order:
             raise ValueError("Ordem não encontrada")
 
-        if order.status != 'disponivel':
-            raise ValueError(f"Ordem não está disponível. Status atual: {order.status}")
-
         # Verificar se o prestador não é o mesmo cliente que criou a ordem
         if order.client_id == provider_id:
             raise ValueError("Você não pode aceitar sua própria ordem")
@@ -115,9 +319,19 @@ class OrderService:
             raise ValueError(f"Você já tem {active_orders} ordens em andamento. Limite máximo: {max_concurrent_orders}")
 
         try:
-            # Atualizar ordem com prestador e novo status
+            # Validar transição de status usando OrderStatusValidator
+            status_change_result = OrderService._change_order_status(
+                order_id=order_id,
+                new_status='aceita',
+                user_id=provider_id,
+                reason=f"Ordem aceita pelo prestador {provider_id}"
+            )
+            
+            if not status_change_result['success']:
+                raise ValueError(status_change_result['error'])
+            
+            # Atualizar ordem com prestador
             order.provider_id = provider_id
-            order.status = 'aceita'
             order.accepted_at = datetime.utcnow()
             
             db.session.commit()
@@ -130,12 +344,16 @@ class OrderService:
                 'order_id': order.id,
                 'new_status': order.status,
                 'accepted_at': order.accepted_at,
-                'provider_id': provider_id
+                'provider_id': provider_id,
+                'status_change_details': status_change_result
             }
             
         except SQLAlchemyError as e:
             db.session.rollback()
             raise ValueError(f"Erro ao aceitar ordem: {str(e)}")
+        except Exception as e:
+            db.session.rollback()
+            raise e
 
     @staticmethod
     def complete_order(user_id, order_id):
@@ -154,15 +372,20 @@ class OrderService:
         if user_id not in [order.client_id, order.provider_id]:
             raise ValueError("Usuário não autorizado a concluir esta ordem")
 
-        if order.status not in ['aceita', 'em_andamento', 'aguardando_confirmacao']:
-            raise ValueError(f"Ordem não pode ser concluída neste estado: {order.status}")
-
         try:
             # Se o prestador marca como concluída, aguarda confirmação do cliente
             if user_id == order.provider_id:
                 if order.status in ['aceita', 'em_andamento']:
-                    order.status = 'aguardando_confirmacao'
-                    db.session.commit()
+                    # Validar transição para aguardando_confirmacao
+                    status_change_result = OrderService._change_order_status(
+                        order_id=order_id,
+                        new_status='aguardando_confirmacao',
+                        user_id=user_id,
+                        reason=f"Prestador {user_id} marcou ordem como concluída"
+                    )
+                    
+                    if not status_change_result['success']:
+                        raise ValueError(status_change_result['error'])
                     
                     # TODO: Implementar notificação para o cliente
                     # NotificationService.notify_client_completion_request(order.client_id, order_id)
@@ -171,18 +394,26 @@ class OrderService:
                         'success': True,
                         'status': 'aguardando_confirmacao',
                         'message': 'Ordem marcada como concluída. Aguardando confirmação do cliente.',
-                        'requires_client_confirmation': True
+                        'requires_client_confirmation': True,
+                        'status_change_details': status_change_result
                     }
                 else:
                     raise ValueError("Ordem já foi marcada como concluída pelo prestador")
 
             # Se o cliente confirma, a ordem é concluída e o pagamento liberado
             if user_id == order.client_id:
-                if order.status != 'aguardando_confirmacao':
-                    raise ValueError("Ordem não está aguardando confirmação do cliente")
+                # Validar transição para concluida
+                status_change_result = OrderService._change_order_status(
+                    order_id=order_id,
+                    new_status='concluida',
+                    user_id=user_id,
+                    reason=f"Cliente {user_id} confirmou conclusão da ordem"
+                )
                 
-                # Marcar ordem como concluída
-                order.status = 'concluida'
+                if not status_change_result['success']:
+                    raise ValueError(status_change_result['error'])
+                
+                # Marcar data de conclusão
                 order.completed_at = datetime.utcnow()
                 db.session.commit()
 
@@ -203,7 +434,8 @@ class OrderService:
                         'system_fee': payment_result['system_fee'],
                         'fee_percentage': payment_result['system_fee_percent'] * 100
                     },
-                    'completed_at': order.completed_at
+                    'completed_at': order.completed_at,
+                    'status_change_details': status_change_result
                 }
 
         except SQLAlchemyError as e:
@@ -231,31 +463,19 @@ class OrderService:
         if user_id not in [order.client_id, order.provider_id]:
             raise ValueError("Usuário não autorizado a cancelar esta ordem")
 
-        # Verificar se ordem pode ser cancelada
-        cancellable_statuses = ['disponivel', 'aceita', 'em_andamento']
-        if order.status not in cancellable_statuses:
-            raise ValueError(f"Ordem não pode ser cancelada neste estado: {order.status}")
-
-        # Verificar prazos para cancelamento (implementação básica)
-        from datetime import datetime, timedelta
-        
-        # Se ordem foi aceita há mais de 24h, só prestador pode cancelar
-        if order.status in ['aceita', 'em_andamento'] and order.accepted_at:
-            hours_since_accepted = (datetime.utcnow() - order.accepted_at).total_seconds() / 3600
-            if hours_since_accepted > 24 and user_id == order.client_id:
-                raise ValueError("Cliente não pode cancelar ordem aceita há mais de 24 horas. Entre em contato com o suporte.")
-
         try:
-            # Marcar ordem como cancelada
-            old_status = order.status
-            order.status = 'cancelada'
+            # Validar transição para cancelada usando OrderStatusValidator
+            status_change_result = OrderService._change_order_status(
+                order_id=order_id,
+                new_status='cancelada',
+                user_id=user_id,
+                reason=reason or f"Ordem cancelada pelo usuário {user_id}"
+            )
             
-            # Registrar motivo do cancelamento
-            if reason:
-                # TODO: Implementar modelo CancellationReason quando necessário
-                pass
+            if not status_change_result['success']:
+                raise ValueError(status_change_result['error'])
             
-            db.session.commit()
+            old_status = status_change_result['previous_status']
 
             # Se havia valor em escrow, reembolsar o cliente
             refund_result = None
@@ -273,7 +493,8 @@ class OrderService:
                 'new_status': order.status,
                 'refund_processed': refund_result is not None,
                 'refund_amount': refund_result['refunded_amount'] if refund_result else 0,
-                'reason': reason
+                'reason': reason,
+                'status_change_details': status_change_result
             }
             
         except SQLAlchemyError as e:
@@ -301,18 +522,24 @@ class OrderService:
         if user_id not in [order.client_id, order.provider_id]:
             raise ValueError("Usuário não autorizado a abrir disputa para esta ordem")
 
-        # Verificar se ordem pode ter disputa aberta
-        disputable_statuses = ['aceita', 'em_andamento', 'aguardando_confirmacao']
-        if order.status not in disputable_statuses:
-            raise ValueError(f"Não é possível abrir disputa para ordem com status: {order.status}")
-
         if not reason or len(reason.strip()) < 10:
             raise ValueError("Motivo da disputa deve ter pelo menos 10 caracteres")
 
         try:
-            # Marcar ordem como disputada e registrar detalhes
-            old_status = order.status
-            order.status = 'disputada'
+            # Validar transição para disputada usando OrderStatusValidator
+            status_change_result = OrderService._change_order_status(
+                order_id=order_id,
+                new_status='disputada',
+                user_id=user_id,
+                reason=reason
+            )
+            
+            if not status_change_result['success']:
+                raise ValueError(status_change_result['error'])
+            
+            old_status = status_change_result['previous_status']
+            
+            # Registrar detalhes da disputa
             order.dispute_reason = reason
             order.dispute_opened_by = user_id
             order.dispute_opened_at = datetime.utcnow()
@@ -330,7 +557,8 @@ class OrderService:
                 'new_status': order.status,
                 'opened_by': user_id,
                 'reason': reason,
-                'message': 'Disputa aberta com sucesso. Aguarde análise administrativa.'
+                'message': 'Disputa aberta com sucesso. Aguarde análise administrativa.',
+                'status_change_details': status_change_result
             }
             
         except SQLAlchemyError as e:
@@ -355,9 +583,6 @@ class OrderService:
         if not order:
             raise ValueError("Ordem não encontrada")
 
-        if order.status != 'disputada':
-            raise ValueError(f"Ordem não está em disputa. Status atual: {order.status}")
-
         # Verificar se usuário é admin
         from models import AdminUser
         admin = AdminUser.query.get(admin_id)
@@ -369,6 +594,25 @@ class OrderService:
             raise ValueError(f"Decisão inválida. Opções: {', '.join(valid_decisions)}")
 
         try:
+            # Determinar novo status baseado na decisão
+            if decision == 'favor_cliente':
+                new_status = 'cancelada'  # Reembolso = cancelamento
+            elif decision == 'favor_prestador':
+                new_status = 'concluida'  # Pagamento = conclusão
+            else:  # dividir_50_50
+                new_status = 'resolvida'  # Status específico para divisão
+            
+            # Validar transição usando OrderStatusValidator
+            status_change_result = OrderService._change_order_status(
+                order_id=order_id,
+                new_status=new_status,
+                admin_id=admin_id,
+                reason=f"Disputa resolvida: {decision}. Notas: {admin_notes}"
+            )
+            
+            if not status_change_result['success']:
+                raise ValueError(status_change_result['error'])
+            
             # Processar decisão conforme tipo
             if decision == 'favor_cliente':
                 # Reembolso total para o cliente
@@ -413,8 +657,7 @@ class OrderService:
                     'admin_fee': 0
                 }
 
-            # Marcar ordem como resolvida e registrar decisão
-            order.status = 'resolvida'
+            # Registrar detalhes da resolução
             order.dispute_resolved_at = datetime.utcnow()
             order.dispute_resolution = f"Decisão: {decision}. Notas: {admin_notes}"
             db.session.commit()
@@ -428,7 +671,8 @@ class OrderService:
                 'decision': decision,
                 'result_details': result_details,
                 'admin_notes': admin_notes,
-                'message': f'Disputa resolvida: {decision.replace("_", " ").title()}'
+                'message': f'Disputa resolvida: {decision.replace("_", " ").title()}',
+                'status_change_details': status_change_result
             }
             
         except SQLAlchemyError as e:
@@ -497,3 +741,206 @@ class OrderService:
                 'valid': False,
                 'error': f'Erro na validação: {str(e)}'
             }
+    
+    @staticmethod
+    def get_valid_status_transitions(order_id):
+        """
+        Retorna as transições de status válidas para uma ordem
+        
+        Args:
+            order_id (int): ID da ordem
+            
+        Returns:
+            dict: Transições válidas e informações da ordem
+        """
+        try:
+            order = Order.query.get(order_id)
+            if not order:
+                return {
+                    'success': False,
+                    'error': 'Ordem não encontrada'
+                }
+            
+            valid_transitions = OrderStatusValidator.get_valid_transitions(order.status)
+            
+            return {
+                'success': True,
+                'order_id': order_id,
+                'current_status': order.status,
+                'valid_transitions': valid_transitions,
+                'is_final_status': OrderStatusValidator.is_final_status(order.status)
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Erro ao consultar transições: {str(e)}'
+            }
+    
+    @staticmethod
+    def validate_status_change(order_id, new_status, user_id=None, admin_id=None, reason=None):
+        """
+        Valida uma mudança de status sem executá-la
+        
+        Args:
+            order_id (int): ID da ordem
+            new_status (str): Novo status desejado
+            user_id (int, optional): ID do usuário
+            admin_id (int, optional): ID do admin
+            reason (str, optional): Motivo da mudança
+            
+        Returns:
+            dict: Resultado da validação
+        """
+        try:
+            order = Order.query.get(order_id)
+            if not order:
+                return {
+                    'valid': False,
+                    'error': 'Ordem não encontrada'
+                }
+            
+            # Usar OrderStatusValidator para validar sem executar
+            validation_result = OrderStatusValidator.validate_transition(
+                order_id=order_id,
+                current_status=order.status,
+                new_status=new_status,
+                user_id=user_id,
+                admin_id=admin_id,
+                reason=reason
+            )
+            
+            return validation_result
+            
+        except Exception as e:
+            return {
+                'valid': False,
+                'error': f'Erro na validação: {str(e)}'
+            }
+
+    @staticmethod
+    def create_order_from_invite(invite_id, provider_id):
+        """
+        Cria uma ordem de serviço a partir de um convite aceito
+        
+        Este método é específico para conversão de convites e garante que:
+        1. O valor efetivo (original ou proposto aceito) seja usado
+        2. O histórico da proposta seja incluído na ordem
+        3. O saldo correto seja reservado
+        4. A referência à proposta aceita seja mantida
+        
+        Args:
+            invite_id (int): ID do convite aceito
+            provider_id (int): ID do prestador que aceitou
+            
+        Returns:
+            dict: Resultado da criação da ordem
+        """
+        from models import Invite, Proposal
+        
+        invite = Invite.query.get(invite_id)
+        if not invite:
+            raise ValueError("Convite não encontrado")
+        
+        if invite.status != 'aceito':
+            raise ValueError("Apenas convites aceitos podem ser convertidos em ordens")
+        
+        # Usar valor efetivo (original ou proposto aceito)
+        effective_value = invite.current_value
+        
+        # Preparar histórico de proposta se existir
+        proposal_history = None
+        proposal_reference = None
+        
+        if invite.current_proposal_id:
+            proposal = Proposal.query.get(invite.current_proposal_id)
+            if proposal and proposal.status == 'accepted':
+                proposal_history = {
+                    'proposal_id': proposal.id,
+                    'original_value': float(proposal.original_value),
+                    'proposed_value': float(proposal.proposed_value),
+                    'justification': proposal.justification,
+                    'created_at': proposal.created_at.isoformat(),
+                    'responded_at': proposal.responded_at.isoformat() if proposal.responded_at else None
+                }
+                proposal_reference = proposal.id
+        
+        try:
+            # Log início da criação
+            # Requirements: 9.1, 9.2, 9.4
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            logger.info(
+                f"INICIANDO CRIAÇÃO ORDEM: Convite {invite_id}, "
+                f"Cliente: {invite.client_id}, Prestador: {provider_id}, "
+                f"Valor efetivo: R$ {effective_value:.2f}, "
+                f"Valor original: R$ {invite.original_value:.2f}, "
+                f"Tem proposta: {proposal_reference is not None}"
+            )
+            
+            # Criar ordem usando o método principal com todas as validações
+            order_result = OrderService.create_order(
+                client_id=invite.client_id,
+                title=invite.service_title,
+                description=invite.service_description,
+                value=effective_value,
+                invite_id=invite_id,
+                proposal_id=proposal_reference
+            )
+            
+            order = order_result['order']
+            
+            # Log do bloqueio de valores
+            # Requirements: 9.1, 9.2, 9.4
+            logger.info(
+                f"VALORES BLOQUEADOS: Ordem #{order.id}, "
+                f"Valor bloqueado: R$ {effective_value:.2f}, "
+                f"Transaction ID: {order_result['escrow_transaction_id']}, "
+                f"Novo saldo cliente: R$ {order_result['new_balance']:.2f}, "
+                f"Novo escrow cliente: R$ {order_result['new_escrow_balance']:.2f}"
+            )
+            
+            # Atualizar ordem com prestador e status aceita
+            order.provider_id = provider_id
+            order.status = 'aceita'
+            order.accepted_at = datetime.utcnow()
+            
+            db.session.commit()
+            
+            # Log final de sucesso
+            # Requirements: 9.1, 9.2, 9.4
+            logger.info(
+                f"ORDEM CRIADA COM SUCESSO: Ordem #{order.id} criada a partir do convite {invite_id}. "
+                f"Cliente: {invite.client_id}, Prestador: {provider_id}, "
+                f"Valor: R$ {effective_value:.2f}, Status: aceita, "
+                f"Timestamp: {order.accepted_at.isoformat()}, "
+                f"Proposta ID: {proposal_reference if proposal_reference else 'N/A'}"
+            )
+            
+            return {
+                'success': True,
+                'order': order,
+                'order_id': order.id,
+                'effective_value': effective_value,
+                'original_value': float(invite.original_value),
+                'proposal_history': proposal_history,
+                'escrow_details': {
+                    'transaction_id': order_result['escrow_transaction_id'],
+                    'new_balance': order_result['new_balance'],
+                    'new_escrow_balance': order_result['new_escrow_balance']
+                },
+                'message': f'Ordem #{order.id} criada com sucesso a partir do convite'
+            }
+            
+        except Exception as e:
+            db.session.rollback()
+            # Log de erro detalhado
+            # Requirements: 7.3, 7.4
+            logger.error(
+                f"ERRO CRIAÇÃO ORDEM: Falha ao criar ordem do convite {invite_id}. "
+                f"Cliente: {invite.client_id}, Prestador: {provider_id}, "
+                f"Valor: R$ {effective_value:.2f}, Erro: {str(e)}",
+                exc_info=True
+            )
+            raise e

@@ -135,6 +135,7 @@
                                         </button>
                                         <form method="POST" action="{{ url_for('admin.resolver_alerta', alert_id=alerta.id) }}" 
                                               style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                             <button type="submit" class="btn btn-sm btn-success" 
                                                     onclick="return confirm('Marcar este alerta como resolvido?')">
                                                 <i class="fas fa-check"></i>

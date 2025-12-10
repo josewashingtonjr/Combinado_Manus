@@ -1,0 +1,422 @@
+# ============================================================================
+# CONFIGURAÇÃO DO CRON JOB - CONFIRMAÇÃO AUTOMÁTICA DE ORDENS
+# ============================================================================
+#
+# Este arquivo contém instruções para configurar o job automático que
+# confirma ordens de serviço após 36 horas sem resposta do cliente.
+#
+# ============================================================================
+
+## VISÃO GERAL
+
+O sistema possui um job automático (jobs/auto_confirm_orders.py) que deve
+ser executado periodicamente para processar ordens que ultrapassaram o prazo
+de 36 horas sem confirmação manual do cliente.
+
+Quando uma ordem atinge esse prazo, o sistema:
+- Confirma automaticamente a ordem
+- Processa os pagamentos (transfere valores para prestador e admin)
+- Devolve as taxas de contestação
+- Notifica ambas as partes
+- Registra que a confirmação foi automática
+
+
+## PRÉ-REQUISITOS
+
+1. Python 3.11 instalado no sistema
+2. Ambiente virtual configurado (se aplicável)
+3. Permissões de escrita no diretório de logs
+4. Acesso ao crontab do usuário
+
+
+## LINHA DO CRON JOB
+
+Adicione a seguinte linha ao crontab para executar o job a cada hora:
+
+0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+
+### Explicação da linha:
+
+- `0 * * * *` : Executa no minuto 0 de cada hora (00:00, 01:00, 02:00, etc.)
+- `cd /home/w-jr/Documentos/Combinado_Manus` : Navega para o diretório do projeto
+- `&&` : Executa o próximo comando apenas se o anterior for bem-sucedido
+- `/usr/bin/python3.11` : Caminho completo do Python 3.11
+- `jobs/auto_confirm_orders.py` : Script do job
+- `>>` : Redireciona a saída (append)
+- `logs/cron_auto_confirm.log` : Arquivo de log do cron
+- `2>&1` : Redireciona erros (stderr) para o mesmo arquivo de log
+
+
+## VARIAÇÕES DE FREQUÊNCIA
+
+Se desejar executar em intervalos diferentes, ajuste os primeiros campos:
+
+# A cada 30 minutos:
+*/30 * * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+
+# A cada 2 horas:
+0 */2 * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+
+# A cada 6 horas:
+0 */6 * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+
+# Diariamente às 3h da manhã:
+0 3 * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+
+
+## INSTRUÇÕES DE INSTALAÇÃO
+
+### 1. Verificar o caminho do Python 3.11
+
+Antes de configurar, confirme o caminho do Python:
+
+```bash
+which python3.11
+```
+
+Se o caminho for diferente de `/usr/bin/python3.11`, ajuste a linha do cron.
+
+
+### 2. Verificar o caminho do projeto
+
+Confirme o caminho completo do diretório do projeto:
+
+```bash
+pwd
+```
+
+Atualize o caminho na linha do cron se necessário.
+
+
+### 3. Criar diretório de logs (se não existir)
+
+```bash
+mkdir -p logs
+chmod 755 logs
+```
+
+
+### 4. Testar o job manualmente
+
+Antes de adicionar ao cron, teste a execução manual:
+
+```bash
+cd /home/w-jr/Documentos/Combinado_Manus
+python3.11 jobs/auto_confirm_orders.py
+```
+
+Verifique se não há erros e se o log foi criado em `logs/auto_confirm_orders.log`.
+
+
+### 5. Editar o crontab
+
+Abra o editor do crontab:
+
+```bash
+crontab -e
+```
+
+Se for a primeira vez, o sistema pode perguntar qual editor usar.
+Recomendamos `nano` para iniciantes ou `vim` para usuários avançados.
+
+
+### 6. Adicionar a linha do cron
+
+No editor, adicione a linha do cron job ao final do arquivo:
+
+```
+0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+```
+
+Salve e feche o editor:
+- No nano: Ctrl+O (salvar), Enter, Ctrl+X (sair)
+- No vim: Esc, :wq, Enter
+
+
+### 7. Verificar a instalação
+
+Liste os cron jobs ativos para confirmar:
+
+```bash
+crontab -l
+```
+
+Você deve ver a linha que acabou de adicionar.
+
+
+### 8. Verificar execução
+
+Após a primeira hora, verifique se o job foi executado:
+
+```bash
+# Ver log do cron
+cat logs/cron_auto_confirm.log
+
+# Ver log detalhado do job
+tail -f logs/auto_confirm_orders.log
+```
+
+
+## MONITORAMENTO E MANUTENÇÃO
+
+### Verificar logs regularmente
+
+```bash
+# Ver últimas 50 linhas do log do job
+tail -50 logs/auto_confirm_orders.log
+
+# Monitorar em tempo real
+tail -f logs/auto_confirm_orders.log
+
+# Ver log do cron
+tail -50 logs/cron_auto_confirm.log
+```
+
+
+### Verificar se o cron está rodando
+
+```bash
+# Ver processos do cron
+ps aux | grep cron
+
+# Ver logs do sistema (Ubuntu/Debian)
+grep CRON /var/log/syslog | tail -20
+```
+
+
+### Rotação de logs
+
+Para evitar que os logs cresçam indefinidamente, configure a rotação:
+
+Crie o arquivo `/etc/logrotate.d/auto_confirm_orders`:
+
+```
+/home/w-jr/Documentos/Combinado_Manus/logs/auto_confirm_orders.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+}
+
+/home/w-jr/Documentos/Combinado_Manus/logs/cron_auto_confirm.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+}
+```
+
+
+## COMANDOS ÚTEIS
+
+### Listar cron jobs ativos
+```bash
+crontab -l
+```
+
+### Editar cron jobs
+```bash
+crontab -e
+```
+
+### Remover todos os cron jobs (CUIDADO!)
+```bash
+crontab -r
+```
+
+### Desabilitar temporariamente o job
+Comente a linha no crontab adicionando `#` no início:
+```bash
+crontab -e
+# Adicione # antes da linha:
+# 0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && ...
+```
+
+### Executar manualmente para teste
+```bash
+cd /home/w-jr/Documentos/Combinado_Manus
+python3.11 jobs/auto_confirm_orders.py
+```
+
+
+## TROUBLESHOOTING
+
+### Problema: Job não está executando
+
+1. Verifique se o cron está rodando:
+   ```bash
+   sudo service cron status
+   ```
+
+2. Verifique os logs do sistema:
+   ```bash
+   grep CRON /var/log/syslog | tail -20
+   ```
+
+3. Verifique permissões do arquivo:
+   ```bash
+   ls -la jobs/auto_confirm_orders.py
+   chmod +x jobs/auto_confirm_orders.py
+   ```
+
+
+### Problema: Erros de importação
+
+1. Verifique se está usando o Python correto:
+   ```bash
+   /usr/bin/python3.11 --version
+   ```
+
+2. Verifique se as dependências estão instaladas:
+   ```bash
+   /usr/bin/python3.11 -m pip list
+   ```
+
+3. Se usar ambiente virtual, ative-o no cron:
+   ```
+   0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && source .venv/bin/activate && python jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+   ```
+
+
+### Problema: Permissões negadas
+
+1. Verifique permissões do diretório de logs:
+   ```bash
+   ls -la logs/
+   chmod 755 logs/
+   ```
+
+2. Verifique se o usuário do cron tem acesso ao projeto:
+   ```bash
+   whoami
+   ls -la /home/w-jr/Documentos/Combinado_Manus
+   ```
+
+
+### Problema: Job executa mas não processa ordens
+
+1. Verifique o log detalhado:
+   ```bash
+   tail -100 logs/auto_confirm_orders.log
+   ```
+
+2. Execute manualmente para ver erros:
+   ```bash
+   cd /home/w-jr/Documentos/Combinado_Manus
+   python3.11 jobs/auto_confirm_orders.py
+   ```
+
+3. Verifique se há ordens elegíveis:
+   - Status deve ser "servico_executado"
+   - confirmation_deadline deve ter passado
+
+
+## VARIÁVEIS DE AMBIENTE
+
+Se o projeto usa variáveis de ambiente, adicione-as ao cron:
+
+```
+0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && export FLASK_ENV=production && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+```
+
+Ou carregue de um arquivo .env:
+
+```
+0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && source .env && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+```
+
+
+## ALERTAS E NOTIFICAÇÕES
+
+Para receber emails quando o job falhar, adicione MAILTO no crontab:
+
+```
+MAILTO=seu-email@exemplo.com
+
+0 * * * * cd /home/w-jr/Documentos/Combinado_Manus && /usr/bin/python3.11 jobs/auto_confirm_orders.py >> logs/cron_auto_confirm.log 2>&1
+```
+
+Nota: Requer configuração de sendmail ou postfix no servidor.
+
+
+## SEGURANÇA
+
+1. **Permissões**: O arquivo do job não precisa ser executável pelo cron,
+   mas deve ter permissões de leitura para o usuário do cron.
+
+2. **Logs sensíveis**: Os logs podem conter informações financeiras.
+   Proteja o diretório de logs:
+   ```bash
+   chmod 700 logs/
+   ```
+
+3. **Backup**: Faça backup regular do crontab:
+   ```bash
+   crontab -l > crontab_backup_$(date +%Y%m%d).txt
+   ```
+
+
+## DESINSTALAÇÃO
+
+Para remover o cron job:
+
+1. Edite o crontab:
+   ```bash
+   crontab -e
+   ```
+
+2. Remova ou comente a linha do job
+
+3. Salve e feche o editor
+
+4. Verifique:
+   ```bash
+   crontab -l
+   ```
+
+
+## SUPORTE
+
+Para mais informações sobre cron:
+```bash
+man cron
+man crontab
+man 5 crontab  # Formato do arquivo crontab
+```
+
+Documentação online:
+- https://crontab.guru/ (gerador de expressões cron)
+- https://man7.org/linux/man-pages/man5/crontab.5.html
+
+
+## HISTÓRICO DE ALTERAÇÕES
+
+- 2025-01-XX: Criação inicial da documentação
+- Configuração para execução a cada hora
+- Logs em logs/cron_auto_confirm.log
+
+
+## NOTAS IMPORTANTES
+
+⚠️ **ATENÇÃO**: Este job processa transações financeiras. Certifique-se de:
+- Testar completamente em ambiente de desenvolvimento
+- Monitorar os logs regularmente
+- Ter backups do banco de dados
+- Configurar alertas para falhas
+
+✅ **RECOMENDAÇÃO**: Execute o job a cada hora para garantir que ordens
+sejam confirmadas logo após o prazo de 36 horas expirar.
+
+📊 **MÉTRICAS**: Monitore as seguintes métricas:
+- Número de ordens confirmadas automaticamente por dia
+- Taxa de sucesso do job
+- Tempo médio de execução
+- Erros e exceções
+
+============================================================================
+FIM DA DOCUMENTAÇÃO
+============================================================================

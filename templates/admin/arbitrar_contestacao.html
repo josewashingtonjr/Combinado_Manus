@@ -1,0 +1,416 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Arbitrar Contestação - Ordem #{{ order.id }} - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-gavel me-2"></i>Arbitragem de Contestação - Ordem #{{ order.id }}</h2>
+    <a href="{{ url_for('admin.contestacoes') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Voltar para Contestações
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Informações da Ordem -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações da Ordem</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th width="40%">ID da Ordem:</th>
+                        <td><strong>#{{ order.id }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Serviço:</th>
+                        <td>{{ order.title }}</td>
+                    </tr>
+                    <tr>
+                        <th>Descrição:</th>
+                        <td>{{ order.description }}</td>
+                    </tr>
+                    <tr>
+                        <th>Valor do Serviço:</th>
+                        <td><strong class="text-success">R$ {{ "%.2f"|format(order.value) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Status:</th>
+                        <td><span class="badge bg-warning">{{ order.status }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Criada em:</th>
+                        <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Concluída em:</th>
+                        <td>{{ order.completed_at.strftime('%d/%m/%Y %H:%M') if order.completed_at else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-users me-2"></i>Partes Envolvidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-primary"><i class="fas fa-user me-2"></i>Cliente</h6>
+                    <div><strong>{{ order.client.nome if order.client else 'N/A' }}</strong></div>
+                    <div class="text-muted small">{{ order.client.email if order.client else '' }}</div>
+                    {% if order.client and order.client.phone %}
+                    <div class="text-muted small">{{ order.client.phone }}</div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div>
+                    <h6 class="text-success"><i class="fas fa-user-tie me-2"></i>Prestador</h6>
+                    <div><strong>{{ order.provider.nome if order.provider else 'N/A' }}</strong></div>
+                    <div class="text-muted small">{{ order.provider.email if order.provider else '' }}</div>
+                    {% if order.provider and order.provider.phone %}
+                    <div class="text-muted small">{{ order.provider.phone }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da Contestação -->
+<div class="card mb-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Detalhes da Contestação</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <th width="40%">Aberta por:</th>
+                        <td>
+                            {% if order.dispute_opened_by == order.client_id %}
+                                <span class="badge bg-info">Cliente</span> - {{ order.client.nome if order.client else 'N/A' }}
+                            {% else %}
+                                <span class="badge bg-primary">Prestador</span> - {{ order.provider.nome if order.provider else 'N/A' }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Data de Abertura:</th>
+                        <td>{{ order.dispute_opened_at.strftime('%d/%m/%Y %H:%M') if order.dispute_opened_at else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <h6 class="text-danger"><i class="fas fa-comment-alt me-2"></i>Declaração do Cliente:</h6>
+        <div class="alert alert-light border">
+            <p class="mb-0">{{ order.dispute_client_statement if order.dispute_client_statement else 'Nenhuma declaração fornecida.' }}</p>
+        </div>
+        
+        {% if order.dispute_provider_response %}
+        <h6 class="text-primary mt-3"><i class="fas fa-reply me-2"></i>Resposta do Prestador:</h6>
+        <div class="alert alert-light border">
+            <p class="mb-0">{{ order.dispute_provider_response }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Provas Apresentadas -->
+{% if order.dispute_evidence_urls %}
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Provas Apresentadas ({{ order.dispute_evidence_urls|length }} arquivo(s))</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for evidence in order.dispute_evidence_urls %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        {% set evidence_url = evidence.url if evidence is mapping else evidence %}
+                        {% set evidence_type = evidence.type if evidence is mapping else evidence_url.split('.')[-1].lower() %}
+                        {% set evidence_filename = evidence.filename if evidence is mapping else evidence_url.split('/')[-1] %}
+                        
+                        {% if evidence_type in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <!-- Visualizador de Imagens -->
+                            <a href="{{ evidence_url }}" target="_blank" data-lightbox="evidence-{{ loop.index }}" data-title="{{ evidence_filename }}">
+                                <img src="{{ evidence_url }}" class="img-fluid mb-2 rounded" alt="Prova {{ loop.index }}" style="max-height: 150px; cursor: pointer;">
+                            </a>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-search-plus me-1"></i>Ampliar
+                            </a>
+                        {% elif evidence_type == 'pdf' %}
+                            <i class="fas fa-file-pdf fa-3x text-danger mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-danger">
+                                <i class="fas fa-file-pdf me-1"></i>Abrir PDF
+                            </a>
+                        {% elif evidence_type in ['mp4', 'avi', 'mov', 'webm'] %}
+                            <i class="fas fa-file-video fa-3x text-info mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-info">
+                                <i class="fas fa-play me-1"></i>Reproduzir
+                            </a>
+                        {% else %}
+                            <i class="fas fa-file fa-3x text-secondary mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-download me-1"></i>Baixar
+                            </a>
+                        {% endif %}
+                        
+                        {% if evidence is mapping and evidence.size %}
+                        <div class="text-muted small mt-2">
+                            Tamanho: {{ "%.2f"|format(evidence.size / 1024) }} KB
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% elif order.dispute_evidence %}
+<!-- Fallback para campo antigo dispute_evidence -->
+<div class="card mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Provas Apresentadas ({{ order.dispute_evidence|length }} arquivo(s))</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for evidence_url in order.dispute_evidence %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        {% set evidence_type = evidence_url.split('.')[-1].lower() %}
+                        {% set evidence_filename = evidence_url.split('/')[-1] %}
+                        
+                        {% if evidence_type in ['jpg', 'jpeg', 'png', 'gif'] %}
+                            <!-- Visualizador de Imagens -->
+                            <a href="{{ evidence_url }}" target="_blank" data-lightbox="evidence-{{ loop.index }}" data-title="{{ evidence_filename }}">
+                                <img src="{{ evidence_url }}" class="img-fluid mb-2 rounded" alt="Prova {{ loop.index }}" style="max-height: 150px; cursor: pointer;">
+                            </a>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-search-plus me-1"></i>Ampliar
+                            </a>
+                        {% elif evidence_type == 'pdf' %}
+                            <i class="fas fa-file-pdf fa-3x text-danger mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-danger">
+                                <i class="fas fa-file-pdf me-1"></i>Abrir PDF
+                            </a>
+                        {% elif evidence_type in ['mp4', 'avi', 'mov', 'webm'] %}
+                            <i class="fas fa-file-video fa-3x text-info mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-info">
+                                <i class="fas fa-play me-1"></i>Reproduzir
+                            </a>
+                        {% else %}
+                            <i class="fas fa-file fa-3x text-secondary mb-2"></i>
+                            <br>
+                            <small class="text-muted d-block mb-2 text-truncate" title="{{ evidence_filename }}">{{ evidence_filename }}</small>
+                            <a href="{{ evidence_url }}" target="_blank" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-download me-1"></i>Baixar
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>Nenhuma prova foi anexada a esta contestação.
+</div>
+{% endif %}
+
+<!-- Transações Relacionadas -->
+{% if transactions %}
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Histórico de Transações</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Usuário</th>
+                        <th>Valor</th>
+                        <th>Descrição</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td><small class="font-monospace">{{ transaction.transaction_id }}</small></td>
+                        <td><span class="badge bg-secondary">{{ transaction.type }}</span></td>
+                        <td>{{ transaction.user.nome if transaction.user else 'N/A' }}</td>
+                        <td class="{% if transaction.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                            R$ {{ "%.2f"|format(transaction.amount|abs) }}
+                        </td>
+                        <td><small>{{ transaction.description }}</small></td>
+                        <td><small>{{ transaction.created_at.strftime('%d/%m/%Y %H:%M') if transaction.created_at else '-' }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Formulário de Decisão -->
+<div class="card border-warning">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Decisão Administrativa</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Atenção:</strong> Sua decisão é final e irá processar automaticamente os pagamentos. 
+            Analise cuidadosamente todas as provas antes de decidir.
+        </div>
+        
+        <form method="POST" action="{{ url_for('admin.resolver_contestacao', order_id=order.id) }}" id="formResolverContestacao">
+            <div class="mb-4">
+                <label class="form-label"><strong>Quem deve vencer esta disputa?</strong> <span class="text-danger">*</span></label>
+                
+                <div class="form-check mb-3 p-3 border rounded">
+                    <input class="form-check-input" type="radio" name="winner" id="winnerClient" value="client" required>
+                    <label class="form-check-label w-100" for="winnerClient">
+                        <strong class="text-info fs-5">Cliente</strong> - {{ order.client.nome if order.client else 'N/A' }}
+                        <div class="text-muted small mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            O valor do serviço será devolvido ao cliente. A taxa de contestação do cliente será transferida para a plataforma.
+                        </div>
+                    </label>
+                </div>
+                
+                <div class="form-check p-3 border rounded">
+                    <input class="form-check-input" type="radio" name="winner" id="winnerProvider" value="provider" required>
+                    <label class="form-check-label w-100" for="winnerProvider">
+                        <strong class="text-primary fs-5">Prestador</strong> - {{ order.provider.nome if order.provider else 'N/A' }}
+                        <div class="text-muted small mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            O prestador receberá o valor do serviço (menos a taxa da plataforma). A taxa de contestação do cliente será transferida para a plataforma.
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="admin_notes" class="form-label">
+                    <strong>Justificativa da Decisão</strong> <span class="text-danger">*</span>
+                </label>
+                <textarea class="form-control" id="admin_notes" name="admin_notes" rows="5" required 
+                          placeholder="Descreva os motivos que levaram à sua decisão. Esta justificativa será registrada no sistema e poderá ser consultada posteriormente."></textarea>
+                <div class="form-text">Mínimo de 20 caracteres. Seja claro e objetivo na justificativa.</div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-warning btn-lg">
+                    <i class="fas fa-gavel me-2"></i>Resolver Contestação
+                </button>
+                <a href="{{ url_for('admin.contestacoes') }}" class="btn btn-secondary">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Visualização de Imagem (Lightbox Simples) -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Visualizar Prova</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Prova">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validação adicional do formulário
+document.getElementById('formResolverContestacao').addEventListener('submit', function(e) {
+    const adminNotes = document.getElementById('admin_notes').value.trim();
+    const winner = document.querySelector('input[name="winner"]:checked');
+    
+    if (!winner) {
+        e.preventDefault();
+        alert('Por favor, selecione o vencedor da disputa.');
+        return false;
+    }
+    
+    if (adminNotes.length < 20) {
+        e.preventDefault();
+        alert('A justificativa deve ter no mínimo 20 caracteres.');
+        return false;
+    }
+    
+    const winnerName = winner.value === 'client' ? 'cliente' : 'prestador';
+    const confirmMsg = `Confirma a resolução desta contestação a favor do ${winnerName}?\n\nEsta ação é IRREVERSÍVEL e processará os pagamentos automaticamente.`;
+    
+    if (!confirm(confirmMsg)) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Visualizador de imagens simples
+document.querySelectorAll('a[data-lightbox]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const imgSrc = this.getAttribute('href');
+        const imgTitle = this.getAttribute('data-title');
+        
+        document.getElementById('modalImage').src = imgSrc;
+        document.getElementById('imageModalLabel').textContent = imgTitle || 'Visualizar Prova';
+        
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        modal.show();
+    });
+});
+</script>
+{% endblock %}

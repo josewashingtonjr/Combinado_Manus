@@ -7,7 +7,14 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-file-contract me-2 text-info"></i>Gestão de Contratos</h2>
+                <div>
+                    <h2><i class="fas fa-file-contract me-2 text-info"></i>Gestão de Contratos</h2>
+                    {% if status_filter and status_filter != 'todos' %}
+                    <span class="badge bg-info">
+                        Filtro: {{ 'Ativos' if status_filter == 'ativo' else 'Finalizados' if status_filter == 'finalizado' else status_filter|title }}
+                    </span>
+                    {% endif %}
+                </div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Dashboard</a></li>
@@ -162,7 +169,7 @@
                     </h5>
                 </div>
                 <div class="card-body p-0">
-                    {% if orders.items %}
+                    {% if contratos.items %}
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
@@ -178,7 +185,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for order in orders.items %}
+                                    {% for order in contratos.items %}
                                     <tr>
                                         <td>
                                             <strong>#{{ order.id }}</strong>
@@ -234,7 +241,7 @@
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 {% if order.status == 'disputada' %}
-                                                <a href="{{ url_for('admin.analisar_contestacao', contestacao_id=order.id) }}" 
+                                                <a href="{{ url_for('admin.ver_contestacao', order_id=order.id) }}" 
                                                    class="btn btn-sm btn-outline-danger" title="Analisar disputa">
                                                     <i class="fas fa-gavel"></i>
                                                 </a>
@@ -248,21 +255,21 @@
                         </div>
 
                         <!-- Paginação -->
-                        {% if orders.pages > 1 %}
+                        {% if contratos.pages > 1 %}
                         <div class="card-footer">
                             <nav aria-label="Navegação de contratos">
                                 <ul class="pagination justify-content-center mb-0">
-                                    {% if orders.has_prev %}
+                                    {% if contratos.has_prev %}
                                         <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('admin.contratos', page=orders.prev_num, status=status_filter) }}">
+                                            <a class="page-link" href="{{ url_for('admin.contratos', page=contratos.prev_num, status=status_filter) }}">
                                                 <i class="fas fa-chevron-left"></i> Anterior
                                             </a>
                                         </li>
                                     {% endif %}
                                     
-                                    {% for page_num in orders.iter_pages() %}
+                                    {% for page_num in contratos.iter_pages() %}
                                         {% if page_num %}
-                                            {% if page_num != orders.page %}
+                                            {% if page_num != contratos.page %}
                                                 <li class="page-item">
                                                     <a class="page-link" href="{{ url_for('admin.contratos', page=page_num, status=status_filter) }}">{{ page_num }}</a>
                                                 </li>
@@ -278,9 +285,9 @@
                                         {% endif %}
                                     {% endfor %}
                                     
-                                    {% if orders.has_next %}
+                                    {% if contratos.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="{{ url_for('admin.contratos', page=orders.next_num, status=status_filter) }}">
+                                            <a class="page-link" href="{{ url_for('admin.contratos', page=contratos.next_num, status=status_filter) }}">
                                                 Próximo <i class="fas fa-chevron-right"></i>
                                             </a>
                                         </li>

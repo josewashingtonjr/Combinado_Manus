@@ -433,16 +433,98 @@ class AdminService:
         return user
     
     @staticmethod
-    def delete_user(user):
-        """Deleta um usuário (soft delete)"""
-        # TODO: Verificar se usuário tem transações pendentes
-        # TODO: Transferir saldo para carteira administrativa
+    def delete_user(user_id, admin_id, reason=None):
+        """Deleta um usuário usando soft delete"""
+        from services.soft_delete_service import SoftDeleteService, SoftDeleteError
         
-        user.active = False
-        user.email = f"deleted_{user.id}_{user.email}"
-        user.cpf = f"deleted_{user.id}_{user.cpf}"
+        try:
+            # TODO: Verificar se usuário tem transações pendentes
+            # TODO: Transferir saldo para carteira administrativa
+            
+            # Usar o SoftDeleteService para exclusão segura
+            result = SoftDeleteService.soft_delete_user(user_id, admin_id, reason)
+            
+            if result:
+                return {'success': True, 'message': 'Usuário deletado com sucesso'}
+            else:
+                return {'success': False, 'error': 'Falha na exclusão do usuário'}
+                
+        except SoftDeleteError as e:
+            return {'success': False, 'error': str(e)}
+        except Exception as e:
+            return {'success': False, 'error': f'Erro inesperado: {str(e)}'}
+    
+    @staticmethod
+    def restore_user(user_id, admin_id):
+        """Restaura um usuário deletado"""
+        from services.soft_delete_service import SoftDeleteService, SoftDeleteError
         
-        db.session.commit()
+        try:
+            result = SoftDeleteService.restore_user(user_id, admin_id)
+            
+            if result:
+                return {'success': True, 'message': 'Usuário restaurado com sucesso'}
+            else:
+                return {'success': False, 'error': 'Falha na restauração do usuário'}
+                
+        except SoftDeleteError as e:
+            return {'success': False, 'error': str(e)}
+        except Exception as e:
+            return {'success': False, 'error': f'Erro inesperado: {str(e)}'}
+    
+    @staticmethod
+    def get_deleted_users():
+        """Retorna lista de usuários deletados"""
+        from services.soft_delete_service import SoftDeleteService
+        
+        try:
+            deleted_users = SoftDeleteService.get_deleted_users()
+            
+            # Converter para formato de resposta
+            users_data = []
+            for user in deleted_users:
+                deletion_info = SoftDeleteService.get_user_deletion_info(user.id)
+                users_data.append({
+                    'id': user.id,
+                    'email': user.email,
+                    'nome': user.nome,
+                    'cpf': user.cpf,
+                    'deleted_at': user.deleted_at,
+                    'deletion_reason': user.deletion_reason,
+                    'deleted_by_admin_email': deletion_info.get('deleted_by_admin_email') if deletion_info else None
+                })
+            
+            return {'success': True, 'users': users_data}
+            
+        except Exception as e:
+            return {'success': False, 'error': f'Erro ao buscar usuários deletados: {str(e)}'}
+    
+    @staticmethod
+    def get_active_users():
+        """Retorna lista de usuários ativos (não deletados)"""
+        from services.soft_delete_service import SoftDeleteService
+        
+        try:
+            active_users = SoftDeleteService.get_active_users()
+            
+            # Converter para formato de resposta
+            users_data = []
+            for user in active_users:
+                users_data.append({
+                    'id': user.id,
+                    'email': user.email,
+                    'nome': user.nome,
+                    'cpf': user.cpf,
+                    'phone': user.phone,
+                    'active': user.active,
+                    'roles': user.roles,
+                    'created_at': user.created_at
+                })
+            
+            return {'success': True, 'users': users_data}
+            
+        except Exception as e:
+            return {'success': False, 'error': f'Erro ao buscar usuários ativos: {str(e)}'}
     
     @staticmethod
     def add_tokens_to_user(user, amount, description):
@@ -760,6 +842,185 @@ class AdminService:
         db.session.commit()
         
         return admin
+    
+    @staticmethod
+    def adjust_token_request_amount(request_id, new_amount, admin_id, reason=None):
+        """
+        Ajusta a quantidade de tokens de uma solicitação pendente.
+        
+        Esta funcionalidade permite que administradores corrijam discrepâncias entre
+        o valor solicitado pelo usuário e o valor efetivamente pago (verificado através
+        do comprovante de pagamento). O ajuste é registrado nas notas administrativas
+        para auditoria completa.
+        
+        Fluxo de Execução:
+        1. Valida que a solicitação existe e está pendente
+        2. Valida que o novo valor é válido (> 0 e diferente do atual)
+        3. Atualiza o campo amount da solicitação
+        4. Registra o ajuste nas admin_notes com timestamp e identificação do admin
+        5. Preserva notas administrativas anteriores
+        6. Registra log de auditoria
+        
+        Formato das Notas de Ajuste:
+        [AJUSTE] Quantidade ajustada de R$ X para R$ Y em DD/MM/YYYY HH:MM por Admin #ID (email)
+        Justificativa: [texto opcional fornecido pelo admin]
+        
+        Args:
+            request_id (int): ID da solicitação a ser ajustada
+            new_amount (Decimal): Nova quantidade de tokens (deve ser > 0 e diferente do valor atual)
+            admin_id (int): ID do administrador que está realizando o ajuste
+            reason (str, optional): Justificativa do ajuste (máximo 500 caracteres)
+        
+        Returns:
+            dict: Resultado da operação contendo:
+                - success (bool): True se ajuste foi bem-sucedido
+                - message (str): Mensagem de sucesso
+                - old_amount (float): Valor original da solicitação
+                - new_amount (float): Novo valor após ajuste
+                - request_id (int): ID da solicitação ajustada
+                - error (str): Mensagem de erro (apenas se success=False)
+        
+        Raises:
+            Não lança exceções diretamente, retorna dict com success=False em caso de erro
+        
+        Examples:
+            >>> # Ajustar solicitação de 100 para 50 tokens
+            >>> result = AdminService.adjust_token_request_amount(
+            ...     request_id=123,
+            ...     new_amount=Decimal('50.00'),
+            ...     admin_id=1,
+            ...     reason='Comprovante mostra pagamento de apenas R$ 50,00'
+            ... )
+            >>> print(result)
+            {
+                'success': True,
+                'message': 'Quantidade ajustada com sucesso',
+                'old_amount': 100.0,
+                'new_amount': 50.0,
+                'request_id': 123
+            }
+        """
+        import logging
+        from decimal import Decimal
+        
+        logger = logging.getLogger('app')
+        
+        try:
+            # Importar modelo TokenRequest
+            from models import TokenRequest
+            
+            # PASSO 1: Buscar solicitação no banco de dados
+            token_request = TokenRequest.query.get(request_id)
+            if not token_request:
+                return {
+                    'success': False,
+                    'error': 'Solicitação não encontrada'
+                }
+            
+            # PASSO 2: Validar que a solicitação está com status 'pending'
+            # Apenas solicitações pendentes podem ser ajustadas para evitar
+            # modificações em solicitações já processadas (aprovadas/rejeitadas)
+            if token_request.status != 'pending':
+                return {
+                    'success': False,
+                    'error': 'Apenas solicitações pendentes podem ser ajustadas'
+                }
+            
+            # PASSO 3: Converter new_amount para Decimal se necessário
+            # Usamos Decimal para garantir precisão em valores monetários
+            if not isinstance(new_amount, Decimal):
+                try:
+                    new_amount = Decimal(str(new_amount))
+                except (ValueError, TypeError):
+                    return {
+                        'success': False,
+                        'error': 'Valor inválido fornecido'
+                    }
+            
+            # PASSO 4: Validar que o novo valor é maior que zero
+            # Não permitimos valores negativos ou zero
+            if new_amount <= 0:
+                return {
+                    'success': False,
+                    'error': 'O novo valor deve ser maior que zero'
+                }
+            
+            # PASSO 5: Validar que o novo valor é diferente do atual
+            # Evita ajustes desnecessários que não alteram nada
+            if new_amount == token_request.amount:
+                return {
+                    'success': False,
+                    'error': 'O novo valor deve ser diferente do valor atual'
+                }
+            
+            # PASSO 6: Buscar informações do administrador para registro de auditoria
+            admin = AdminUser.query.get(admin_id)
+            if not admin:
+                return {
+                    'success': False,
+                    'error': 'Administrador não encontrado'
+                }
+            
+            # PASSO 7: Armazenar valor antigo para registro nas notas
+            old_amount = token_request.amount
+            
+            # PASSO 8: Atualizar o campo amount com o novo valor
+            # Este é o campo que será usado quando a solicitação for aprovada
+            token_request.amount = new_amount
+            
+            # PASSO 9: Construir nota de ajuste com formato padronizado
+            # Formato: [AJUSTE] Quantidade ajustada de R$ X para R$ Y em DD/MM/YYYY HH:MM por Admin #ID (email)
+            timestamp = datetime.utcnow().strftime('%d/%m/%Y %H:%M')
+            adjustment_note = f"[AJUSTE] Quantidade ajustada de R$ {old_amount:.2f} para R$ {new_amount:.2f} em {timestamp} por Admin #{admin_id} ({admin.email})"
+            
+            # PASSO 10: Adicionar justificativa se fornecida
+            # A justificativa é opcional mas recomendada para documentar o motivo do ajuste
+            if reason and reason.strip():
+                # Limitar justificativa a 500 caracteres para evitar textos muito longos
+                reason_text = reason.strip()[:500]
+                adjustment_note += f"\nJustificativa: {reason_text}"
+            
+            # PASSO 11: Preservar notas administrativas anteriores
+            # Adicionamos a nova nota no início, mantendo o histórico completo
+            # Isso permite rastrear múltiplos ajustes se necessário
+            if token_request.admin_notes:
+                token_request.admin_notes = adjustment_note + "\n\n" + token_request.admin_notes
+            else:
+                token_request.admin_notes = adjustment_note
+            
+            # PASSO 12: Commit da transação no banco de dados
+            # Todas as alterações são salvas atomicamente
+            db.session.commit()
+            
+            # PASSO 13: Registrar log de auditoria no sistema
+            # Este log é independente das notas e fica nos arquivos de log do servidor
+            logger.info(f"Quantidade da solicitação {request_id} ajustada de R$ {old_amount:.2f} para R$ {new_amount:.2f} por admin {admin.email}")
+            
+            # PASSO 14: Retornar resultado de sucesso
+            return {
+                'success': True,
+                'message': 'Quantidade ajustada com sucesso',
+                'old_amount': float(old_amount),
+                'new_amount': float(new_amount),
+                'request_id': request_id
+            }
+            
+        except ValueError as e:
+            # Erro de validação: rollback e retornar erro
+            db.session.rollback()
+            logger.warning(f"Validação falhou ao ajustar solicitação {request_id}: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
+        except Exception as e:
+            # Erro inesperado: rollback, log detalhado e retornar erro genérico
+            db.session.rollback()
+            logger.error(f"Erro ao ajustar solicitação {request_id}: {e}", exc_info=True)
+            return {
+                'success': False,
+                'error': 'Erro interno ao processar ajuste'
+            }
     
     @staticmethod
     def get_system_logs(limit=100):

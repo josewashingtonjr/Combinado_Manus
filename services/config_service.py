@@ -6,13 +6,19 @@ import json
 import shutil
 import subprocess
 from datetime import datetime, timedelta
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
+from decimal import Decimal
 from models import SystemConfig, SystemBackup, LoginAttempt, SystemAlert, db, User, Wallet, Transaction
 from sqlalchemy import func, desc
 import logging
 
 class ConfigService:
     """Serviço para gerenciamento de configurações avançadas do sistema"""
+    
+    # Cache para configurações (5 minutos)
+    _config_cache = {}
+    _cache_timestamp = {}
+    _cache_ttl = 300  # 5 minutos em segundos
     
     # Configurações padrão do sistema
     DEFAULT_CONFIGS = {
@@ -22,6 +28,11 @@ class ConfigService:
         'taxa_deposito': {'value': '0.00', 'category': 'taxas', 'description': 'Taxa fixa para depósitos'},
         'valor_minimo_saque': {'value': '10.00', 'category': 'taxas', 'description': 'Valor mínimo para saques'},
         'valor_maximo_saque': {'value': '50000.00', 'category': 'taxas', 'description': 'Valor máximo para saques'},
+        
+        # Taxas de Ordens
+        'platform_fee_percentage': {'value': '5.0', 'category': 'taxas', 'description': 'Taxa percentual da plataforma sobre o valor do serviço'},
+        'contestation_fee': {'value': '10.00', 'category': 'taxas', 'description': 'Taxa fixa de contestação (garantia)'},
+        'cancellation_fee_percentage': {'value': '10.0', 'category': 'taxas', 'description': 'Taxa percentual de cancelamento (multa)'},
         
         # Multas
         'multa_cancelamento': {'value': '10.0', 'category': 'multas', 'description': 'Multa percentual por cancelamento'},
@@ -182,11 +193,239 @@ class ConfigService:
                     db.session.add(config)
             
             db.session.commit()
+            # Limpar cache após atualização em lote
+            ConfigService._config_cache.clear()
+            ConfigService._cache_timestamp.clear()
             return True
         except Exception as e:
             db.session.rollback()
             logging.error(f"Erro ao atualizar configurações em lote: {str(e)}")
             return False
+    
+    # ==============================================================================
+    #  MÉTODOS PARA GESTÃO DE TAXAS DE ORDENS
+    # ==============================================================================
+    
+    @staticmethod
+    def _get_cached_config(key: str, default_value: Any = None) -> Any:
+        """Obtém configuração do cache ou do banco de dados"""
+        current_time = datetime.utcnow().timestamp()
+        
+        # Verificar se está no cache e não expirou
+        if key in ConfigService._config_cache:
+            cache_time = ConfigService._cache_timestamp.get(key, 0)
+            if current_time - cache_time < ConfigService._cache_ttl:
+                return ConfigService._config_cache[key]
+        
+        # Buscar do banco de dados
+        try:
+            config = SystemConfig.query.filter_by(key=key).first()
+            if config:
+                value = Decimal(config.value)
+                # Armazenar no cache
+                ConfigService._config_cache[key] = value
+                ConfigService._cache_timestamp[key] = current_time
+                return value
+            return Decimal(str(default_value)) if default_value is not None else None
+        except Exception as e:
+            logging.error(f"Erro ao obter configuração {key}: {str(e)}")
+            return Decimal(str(default_value)) if default_value is not None else None
+    
+    @staticmethod
+    def _clear_cache(key: str = None):
+        """Limpa o cache de configurações"""
+        if key:
+            ConfigService._config_cache.pop(key, None)
+            ConfigService._cache_timestamp.pop(key, None)
+        else:
+            ConfigService._config_cache.clear()
+            ConfigService._cache_timestamp.clear()
+    
+    @staticmethod
+    def get_platform_fee_percentage() -> Decimal:
+        """
+        Retorna a taxa percentual da plataforma sobre o valor do serviço
+        
+        Returns:
+            Decimal: Taxa percentual (padrão: 5.0%)
+        """
+        return ConfigService._get_cached_config('platform_fee_percentage', '5.0')
+    
+    @staticmethod
+    def get_contestation_fee() -> Decimal:
+        """
+        Retorna a taxa fixa de contestação (garantia)
+        
+        Returns:
+            Decimal: Taxa fixa em reais (padrão: R$ 10.00)
+        """
+        return ConfigService._get_cached_config('contestation_fee', '10.00')
+    
+    @staticmethod
+    def get_cancellation_fee_percentage() -> Decimal:
+        """
+        Retorna a taxa percentual de cancelamento (multa)
+        
+        Returns:
+            Decimal: Taxa percentual (padrão: 10.0%)
+        """
+        return ConfigService._get_cached_config('cancellation_fee_percentage', '10.0')
+    
+    @staticmethod
+    def set_platform_fee_percentage(value: Decimal, admin_id: int = None) -> Tuple[bool, str]:
+        """
+        Atualiza a taxa percentual da plataforma
+        
+        Args:
+            value: Novo valor da taxa (0-100%)
+            admin_id: ID do admin que está fazendo a alteração (opcional)
+            
+        Returns:
+            Tuple[bool, str]: (Sucesso, Mensagem)
+        """
+        try:
+            # Validar valor
+            value = Decimal(str(value))
+            if value < 0 or value > 100:
+                return False, "Taxa da plataforma deve estar entre 0% e 100%"
+            
+            # Atualizar configuração
+            config = SystemConfig.query.filter_by(key='platform_fee_percentage').first()
+            if config:
+                config.value = str(value)
+                config.updated_at = datetime.utcnow()
+            else:
+                config = SystemConfig(
+                    key='platform_fee_percentage',
+                    value=str(value),
+                    category='taxas',
+                    description='Taxa percentual da plataforma sobre o valor do serviço'
+                )
+                db.session.add(config)
+            
+            db.session.commit()
+            
+            # Limpar cache
+            ConfigService._clear_cache('platform_fee_percentage')
+            
+            # Log da alteração
+            logging.info(f"Taxa da plataforma atualizada para {value}% por admin {admin_id}")
+            
+            return True, f"Taxa da plataforma atualizada para {value}%"
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Erro ao atualizar taxa da plataforma: {str(e)}")
+            return False, f"Erro ao atualizar taxa: {str(e)}"
+    
+    @staticmethod
+    def set_contestation_fee(value: Decimal, admin_id: int = None) -> Tuple[bool, str]:
+        """
+        Atualiza a taxa fixa de contestação
+        
+        Args:
+            value: Novo valor da taxa (deve ser positivo)
+            admin_id: ID do admin que está fazendo a alteração (opcional)
+            
+        Returns:
+            Tuple[bool, str]: (Sucesso, Mensagem)
+        """
+        try:
+            # Validar valor
+            value = Decimal(str(value))
+            if value <= 0:
+                return False, "Taxa de contestação deve ser um valor positivo"
+            
+            # Atualizar configuração
+            config = SystemConfig.query.filter_by(key='contestation_fee').first()
+            if config:
+                config.value = str(value)
+                config.updated_at = datetime.utcnow()
+            else:
+                config = SystemConfig(
+                    key='contestation_fee',
+                    value=str(value),
+                    category='taxas',
+                    description='Taxa fixa de contestação (garantia)'
+                )
+                db.session.add(config)
+            
+            db.session.commit()
+            
+            # Limpar cache
+            ConfigService._clear_cache('contestation_fee')
+            
+            # Log da alteração
+            logging.info(f"Taxa de contestação atualizada para R$ {value} por admin {admin_id}")
+            
+            return True, f"Taxa de contestação atualizada para R$ {value}"
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Erro ao atualizar taxa de contestação: {str(e)}")
+            return False, f"Erro ao atualizar taxa: {str(e)}"
+    
+    @staticmethod
+    def set_cancellation_fee_percentage(value: Decimal, admin_id: int = None) -> Tuple[bool, str]:
+        """
+        Atualiza a taxa percentual de cancelamento
+        
+        Args:
+            value: Novo valor da taxa (0-100%)
+            admin_id: ID do admin que está fazendo a alteração (opcional)
+            
+        Returns:
+            Tuple[bool, str]: (Sucesso, Mensagem)
+        """
+        try:
+            # Validar valor
+            value = Decimal(str(value))
+            if value < 0 or value > 100:
+                return False, "Taxa de cancelamento deve estar entre 0% e 100%"
+            
+            # Atualizar configuração
+            config = SystemConfig.query.filter_by(key='cancellation_fee_percentage').first()
+            if config:
+                config.value = str(value)
+                config.updated_at = datetime.utcnow()
+            else:
+                config = SystemConfig(
+                    key='cancellation_fee_percentage',
+                    value=str(value),
+                    category='taxas',
+                    description='Taxa percentual de cancelamento (multa)'
+                )
+                db.session.add(config)
+            
+            db.session.commit()
+            
+            # Limpar cache
+            ConfigService._clear_cache('cancellation_fee_percentage')
+            
+            # Log da alteração
+            logging.info(f"Taxa de cancelamento atualizada para {value}% por admin {admin_id}")
+            
+            return True, f"Taxa de cancelamento atualizada para {value}%"
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Erro ao atualizar taxa de cancelamento: {str(e)}")
+            return False, f"Erro ao atualizar taxa: {str(e)}"
+    
+    @staticmethod
+    def get_all_fees() -> Dict[str, Decimal]:
+        """
+        Retorna todas as taxas de ordens atuais
+        
+        Returns:
+            Dict com todas as taxas: {
+                'platform_fee_percentage': Decimal,
+                'contestation_fee': Decimal,
+                'cancellation_fee_percentage': Decimal
+            }
+        """
+        return {
+            'platform_fee_percentage': ConfigService.get_platform_fee_percentage(),
+            'contestation_fee': ConfigService.get_contestation_fee(),
+            'cancellation_fee_percentage': ConfigService.get_cancellation_fee_percentage()
+        }
 
 
 class BackupService:

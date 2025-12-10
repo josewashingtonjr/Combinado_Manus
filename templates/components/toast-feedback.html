@@ -1,0 +1,23 @@
+<!-- Toast Feedback Component -->
+<!-- Container para toasts - posicionado no topo da tela -->
+<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true">
+    <!-- Toasts serão inseridos aqui dinamicamente -->
+</div>
+
+<!-- Template de toast (oculto, usado para clonar) -->
+<template id="toast-template">
+    <div class="toast-feedback" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-content">
+            <div class="toast-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="toast-message">
+                <span class="toast-text"></span>
+            </div>
+            <button type="button" class="toast-close" aria-label="Fechar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="toast-progress"></div>
+    </div>
+</template>

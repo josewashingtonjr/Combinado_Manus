@@ -1,0 +1,62 @@
+{
+  "timestamp": "2025-11-06T08:18:29.683378",
+  "validation_result": {
+    "success": false,
+    "results": {
+      "wallets": {
+        "valid": false,
+        "error": "The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?",
+        "table": "wallets"
+      },
+      "transactions": {
+        "valid": false,
+        "error": "The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?",
+        "table": "transactions"
+      },
+      "orders": {
+        "valid": false,
+        "error": "The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?",
+        "table": "orders"
+      },
+      "token_requests": {
+        "valid": false,
+        "error": "The current Flask app is not registered with this 'SQLAlchemy' instance. Did you forget to call 'init_app', or did you create multiple 'SQLAlchemy' instances?",
+        "table": "token_requests"
+      }
+    },
+    "summary": {
+      "total_tables": 4,
+      "valid_tables": 0,
+      "total_records": 0,
+      "total_invalid_records": 0,
+      "tables_with_errors": [
+        "wallets",
+        "transactions",
+        "orders",
+        "token_requests"
+      ],
+      "all_valid": false
+    }
+  },
+  "constraints_result": {
+    "success": true,
+    "all_constraints_active": true,
+    "tests": [
+      {
+        "test": "negative_balance",
+        "passed": true,
+        "message": "Constraint de saldo negativo está ativa"
+      },
+      {
+        "test": "zero_transaction",
+        "passed": true,
+        "message": "Constraint de transação zero está ativa"
+      },
+      {
+        "test": "negative_order_value",
+        "passed": true,
+        "message": "Constraint de valor negativo em orders está ativa"
+      }
+    ]
+  }
+}

@@ -40,14 +40,13 @@
 <div class="alert alert-warning alert-dismissible fade show mb-4">
     <h6><i class="fas fa-exclamation-triangle me-2"></i>Alertas de Segurança ({{ alerts|length }})</h6>
     <ul class="mb-2">
-        {% for alert in alerts[:3] %}
+        {% for alert in alerts[:5] %}
         <li class="small">{{ alert.message }}</li>
         {% endfor %}
-        {% if alerts|length > 3 %}
-        <li class="small"><em>... e mais {{ alerts|length - 3 }} alertas</em></li>
+        {% if alerts|length > 5 %}
+        <li class="small"><em>... e mais {{ alerts|length - 5 }} alertas</em></li>
         {% endif %}
     </ul>
-    <a href="{{ url_for('admin.alertas_tokens') }}" class="btn btn-sm btn-outline-warning">Ver Todos os Alertas</a>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}

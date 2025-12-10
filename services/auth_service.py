@@ -20,16 +20,28 @@ class AuthService:
     
     @staticmethod
     def get_current_admin():
-        """Retorna o administrador atual"""
+        """Retorna o administrador atual (apenas se não foi deletado)"""
         if AuthService.is_admin_logged_in():
-            return AdminUser.query.get(session['admin_id'])
+            admin = AdminUser.query.get(session['admin_id'])
+            # Verificar se o admin não foi deletado
+            if admin and not admin.is_deleted:
+                return admin
+            # Se foi deletado, limpar a sessão
+            elif admin and admin.is_deleted:
+                session.clear()
         return None
     
     @staticmethod
     def get_current_user():
-        """Retorna o usuário atual"""
+        """Retorna o usuário atual (apenas se não foi deletado)"""
         if AuthService.is_user_logged_in():
-            return User.query.get(session['user_id'])
+            user = User.query.get(session['user_id'])
+            # Verificar se o usuário não foi deletado
+            if user and not user.is_deleted:
+                return user
+            # Se foi deletado, limpar a sessão
+            elif user and user.is_deleted:
+                session.clear()
         return None
     
     @staticmethod
@@ -60,16 +72,16 @@ class AuthService:
     
     @staticmethod
     def authenticate_admin(email, password):
-        """Autentica um administrador"""
-        admin = AdminUser.query.filter_by(email=email).first()
+        """Autentica um administrador (apenas se não foi deletado)"""
+        admin = AdminUser.query.filter_by(email=email).filter(AdminUser.deleted_at.is_(None)).first()
         if admin and admin.check_password(password):
             return admin
         return None
     
     @staticmethod
     def authenticate_user(email, password):
-        """Autentica um usuário"""
-        user = User.query.filter_by(email=email, active=True).first()
+        """Autentica um usuário (apenas se ativo e não foi deletado)"""
+        user = User.query.filter_by(email=email, active=True).filter(User.deleted_at.is_(None)).first()
         if user and user.check_password(password):
             return user
         return None

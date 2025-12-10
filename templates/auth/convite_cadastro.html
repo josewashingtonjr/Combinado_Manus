@@ -1,282 +1,475 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/invite.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-utilities.css') }}">
+<style>
+/* Página de convite - layout limpo sem navegação */
+body.invite-page {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+/* Ocultar completamente todos os elementos de navegação */
+body.invite-page .sidebar, 
+body.invite-page .col-md-2.d-none.d-md-block,
+body.invite-page .navbar-nav, 
+body.invite-page .navbar-toggler,
+body.invite-page nav.navbar,
+body.invite-page .navbar-brand,
+body.invite-page .navbar-collapse,
+body.invite-page .nav-item,
+body.invite-page .dropdown-menu,
+body.invite-page [class*="sidebar"],
+body.invite-page [class*="nav-"],
+body.invite-page [class*="menu-"] {
+    display: none !important;
+}
+
+/* Layout da página de convite ocupa toda a largura */
+body.invite-page .container-fluid {
+    padding: 0;
+    max-width: 100%;
+}
+
+body.invite-page .container-fluid .row {
+    margin: 0;
+}
+
+/* Forçar o conteúdo principal a ocupar toda a largura */
+body.invite-page .col-md-10 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+/* Container da página de convite */
+body.invite-page .invite-page-container {
+    width: 100%;
+    padding: 20px 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+/* Garantir que o footer não apareça na página de convite */
+body.invite-page footer {
+    display: none !important;
+}
+</style>
+
+<script>
+// Adicionar classe específica ao body para identificar página de convite
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('invite-page');
+});
+</script>
+{% endblock %}
+
 {% block title %}Convite de Serviço - Sistema Combinado{% endblock %}
 
+{% block navbar %}
+<!-- Não exibir navbar na página de convite -->
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="row min-vh-100">
-        <!-- Coluna da Esquerda - Informações do Convite -->
-        <div class="col-md-6 bg-primary text-white d-flex align-items-center">
-            <div class="container">
-                <div class="text-center mb-4">
-                    <i class="fas fa-envelope-open-text fa-4x mb-3"></i>
-                    <h2>Você foi Convidado!</h2>
-                    <p class="lead">{{ invite.client.nome }} enviou um convite especial para você</p>
-                </div>
+<!-- Nova estrutura vertical centralizada -->
+<div class="invite-page-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-8 col-xl-6">
                 
-                <div class="card bg-white text-dark">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Detalhes do Convite</h5>
+                <!-- Logo destacada no topo -->
+                <div class="invite-logo-section text-center mb-5">
+                    <img src="{{ url_for('static', filename='images/logo.svg') }}" 
+                         alt="Logo Sistema Combinado" 
+                         class="invite-logo img-fluid"
+                         onerror="handleLogoError(this)">
+                    <div class="logo-fallback" style="display: none;">
+                        <h1 class="mb-0">Sistema<br>Combinado</h1>
+                    </div>
+                </div>
+
+                <!-- Título principal -->
+                <div class="invite-header text-center mb-4">
+                    <h2 class="invite-title">Você foi Convidado!</h2>
+                    <p class="invite-subtitle">{{ invite.client.nome }} enviou um convite especial para você</p>
+                </div>
+                <!-- Card de informações do convite redesenhado -->
+                <div class="invite-info-card card shadow-lg mb-4">
+                    <div class="card-header invite-card-header">
+                        <div class="header-content">
+                            <div class="header-icon">
+                                <i class="fas fa-envelope-open-text"></i>
+                            </div>
+                            <div class="header-text">
+                                <h5 class="mb-0">Detalhes do Convite</h5>
+                                <small class="text-muted">Informações completas do serviço solicitado</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body invite-card-body">
+                        <!-- Título e descrição do serviço com destaque -->
+                        <div class="service-highlight mb-4">
+                            <div class="service-icon-wrapper">
+                                <i class="fas fa-briefcase service-main-icon"></i>
+                            </div>
+                            <h3 class="service-title mb-2">{{ invite.service_title }}</h3>
+                            <p class="service-description">{{ invite.service_description }}</p>
+                        </div>
+                        
+                        <!-- Informações principais organizadas em grid -->
+                        <div class="invite-details-grid">
+                            <!-- Valor oferecido - destaque principal -->
+                            <div class="detail-item detail-item-primary">
+                                <div class="detail-icon detail-icon-value">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Valor Oferecido</div>
+                                    <div class="detail-value detail-value-money">
+                                        {{ invite.original_value|format_currency }}
+                                    </div>
+                                    <div class="detail-subtitle">Pagamento após conclusão</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Data de entrega -->
+                            <div class="detail-item detail-item-secondary">
+                                <div class="detail-icon detail-icon-date">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Prazo de Entrega</div>
+                                    <div class="detail-value detail-value-date">
+                                        {{ invite.delivery_date.strftime('%d de %B de %Y') }}
+                                    </div>
+                                    <div class="detail-subtitle">
+                                        {% set days_until = (invite.delivery_date - invite.created_at).days %}
+                                        {% if days_until > 0 %}
+                                            {{ days_until }} dias para conclusão
+                                        {% else %}
+                                            Entrega imediata
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Informações do cliente -->
+                            <div class="detail-item detail-item-secondary">
+                                <div class="detail-icon detail-icon-client">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Solicitado por</div>
+                                    <div class="detail-value detail-value-client">
+                                        {{ invite.client.nome }}
+                                    </div>
+                                    <div class="detail-subtitle">Cliente verificado</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status e urgência -->
+                            <div class="detail-item detail-item-info">
+                                <div class="detail-icon detail-icon-status">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Status do Convite</div>
+                                    <div class="detail-value detail-value-status">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-hourglass-half me-1"></i>
+                                            Aguardando Resposta
+                                        </span>
+                                    </div>
+                                    <div class="detail-subtitle">
+                                        Expira em {{ invite.expires_at.strftime('%d/%m/%Y') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações adicionais em formato compacto -->
+                        <div class="invite-metadata mt-4">
+                            <div class="metadata-row">
+                                <div class="metadata-item">
+                                    <i class="fas fa-calendar-plus text-muted me-2"></i>
+                                    <span class="metadata-label">Criado:</span>
+                                    <span class="metadata-value">{{ invite.created_at.strftime('%d/%m/%Y às %H:%M') }}</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <i class="fas fa-phone text-muted me-2"></i>
+                                    <span class="metadata-label">Contato:</span>
+                                    <span class="metadata-value">{{ invite.invited_phone }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banner de segurança -->
+                <div class="security-banner text-center mb-4">
+                    <div class="security-content">
+                        <i class="fas fa-shield-alt security-icon"></i>
+                        <p class="security-text mb-0">
+                            <strong>Seus dados estão protegidos e seguros</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Painel de instruções -->
+                <div class="instructions-panel card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0 text-center">
+                            <i class="fas fa-list-ol me-2"></i>
+                            Como proceder
+                        </h6>
                     </div>
                     <div class="card-body">
-                        <h4 class="text-primary mb-3">{{ invite.service_title }}</h4>
-                        <p class="mb-3">{{ invite.service_description }}</p>
-                        
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <strong>Valor Oferecido:</strong><br>
-                                <span class="h5 text-success">{{ invite.original_value|format_currency }}</span>
+                        <div class="instruction-steps">
+                            <div class="instruction-step">
+                                <div class="step-icon-wrapper">
+                                    <div class="step-number">1</div>
+                                    <div class="step-icon">
+                                        <i class="fas fa-search"></i>
+                                    </div>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Analise o convite</strong><br>
+                                    <small>Verifique os detalhes do serviço, valor e prazo de entrega</small>
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <strong>Data de Entrega:</strong><br>
-                                <span class="text-primary">{{ invite.delivery_date.strftime('%d/%m/%Y') }}</span>
+                            <div class="instruction-step">
+                                <div class="step-icon-wrapper">
+                                    <div class="step-number">2</div>
+                                    <div class="step-icon">
+                                        <i class="fas fa-balance-scale"></i>
+                                    </div>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Decida sua resposta</strong><br>
+                                    <small>Aceite para criar sua conta ou rejeite se não puder atender</small>
+                                </div>
+                            </div>
+                            <div class="instruction-step">
+                                <div class="step-icon-wrapper">
+                                    <div class="step-number">3</div>
+                                    <div class="step-icon">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Complete seu cadastro</strong><br>
+                                    <small>Se aceitar, você será direcionado para criar sua conta no sistema</small>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-6">
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar-plus me-1"></i>
-                                    Criado: {{ invite.created_at.strftime('%d/%m/%Y') }}
-                                </small>
+                        <!-- Dica adicional destacada -->
+                        <div class="instruction-tip mt-3">
+                            <div class="tip-icon">
+                                <i class="fas fa-lightbulb"></i>
                             </div>
-                            <div class="col-6">
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar-times me-1"></i>
-                                    Expira: {{ invite.expires_at.strftime('%d/%m/%Y') }}
-                                </small>
+                            <div class="tip-content">
+                                <strong>Dica importante:</strong> Você pode rejeitar o convite sem problemas. 
+                                Isso permitirá que o cliente envie para outro prestador.
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="mt-4 text-center">
-                    <p class="small">
-                        <i class="fas fa-shield-alt me-1"></i>
-                        Seus dados estão protegidos e seguros conosco
+
+                <!-- Botões de ação principais -->
+                <div class="action-buttons text-center mb-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <form method="POST" action="{{ url_for('auth.aceitar_convite_inicial', token=token) }}" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" 
+                                        class="btn btn-success btn-lg w-100 accept-btn" 
+                                        aria-label="Aceitar convite e prosseguir para login/cadastro"
+                                        title="Clique para aceitar o convite e prosseguir para login/cadastro"
+                                        onclick="return confirm('Tem certeza que deseja aceitar este convite?\n\nVocê será direcionado para fazer login ou criar sua conta.');">
+                                    <i class="fas fa-check me-2" aria-hidden="true"></i>
+                                    <span class="btn-text">Aceitar Convite</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <button type="button" 
+                                    class="btn btn-danger btn-lg w-100 reject-btn" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#rejectModal"
+                                    aria-label="Rejeitar convite"
+                                    title="Clique para rejeitar este convite">
+                                <i class="fas fa-times me-2" aria-hidden="true"></i>
+                                <span class="btn-text">Rejeitar Convite</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Explicação do fluxo -->
+                    <div class="mt-3">
+                        <p class="small text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Ao aceitar, você será direcionado para fazer login ou criar sua conta. 
+                            Se quiser negociar o valor, entre em contato com quem enviou o convite.
+                        </p>
+                    </div>
+                </div>
+
+
+
+                <!-- Rodapé com ajuda -->
+                <div class="text-center mt-4">
+                    <p class="small text-muted">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Precisa de ajuda? <a href="mailto:suporte@combinado.com">Entre em contato</a>
                     </p>
                 </div>
+
             </div>
         </div>
-        
-        <!-- Coluna da Direita - Formulário de Cadastro -->
-        <div class="col-md-6 d-flex align-items-center">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="text-center mb-4">
-                            <h3>Criar Sua Conta</h3>
-                            <p class="text-muted">Complete seu cadastro para responder ao convite</p>
-                        </div>
-                        
-                        <!-- Mensagens Flash -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-                        
-                        <!-- Formulário de Cadastro -->
-                        <form method="POST" action="{{ url_for('auth.processar_cadastro_convite', token=token) }}" id="cadastroForm">
-                            <div class="mb-3">
-                                <label for="nome" class="form-label">
-                                    <i class="fas fa-user me-1"></i>Nome Completo *
-                                </label>
-                                <input type="text" class="form-control" id="nome" name="nome" 
-                                       placeholder="Seu nome completo" required>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="phone_display" class="form-label">
-                                    <i class="fas fa-phone me-1"></i>Telefone do Convite
-                                </label>
-                                <input type="tel" class="form-control" id="phone_display" name="phone_display" 
-                                       value="{{ invite.invited_phone }}" readonly>
-                                <div class="form-text">Este é o telefone para o qual o convite foi enviado</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="email" class="form-label">
-                                    <i class="fas fa-envelope me-1"></i>Email *
-                                </label>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                       placeholder="seu@email.com" required>
-                                <div class="form-text">Digite seu email para criar a conta</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="cpf" class="form-label">
-                                    <i class="fas fa-id-card me-1"></i>CPF *
-                                </label>
-                                <input type="text" class="form-control" id="cpf" name="cpf" 
-                                       placeholder="000.000.000-00" maxlength="14" required>
-                            </div>
-                            
+    </div>
+</div>
 
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="password" class="form-label">
-                                            <i class="fas fa-lock me-1"></i>Senha *
-                                        </label>
-                                        <input type="password" class="form-control" id="password" name="password" 
-                                               placeholder="Mínimo 6 caracteres" minlength="6" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="confirm_password" class="form-label">
-                                            <i class="fas fa-lock me-1"></i>Confirmar Senha *
-                                        </label>
-                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
-                                               placeholder="Repita a senha" minlength="6" required>
-                                    </div>
-                                </div>
+<!-- Modal de Rejeição Melhorado -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectModalLabel">
+                    <i class="fas fa-times-circle me-2"></i>Rejeitar Convite de Serviço
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="{{ url_for('auth.rejeitar_convite', token=token) }}" id="rejectForm">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <!-- Resumo do convite -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading mb-2">
+                            <i class="fas fa-info-circle me-2"></i>Resumo do Convite
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Serviço:</strong> {{ invite.service_title }}<br>
+                                <strong>Cliente:</strong> {{ invite.client.nome }}
                             </div>
-                            
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
-                                <label class="form-check-label" for="terms">
-                                    Eu aceito os <a href="#" target="_blank">termos de uso</a> e 
-                                    <a href="#" target="_blank">política de privacidade</a> *
-                                </label>
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="fas fa-user-plus me-2"></i>Criar Conta e Ver Convite
-                                </button>
-                            </div>
-                        </form>
-                        
-                        <!-- Separador -->
-                        <div class="text-center my-4">
-                            <hr>
-                            <span class="text-muted">ou</span>
-                        </div>
-                        
-                        <!-- Login para Usuários Existentes -->
-                        <div class="card border-info">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Já tem uma conta?</h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="small mb-3">Se você já possui uma conta no sistema, faça login para ver o convite:</p>
-                                
-                                <form method="POST" action="{{ url_for('auth.processar_login_convite', token=token) }}" id="loginForm">
-                                    <div class="mb-3">
-                                        <label for="login_phone" class="form-label">Telefone:</label>
-                                        <input type="tel" class="form-control" id="login_phone" name="phone" 
-                                               value="{{ invite.invited_phone }}" readonly>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="login_password" class="form-label">Senha:</label>
-                                        <input type="password" class="form-control" id="login_password" name="password" 
-                                               placeholder="Sua senha" required>
-                                    </div>
-                                    
-                                    <div class="d-grid">
-                                        <button type="submit" class="btn btn-info">
-                                            <i class="fas fa-sign-in-alt me-2"></i>Fazer Login
-                                        </button>
-                                    </div>
-                                </form>
+                            <div class="col-md-6">
+                                <strong>Valor:</strong> {{ invite.original_value|format_currency }}<br>
+                                <strong>Prazo:</strong> {{ invite.delivery_date.strftime('%d/%m/%Y') }}
                             </div>
                         </div>
-                        
-                        <div class="text-center mt-4">
-                            <p class="small text-muted">
-                                <i class="fas fa-question-circle me-1"></i>
-                                Precisa de ajuda? <a href="mailto:suporte@combinado.com">Entre em contato</a>
-                            </p>
+                    </div>
+                    
+                    <!-- Aviso sobre a rejeição -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção!</strong> Ao rejeitar este convite:
+                        <ul class="mb-0 mt-2">
+                            <li>O cliente será notificado automaticamente</li>
+                            <li>O cliente poderá enviar o convite para outro prestador</li>
+                            <li>Esta ação não pode ser desfeita</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Campo para motivo da rejeição -->
+                    <div class="mb-3">
+                        <label for="reject_reason" class="form-label">
+                            <i class="fas fa-comment-alt me-1"></i>
+                            <strong>Motivo da rejeição (opcional)</strong>
+                        </label>
+                        <textarea class="form-control" id="reject_reason" name="reason" rows="4" 
+                                  placeholder="Explique brevemente por que não pode aceitar este convite. Exemplos:&#10;- Não tenho disponibilidade na data solicitada&#10;- Não trabalho com este tipo de serviço&#10;- Valor não está adequado para o serviço&#10;- Localização muito distante"></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb text-warning me-1"></i>
+                            Fornecer um motivo ajuda o cliente a entender sua decisão e pode facilitar futuras negociações
+                        </div>
+                    </div>
+                    
+                    <!-- Opções rápidas de motivo -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-list me-1"></i>
+                            <strong>Motivos comuns (clique para usar)</strong>
+                        </label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Não tenho disponibilidade na data solicitada">
+                                <i class="fas fa-calendar-times me-1"></i>Sem disponibilidade
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Não trabalho com este tipo de serviço">
+                                <i class="fas fa-tools me-1"></i>Fora da especialidade
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Localização muito distante">
+                                <i class="fas fa-map-marker-alt me-1"></i>Localização distante
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Valor não está adequado para o serviço">
+                                <i class="fas fa-dollar-sign me-1"></i>Valor inadequado
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger confirm-reject-btn">
+                        <i class="fas fa-times me-2"></i>
+                        <span class="btn-text">Confirmar Rejeição</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/invite-interactions.js') }}"></script>
 <script>
+
+// Função para lidar com erro de carregamento da logo
+function handleLogoError(img) {
+    img.onerror = null; // Prevenir loop infinito
+    img.src = '{{ url_for("static", filename="images/logo.png") }}';
+    if (img.complete && img.naturalWidth === 0) {
+        img.style.display = 'none';
+        img.nextElementSibling.style.display = 'inline-block';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Máscara para CPF
-    const cpfInput = document.getElementById('cpf');
-    cpfInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        value = value.replace(/(\d{3})(\d)/, '$1.$2');
-        value = value.replace(/(\d{3})(\d)/, '$1.$2');
-        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-        e.target.value = value;
-    });
+    // Verificação aprimorada da logo
+    const logoImg = document.querySelector('.invite-logo');
+    const logoFallback = document.querySelector('.logo-fallback');
     
-    // Máscara para telefone
-    const phoneInput = document.getElementById('phone');
-    phoneInput.addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-        value = value.replace(/(\d{2})(\d)/, '($1) $2');
-        value = value.replace(/(\d{5})(\d)/, '$1-$2');
-        e.target.value = value;
-    });
-    
-    // Validação de senhas
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirm_password');
-    
-    function validatePasswords() {
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            confirmPasswordInput.setCustomValidity('As senhas não coincidem');
-        } else {
-            confirmPasswordInput.setCustomValidity('');
+    if (logoImg && logoFallback) {
+        // Função para mostrar fallback
+        function showFallback() {
+            logoImg.style.display = 'none';
+            logoFallback.style.display = 'inline-block';
         }
+        
+        // Verificar se a imagem carregou corretamente
+        logoImg.addEventListener('load', function() {
+            if (this.naturalWidth === 0 || this.naturalHeight === 0) {
+                showFallback();
+            }
+        });
+        
+        // Verificação adicional após um tempo
+        setTimeout(function() {
+            if (logoImg.complete && (logoImg.naturalWidth === 0 || logoImg.naturalHeight === 0)) {
+                showFallback();
+            }
+        }, 1000);
     }
     
-    passwordInput.addEventListener('input', validatePasswords);
-    confirmPasswordInput.addEventListener('input', validatePasswords);
-    
-    // Validação do formulário de cadastro
-    document.getElementById('cadastroForm').addEventListener('submit', function(e) {
-        if (passwordInput.value !== confirmPasswordInput.value) {
-            e.preventDefault();
-            alert('As senhas não coincidem!');
-            return false;
-        }
-        
-        if (passwordInput.value.length < 6) {
-            e.preventDefault();
-            alert('A senha deve ter pelo menos 6 caracteres!');
-            return false;
-        }
-        
-        if (!document.getElementById('terms').checked) {
-            e.preventDefault();
-            alert('Você deve aceitar os termos de uso!');
-            return false;
-        }
-        
-        return confirm('Deseja criar sua conta e responder ao convite?');
-    });
-    
-    // Validação do formulário de login
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        const loginPassword = document.getElementById('login_password').value;
-        
-        if (!loginPassword) {
-            e.preventDefault();
-            alert('Digite sua senha para fazer login!');
-            return false;
-        }
-        
-        return true;
-    });
+    // Máscaras, validações e interações são gerenciadas pelo invite-interactions.js
 });
 </script>
 {% endblock %}

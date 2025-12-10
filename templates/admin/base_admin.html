@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-menu.css') }}">
+{% endblock %}
+
 {% block navbar %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
@@ -7,7 +11,7 @@
             <i class="fas fa-cog me-2"></i>Admin - Sistema Combinado
         </a>
         
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Alternar menu de navegação">
             <span class="navbar-toggler-icon"></span>
         </button>
         
@@ -44,6 +48,16 @@
                             <i class="fas fa-plus me-1"></i>Adicionar Tokens
                         </a></li>
                     </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.ordens') }}">
+                        <i class="fas fa-clipboard-list me-1"></i>Ordens
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin.convites') }}">
+                        <i class="fas fa-envelope me-1"></i>Convites
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('admin.contratos') }}">
@@ -110,17 +124,17 @@
                     
                     <!-- Gestão de Usuários -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuUsuarios" role="button">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuUsuarios" role="button" aria-expanded="false" aria-controls="menuUsuarios">
                             <span><i class="fas fa-users me-2 text-success"></i><strong>Usuários</strong></span>
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
                         <div class="collapse" id="menuUsuarios">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.usuarios') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.usuarios') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-list me-2"></i>Listar Todos
                                 </a>
-                                <a href="{{ url_for('admin.criar_usuario') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.criar_usuario') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-user-plus me-2"></i>Criar Novo
                                 </a>
                             </div>
@@ -129,56 +143,63 @@
                     
                     <!-- Gestão de Tokens -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuTokens" role="button">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuTokens" role="button" aria-expanded="false" aria-controls="menuTokens">
                             <span><i class="fas fa-coins me-2 text-warning"></i><strong>Tokens</strong>
                             {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
                                 <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
                             {% endif %}
                             </span>
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
                         <div class="collapse" id="menuTokens">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.tokens') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.tokens') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-wallet me-2"></i>Gerenciar
                                 </a>
-                                <a href="{{ url_for('admin.solicitacoes_tokens') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.solicitacoes_tokens') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-paper-plane me-2"></i>Solicitações
                                     {% if stats and stats.get('solicitacoes_tokens_pendentes', 0) > 0 %}
                                         <span class="badge bg-warning text-dark ms-1">{{ stats.get('solicitacoes_tokens_pendentes', 0) }}</span>
                                     {% endif %}
                                 </a>
-                                <a href="{{ url_for('admin.adicionar_tokens') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.adicionar_tokens') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-plus-circle me-2"></i>Adicionar
                                 </a>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Financeiro (Nova Seção) -->
+
+                    <!-- Ordens -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuFinanceiro" role="button">
-                            <span><i class="fas fa-chart-line me-2 text-success"></i><strong>Financeiro</strong></span>
-                            <i class="fas fa-chevron-down"></i>
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuOrdens" role="button" aria-expanded="false" aria-controls="menuOrdens">
+                            <span><i class="fas fa-clipboard-list me-2 text-primary"></i><strong>Ordens</strong></span>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
-                        <div class="collapse" id="menuFinanceiro">
+                        <div class="collapse" id="menuOrdens">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.dashboard') }}" class="list-group-item list-group-item-action ps-4 border-0">
-                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                <a href="{{ url_for('admin.ordens') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-list me-2"></i>Todas
                                 </a>
-                                <a href="{{ url_for('admin.relatorios') }}" class="list-group-item list-group-item-action ps-4 border-0">
-                                    <i class="fas fa-money-bill-wave me-2"></i>Receitas
+                                <a href="{{ url_for('admin.ordens') }}?status=aguardando_execucao" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-clock me-2"></i>Aguardando
                                 </a>
-                                <a href="{{ url_for('admin.configuracoes') }}" class="list-group-item list-group-item-action ps-4 border-0">
-                                    <i class="fas fa-percentage me-2"></i>Configurar Taxas
+                                <a href="{{ url_for('admin.ordens') }}?status=servico_executado" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-hourglass-half me-2"></i>Executadas
                                 </a>
-                                <a href="{{ url_for('admin.relatorios') }}" class="list-group-item list-group-item-action ps-4 border-0">
-                                    <i class="fas fa-chart-area me-2"></i>Previsões
+                                <a href="{{ url_for('admin.ordens') }}?status=concluida" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-check-circle me-2"></i>Concluídas
                                 </a>
-                                <a href="{{ url_for('admin.relatorios') }}" class="list-group-item list-group-item-action ps-4 border-0">
-                                    <i class="fas fa-file-invoice-dollar me-2"></i>Relatórios
+                                <a href="{{ url_for('admin.ordens') }}?status=cancelada" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-times-circle me-2"></i>Canceladas
+                                </a>
+                                <a href="{{ url_for('admin.ordens') }}?status=contestada" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Contestadas
+                                </a>
+                                <a href="{{ url_for('admin.ordens') }}?status=resolvida" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-gavel me-2"></i>Resolvidas
                                 </a>
                             </div>
                         </div>
@@ -186,21 +207,46 @@
                     
                     <!-- Contestações -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuContestacoes" role="button">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuContestacoes" role="button" aria-expanded="false" aria-controls="menuContestacoes">
                             <span><i class="fas fa-exclamation-triangle me-2 text-danger"></i><strong>Contestações</strong></span>
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
                         <div class="collapse" id="menuContestacoes">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.contestacoes') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contestacoes') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-list me-2"></i>Todas
                                 </a>
-                                <a href="{{ url_for('admin.contestacoes') }}?status=pendente" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contestacoes') }}?status=pendente" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-clock me-2"></i>Pendentes
                                 </a>
-                                <a href="{{ url_for('admin.contestacoes') }}?status=em_analise" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contestacoes') }}?status=em_analise" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-search me-2"></i>Em Análise
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Convites -->
+                    <div class="list-group-item p-0">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuConvites" role="button" aria-expanded="false" aria-controls="menuConvites">
+                            <span><i class="fas fa-envelope me-2 text-primary"></i><strong>Convites</strong></span>
+                            <i class="fas fa-chevron-down transition-icon"></i>
+                        </a>
+                        <div class="collapse" id="menuConvites">
+                            <div class="list-group list-group-flush">
+                                <a href="{{ url_for('admin.convites') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-list me-2"></i>Todos
+                                </a>
+                                <a href="{{ url_for('admin.convites') }}?status=pendente" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-clock me-2"></i>Pendentes
+                                </a>
+                                <a href="{{ url_for('admin.convites') }}?status=aceito" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-check me-2"></i>Aceitos
+                                </a>
+                                <a href="{{ url_for('admin.convites') }}?status=recusado" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-times me-2"></i>Recusados
                                 </a>
                             </div>
                         </div>
@@ -208,20 +254,20 @@
                     
                     <!-- Contratos -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuContratos" role="button">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuContratos" role="button" aria-expanded="false" aria-controls="menuContratos">
                             <span><i class="fas fa-file-contract me-2 text-info"></i><strong>Contratos</strong></span>
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
                         <div class="collapse" id="menuContratos">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.contratos') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contratos') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-list me-2"></i>Todos
                                 </a>
-                                <a href="{{ url_for('admin.contratos_ativos') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contratos', status='ativo') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-hourglass-half me-2"></i>Ativos
                                 </a>
-                                <a href="{{ url_for('admin.contratos_finalizados') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.contratos', status='finalizado') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-check-circle me-2"></i>Finalizados
                                 </a>
                             </div>
@@ -230,20 +276,23 @@
                     
                     <!-- Configurações -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuConfig" role="button">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuConfig" role="button" aria-expanded="false" aria-controls="menuConfig">
                             <span><i class="fas fa-cogs me-2 text-secondary"></i><strong>Configurações</strong></span>
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
                         <div class="collapse" id="menuConfig">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.configuracoes') }}" class="list-group-item list-group-item-action ps-4 border-0">
-                                    <i class="fas fa-percentage me-2"></i>Taxas e Multas
+                                <a href="{{ url_for('admin.configuracoes') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-home me-2"></i>Visão Geral
                                 </a>
-                                <a href="{{ url_for('admin.configuracoes') }}#seguranca" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.configuracoes_taxas') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
+                                    <i class="fas fa-percentage me-2"></i>Taxas do Sistema
+                                </a>
+                                <a href="{{ url_for('admin.configuracoes_seguranca') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-shield-alt me-2"></i>Segurança
                                 </a>
-                                <a href="{{ url_for('admin.alterar_senha') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.alterar_senha') }}" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-key me-2"></i>Alterar Senha
                                 </a>
                             </div>
@@ -252,20 +301,20 @@
                     
                     <!-- Relatórios -->
                     <div class="list-group-item p-0">
-                        <a class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-dark" 
-                           data-bs-toggle="collapse" href="#menuRelatorios" role="button">
+                        <a class="d-flex justify-content-between align-items-center p-3 text-decoration-none text-dark sidebar-menu-header" 
+                           data-bs-toggle="collapse" href="#menuRelatorios" role="button" aria-expanded="false" aria-controls="menuRelatorios">
                             <span><i class="fas fa-chart-bar me-2 text-primary"></i><strong>Relatórios</strong></span>
-                            <i class="fas fa-chevron-down"></i>
+                            <i class="fas fa-chevron-down transition-icon"></i>
                         </a>
                         <div class="collapse" id="menuRelatorios">
                             <div class="list-group list-group-flush">
-                                <a href="{{ url_for('admin.relatorios') }}" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.relatorios') }}#financeiro" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-chart-line me-2"></i>Financeiro
                                 </a>
-                                <a href="{{ url_for('admin.relatorios') }}#usuarios" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.relatorios') }}#usuarios" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-users me-2"></i>Usuários
                                 </a>
-                                <a href="{{ url_for('admin.relatorios') }}#contratos" class="list-group-item list-group-item-action ps-4 border-0">
+                                <a href="{{ url_for('admin.relatorios') }}#contratos" class="list-group-item list-group-item-action ps-4 py-2 border-0 sidebar-submenu-item">
                                     <i class="fas fa-file-contract me-2"></i>Contratos
                                 </a>
                             </div>
@@ -286,4 +335,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin-menu.js') }}"></script>
 {% endblock %}

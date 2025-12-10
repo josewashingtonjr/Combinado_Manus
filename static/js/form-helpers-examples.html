@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Helpers - Exemplos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #444;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        label .required {
+            color: #dc3545;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 48px;
+        }
+
+        button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button[type="reset"] {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        button[type="reset"]:hover {
+            background: #545b62;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .example-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .example-box h3 {
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            button[type="reset"] {
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Form Helpers - Sistema de Validação</h1>
+        <p class="subtitle">Exemplos de validação em tempo real e máscaras para formulários</p>
+
+        <!-- Exemplo 1: Validações Básicas -->
+        <div class="section">
+            <h2>1. Validações Básicas</h2>
+            
+            <div class="example-box">
+                <h3>Campo Obrigatório</h3>
+                <form id="form-basico">
+                    <div class="form-group">
+                        <label>
+                            Nome Completo <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="nome"
+                            data-validate="required"
+                            placeholder="Digite seu nome completo"
+                        >
+                        <div class="help-text">Campo obrigatório</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            E-mail <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email"
+                            data-validate="required,email"
+                            placeholder="seu@email.com"
+                        >
+                        <div class="help-text">Digite um e-mail válido</div>
+                    </div>
+
+                    <button type="submit">Validar Formulário</button>
+                    <button type="reset">Limpar</button>
+                </form>
+            </div>
+
+            <div class="code">
+&lt;input data-validate="required,email" /&gt;
+            </div>
+        </div>
+
+        <!-- Exemplo 2: Máscaras Brasileiras -->
+        <div class="section">
+            <h2>2. Máscaras Brasileiras</h2>
+            
+            <div class="example-box">
+                <h3>Telefone, CPF, CNPJ e CEP</h3>
+                <form id="form-mascaras">
+                    <div class="form-group">
+                        <label>
+                            Telefone <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            name="telefone"
+                            data-mask="telefone"
+                            data-validate="required,telefone"
+                            placeholder="(00) 00000-0000"
+                        >
+                        <div class="help-text">Formato: (XX) XXXXX-XXXX</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            CPF <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="cpf"
+                            data-mask="cpf"
+                            data-validate="required,cpf"
+                            placeholder="000.000.000-00"
+                        >
+                        <div class="help-text">Digite um CPF válido</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>CNPJ</label>
+                        <input 
+                            type="text" 
+                            name="cnpj"
+                            data-mask="cnpj"
+                            data-validate="cnpj"
+                            placeholder="00.000.000/0000-00"
+                        >
+                        <div class="help-text">Opcional - Digite um CNPJ válido</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>CEP</label>
+                        <input 
+                            type="text" 
+                            name="cep"
+                            data-mask="cep"
+                            placeholder="00000-000"
+                        >
+                        <div class="help-text">Formato: XXXXX-XXX</div>
+                    </div>
+
+                    <button type="submit">Validar Formulário</button>
+                    <button type="reset">Limpar</button>
+                </form>
+            </div>
+
+            <div class="code">
+&lt;input data-mask="telefone" data-validate="telefone" /&gt;
+&lt;input data-mask="cpf" data-validate="cpf" /&gt;
+&lt;input data-mask="cnpj" data-validate="cnpj" /&gt;
+            </div>
+        </div>
+
+        <!-- Exemplo 3: Valores Monetários -->
+        <div class="section">
+            <h2>3. Valores Monetários</h2>
+            
+            <div class="example-box">
+                <h3>Formatação de Moeda</h3>
+                <form id="form-valores">
+                    <div class="form-group">
+                        <label>
+                            Valor do Serviço <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="valor"
+                            data-mask="valor"
+                            data-validate="required,valor"
+                            placeholder="0,00"
+                        >
+                        <div class="help-text">Digite o valor em reais</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Valor Mínimo (R$ 50,00)
+                        </label>
+                        <input 
+                            type="number" 
+                            name="valor_min"
+                            data-validate="min"
+                            data-min="50"
+                            min="50"
+                            placeholder="50.00"
+                        >
+                        <div class="help-text">Valor mínimo: R$ 50,00</div>
+                    </div>
+
+                    <button type="submit">Validar Formulário</button>
+                    <button type="reset">Limpar</button>
+                </form>
+            </div>
+
+            <div class="code">
+&lt;input data-mask="valor" data-validate="valor" /&gt;
+&lt;input data-validate="min" data-min="50" /&gt;
+            </div>
+        </div>
+
+        <!-- Exemplo 4: Senhas -->
+        <div class="section">
+            <h2>4. Validação de Senhas</h2>
+            
+            <div class="example-box">
+                <h3>Senha Forte e Confirmação</h3>
+                <form id="form-senha">
+                    <div class="form-group">
+                        <label>
+                            Nova Senha <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="password" 
+                            name="senha"
+                            data-validate="required,senha-forte"
+                            placeholder="Digite uma senha forte"
+                        >
+                        <div class="help-text">
+                            Mínimo 8 caracteres, com maiúscula, minúscula e número
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Confirmar Senha <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="password" 
+                            name="confirmar_senha"
+                            data-validate="required,confirmar-senha"
+                            placeholder="Digite a senha novamente"
+                        >
+                        <div class="help-text">As senhas devem ser iguais</div>
+                    </div>
+
+                    <button type="submit">Validar Formulário</button>
+                    <button type="reset">Limpar</button>
+                </form>
+            </div>
+
+            <div class="code">
+&lt;input data-validate="senha-forte" /&gt;
+&lt;input data-validate="confirmar-senha" /&gt;
+            </div>
+        </div>
+
+        <!-- Exemplo 5: Formulário Completo -->
+        <div class="section">
+            <h2>5. Formulário Completo de Cadastro</h2>
+            
+            <div class="example-box">
+                <h3>Cadastro de Prestador</h3>
+                <form id="form-completo">
+                    <div class="form-group">
+                        <label>
+                            Nome Completo <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="nome"
+                            data-validate="required,minlength"
+                            data-minlength="3"
+                            placeholder="Digite seu nome completo"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            E-mail <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email"
+                            data-validate="required,email"
+                            placeholder="seu@email.com"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Telefone <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            name="telefone"
+                            data-mask="telefone"
+                            data-validate="required,telefone"
+                            placeholder="(00) 00000-0000"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            CPF <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="cpf"
+                            data-mask="cpf"
+                            data-validate="required,cpf"
+                            placeholder="000.000.000-00"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Valor por Hora <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            name="valor_hora"
+                            data-mask="valor"
+                            data-validate="required,valor"
+                            placeholder="0,00"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Descrição dos Serviços <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            name="descricao"
+                            data-validate="required,minlength"
+                            data-minlength="20"
+                            placeholder="Descreva os serviços que você oferece (mínimo 20 caracteres)"
+                        ></textarea>
+                    </div>
+
+                    <button type="submit">Cadastrar Prestador</button>
+                    <button type="reset">Limpar Formulário</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Exemplo 6: API Programática -->
+        <div class="section">
+            <h2>6. Uso Programático</h2>
+            
+            <div class="example-box">
+                <h3>Validação Manual via JavaScript</h3>
+                <div class="form-group">
+                    <label>Campo de Teste</label>
+                    <input 
+                        type="text" 
+                        id="campo-teste"
+                        data-validate="required,email"
+                        placeholder="Digite um e-mail"
+                    >
+                </div>
+                <button onclick="validarCampo()">Validar Campo</button>
+                <button onclick="limparValidacao()">Limpar Validação</button>
+                <button onclick="obterValorLimpo()">Obter Valor Limpo</button>
+            </div>
+
+            <div class="code">
+// Validar campo manualmente
+window.formHelpers.validateField(input);
+
+// Limpar validação
+window.formHelpers.clearFieldValidation(input);
+
+// Obter valor sem máscara
+const valor = window.formHelpers.getCleanValue(input);
+
+// Adicionar validador customizado
+window.formHelpers.addValidator('meu-validador', (value) => {
+    return {
+        valid: value.length > 5,
+        message: 'Mínimo 5 caracteres'
+    };
+});
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    <!-- Toast Template -->
+    <template id="toast-template">
+        <div class="toast-feedback">
+            <div class="toast-content">
+                <span class="toast-icon"></span>
+                <span class="toast-text"></span>
+            </div>
+            <button class="toast-close" aria-label="Fechar">×</button>
+            <div class="toast-progress"></div>
+        </div>
+    </template>
+
+    <!-- Scripts -->
+    <script src="toast-feedback.js"></script>
+    <script src="form-helpers.js"></script>
+    
+    <script>
+        // Previne submit real dos formulários de exemplo
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const isValid = window.formHelpers.validateForm(form);
+                
+                if (isValid) {
+                    window.toast.success('✅ Formulário válido! Todos os campos estão corretos.');
+                    console.log('Dados do formulário:', new FormData(form));
+                } else {
+                    window.toast.error('❌ Formulário inválido! Corrija os erros destacados.');
+                }
+            });
+        });
+
+        // Funções para exemplo de API programática
+        function validarCampo() {
+            const input = document.getElementById('campo-teste');
+            const isValid = window.formHelpers.validateField(input);
+            
+            if (isValid) {
+                window.toast.success('Campo válido!');
+            } else {
+                window.toast.error('Campo inválido!');
+            }
+        }
+
+        function limparValidacao() {
+            const input = document.getElementById('campo-teste');
+            window.formHelpers.clearFieldValidation(input);
+            window.toast.info('Validação limpa');
+        }
+
+        function obterValorLimpo() {
+            const input = document.getElementById('campo-teste');
+            const valor = window.formHelpers.getCleanValue(input);
+            window.toast.info(`Valor limpo: ${valor}`);
+            console.log('Valor limpo:', valor);
+        }
+
+        // Log de inicialização
+        console.log('Form Helpers carregado:', window.formHelpers);
+        console.log('Validadores disponíveis:', Array.from(window.formHelpers.validators.keys()));
+        console.log('Máscaras disponíveis:', Array.from(window.formHelpers.masks.keys()));
+    </script>
+</body>
+</html>

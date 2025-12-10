@@ -1,0 +1,240 @@
+{
+  "css": {
+    "files_processed": 17,
+    "original_size": 212280,
+    "minified_size": 124916,
+    "files": [
+      {
+        "name": "tokens.css",
+        "original_size": 5919,
+        "minified_size": 4152,
+        "reduction_percent": 29.85
+      },
+      {
+        "name": "lazy-loading.css",
+        "original_size": 1636,
+        "minified_size": 950,
+        "reduction_percent": 41.93
+      },
+      {
+        "name": "zoom-optimization.css",
+        "original_size": 17901,
+        "minified_size": 7944,
+        "reduction_percent": 55.62
+      },
+      {
+        "name": "pre-ordem-interactions.css",
+        "original_size": 3480,
+        "minified_size": 2381,
+        "reduction_percent": 31.58
+      },
+      {
+        "name": "accessibility-keyboard.css",
+        "original_size": 9261,
+        "minified_size": 3825,
+        "reduction_percent": 58.7
+      },
+      {
+        "name": "invite.css",
+        "original_size": 33497,
+        "minified_size": 20692,
+        "reduction_percent": 38.23
+      },
+      {
+        "name": "responsive-utilities.css",
+        "original_size": 7520,
+        "minified_size": 5474,
+        "reduction_percent": 27.21
+      },
+      {
+        "name": "mobile-nav.css",
+        "original_size": 10052,
+        "minified_size": 4827,
+        "reduction_percent": 51.98
+      },
+      {
+        "name": "style.css",
+        "original_size": 13996,
+        "minified_size": 8180,
+        "reduction_percent": 41.55
+      },
+      {
+        "name": "home.css",
+        "original_size": 13113,
+        "minified_size": 10645,
+        "reduction_percent": 18.82
+      },
+      {
+        "name": "accessibility-colors.css",
+        "original_size": 12138,
+        "minified_size": 5333,
+        "reduction_percent": 56.06
+      },
+      {
+        "name": "admin-menu.css",
+        "original_size": 3744,
+        "minified_size": 2546,
+        "reduction_percent": 32.0
+      },
+      {
+        "name": "accessibility.css",
+        "original_size": 0,
+        "minified_size": 0,
+        "reduction_percent": 0
+      },
+      {
+        "name": "toast-feedback.css",
+        "original_size": 4868,
+        "minified_size": 3077,
+        "reduction_percent": 36.79
+      },
+      {
+        "name": "mobile-first.css",
+        "original_size": 39056,
+        "minified_size": 21089,
+        "reduction_percent": 46.0
+      },
+      {
+        "name": "dashboard-realtime.css",
+        "original_size": 3075,
+        "minified_size": 1959,
+        "reduction_percent": 36.29
+      },
+      {
+        "name": "touch-targets.css",
+        "original_size": 33024,
+        "minified_size": 21842,
+        "reduction_percent": 33.86
+      }
+    ]
+  },
+  "js": {
+    "files_processed": 20,
+    "original_size": 312371,
+    "minified_size": 178879,
+    "files": [
+      {
+        "name": "high-contrast-toggle.js",
+        "original_size": 5927,
+        "minified_size": 3381,
+        "reduction_percent": 42.96
+      },
+      {
+        "name": "dashboard-realtime.js",
+        "original_size": 19917,
+        "minified_size": 11136,
+        "reduction_percent": 44.09
+      },
+      {
+        "name": "home.js",
+        "original_size": 13702,
+        "minified_size": 8526,
+        "reduction_percent": 37.78
+      },
+      {
+        "name": "toast-feedback.js",
+        "original_size": 6707,
+        "minified_size": 3695,
+        "reduction_percent": 44.91
+      },
+      {
+        "name": "session-timeout.js",
+        "original_size": 14867,
+        "minified_size": 7846,
+        "reduction_percent": 47.23
+      },
+      {
+        "name": "accessibility-aria.js",
+        "original_size": 14322,
+        "minified_size": 7649,
+        "reduction_percent": 46.59
+      },
+      {
+        "name": "proposal-interactions.js",
+        "original_size": 36016,
+        "minified_size": 23215,
+        "reduction_percent": 35.54
+      },
+      {
+        "name": "touch-feedback.js",
+        "original_size": 8045,
+        "minified_size": 4547,
+        "reduction_percent": 43.48
+      },
+      {
+        "name": "colorblind-simulator.js",
+        "original_size": 10389,
+        "minified_size": 5930,
+        "reduction_percent": 42.92
+      },
+      {
+        "name": "admin-login.js",
+        "original_size": 5982,
+        "minified_size": 3782,
+        "reduction_percent": 36.78
+      },
+      {
+        "name": "toast-integration-example.js",
+        "original_size": 13846,
+        "minified_size": 8218,
+        "reduction_percent": 40.65
+      },
+      {
+        "name": "form-helpers.js",
+        "original_size": 22345,
+        "minified_size": 12479,
+        "reduction_percent": 44.15
+      },
+      {
+        "name": "pre-ordem-realtime.js",
+        "original_size": 37441,
+        "minified_size": 19224,
+        "reduction_percent": 48.66
+      },
+      {
+        "name": "main.js",
+        "original_size": 7578,
+        "minified_size": 4215,
+        "reduction_percent": 44.38
+      },
+      {
+        "name": "real-time-updates.js",
+        "original_size": 14784,
+        "minified_size": 8220,
+        "reduction_percent": 44.4
+      },
+      {
+        "name": "loading-states.js",
+        "original_size": 18296,
+        "minified_size": 10038,
+        "reduction_percent": 45.14
+      },
+      {
+        "name": "pre-ordem-interactions.js",
+        "original_size": 29479,
+        "minified_size": 18776,
+        "reduction_percent": 36.31
+      },
+      {
+        "name": "lazy-loading.js",
+        "original_size": 5408,
+        "minified_size": 2890,
+        "reduction_percent": 46.56
+      },
+      {
+        "name": "invite-interactions.js",
+        "original_size": 20849,
+        "minified_size": 11884,
+        "reduction_percent": 43.0
+      },
+      {
+        "name": "admin-menu.js",
+        "original_size": 6471,
+        "minified_size": 3228,
+        "reduction_percent": 50.12
+      }
+    ]
+  },
+  "total_original": 524651,
+  "total_minified": 303795
+}

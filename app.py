@@ -33,28 +33,47 @@ app = create_app()
 CORS(app, supports_credentials=True)
 
 # ==============================================================================
-#  CONFIGURAÇÃO DE LOGGING
+#  CONFIGURAÇÃO DE LOGGING COM ROTATION
 # ==============================================================================
 
 # Criar diretório de logs se não existir
 os.makedirs('logs', exist_ok=True)
 
-# Configurar logging estruturado
+from logging.handlers import RotatingFileHandler
+
+# Configurar logging estruturado com rotation
+# Handler principal do sistema com rotation (10MB por arquivo, mantém 5 backups)
+main_handler = RotatingFileHandler(
+    'logs/sistema_combinado.log',
+    maxBytes=10*1024*1024,  # 10MB
+    backupCount=5,
+    encoding='utf-8'
+)
+main_handler.setLevel(logging.INFO)
+main_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+main_handler.setFormatter(main_formatter)
+
+# Handler para console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(main_formatter)
+
+# Configurar logging básico
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/sistema_combinado.log', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
+    handlers=[main_handler, console_handler]
 )
 
-# Logger específico para erros do sistema
+# Logger específico para erros do sistema com rotation
 error_logger = logging.getLogger('sistema_combinado.errors')
 error_logger.setLevel(logging.ERROR)
 
-# Handler específico para erros críticos
-error_handler = logging.FileHandler('logs/erros_criticos.log', encoding='utf-8')
+error_handler = RotatingFileHandler(
+    'logs/erros_criticos.log',
+    maxBytes=10*1024*1024,  # 10MB
+    backupCount=5,
+    encoding='utf-8'
+)
 error_handler.setLevel(logging.ERROR)
 error_formatter = logging.Formatter(
     '%(asctime)s - %(levelname)s - %(message)s - Contexto: %(pathname)s:%(lineno)d'
@@ -62,10 +81,72 @@ error_formatter = logging.Formatter(
 error_handler.setFormatter(error_formatter)
 error_logger.addHandler(error_handler)
 
+# Logger específico para operações de ordem com rotation
+order_operations_logger = logging.getLogger('sistema_combinado.order_operations')
+order_operations_logger.setLevel(logging.INFO)
+
+order_handler = RotatingFileHandler(
+    'logs/order_operations.log',
+    maxBytes=10*1024*1024,  # 10MB
+    backupCount=10,  # Mantém mais backups para operações de ordem
+    encoding='utf-8'
+)
+order_handler.setLevel(logging.INFO)
+order_formatter = logging.Formatter('%(asctime)s - ORDER_OPS - %(message)s')
+order_handler.setFormatter(order_formatter)
+order_operations_logger.addHandler(order_handler)
+
+# Logger de auditoria com rotation (configurado em audit_service.py)
+audit_logger = logging.getLogger('sistema_combinado.audit')
+audit_logger.setLevel(logging.INFO)
+
+audit_handler = RotatingFileHandler(
+    'logs/audit.log',
+    maxBytes=20*1024*1024,  # 20MB (maior porque auditoria é crítica)
+    backupCount=20,  # Mantém mais backups para auditoria
+    encoding='utf-8'
+)
+audit_handler.setLevel(logging.INFO)
+audit_formatter = logging.Formatter('%(asctime)s - AUDIT - %(message)s')
+audit_handler.setFormatter(audit_formatter)
+audit_logger.addHandler(audit_handler)
+
 from models import db
 db.init_app(app)
 migrate = Migrate(app, db)
-# csrf = CSRFProtect(app)  # Desabilitado para APIs AJAX
+
+# Configurar Flask-Login
+from flask_login import LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Por favor, faça login para acessar esta página.'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+    from models import User
+    return User.query.get(int(user_id))
+
+# Configurar proteção CSRF
+csrf = CSRFProtect(app)
+
+# Configurar Rate Limiter
+from services.rate_limiter_service import limiter, rate_limit_error_handler
+limiter.init_app(app)
+
+# Registrar handler de erro para rate limiting
+@app.errorhandler(429)
+def handle_rate_limit_error(e):
+    return rate_limit_error_handler(e)
+
+# Configurar Middleware de Performance
+from services.performance_middleware import PerformanceMiddleware
+performance = PerformanceMiddleware(app)
+
+# Registrar Template Helpers
+from template_helpers import register_template_helpers
+register_template_helpers(app)
 
 # ==============================================================================
 #  IMPORTAÇÃO DE MODELOS (necessário para migrations)
@@ -84,6 +165,12 @@ from routes.cliente_routes import cliente_bp
 from routes.prestador_routes import prestador_bp
 from routes.app_routes import app_bp
 from routes.role_routes import role_bp
+from routes.session_timeout_routes import session_timeout_bp
+from routes.proposal_routes import proposal_bp
+from routes.admin_proposal_monitoring_routes import admin_proposal_monitoring
+from routes.order_routes import order_bp
+from routes.realtime_routes import realtime_bp
+from routes.pre_ordem_routes import pre_ordem_bp
 
 app.register_blueprint(home_bp)
 app.register_blueprint(auth_bp)
@@ -92,6 +179,15 @@ app.register_blueprint(cliente_bp)
 app.register_blueprint(prestador_bp)
 app.register_blueprint(app_bp)
 app.register_blueprint(role_bp)
+app.register_blueprint(session_timeout_bp)
+app.register_blueprint(proposal_bp)
+app.register_blueprint(admin_proposal_monitoring)
+app.register_blueprint(order_bp)
+app.register_blueprint(realtime_bp)
+app.register_blueprint(pre_ordem_bp)
+
+# Configurar exceções de CSRF para rotas de autenticação
+csrf.exempt(auth_bp)
 
 
 
@@ -110,6 +206,12 @@ def inject_version_info():
     """Injeta informações de versão em todos os templates"""
     from version import get_version_info
     return get_version_info()
+
+@app.context_processor
+def inject_csrf_token():
+    """Injeta token CSRF em todos os templates"""
+    from flask_wtf.csrf import generate_csrf
+    return dict(csrf_token=generate_csrf)
 
 # ==============================================================================
 #  FILTROS JINJA2
@@ -184,6 +286,65 @@ def validate_database_connection():
         
         # Caso contrário, renderizar página de erro
         return render_template('errors/500.html', is_database_error=True), 503
+
+@app.before_request
+def check_session_timeout():
+    """Middleware para verificar timeout de sessão"""
+    # Pular verificação para rotas que não precisam de autenticação
+    skip_routes = [
+        'static', 'auth.index', 'auth.user_login', 'auth.admin_login', 
+        'auth.register', 'auth.convite_acesso', 'auth.processar_cadastro_convite',
+        'auth.processar_login_convite', 'auth.aceitar_convite_inicial', 
+        'auth.convite_login_cadastro', 'auth.rejeitar_convite', 'home.index', 'home.sobre',
+        'session_timeout.check_status', 'session_timeout.extend_session'
+    ]
+    
+    # Pular para rotas estáticas e específicas
+    if (request.endpoint and any(request.endpoint.startswith(route) for route in ['static', 'error']) or
+        request.path.startswith('/static/') or
+        request.endpoint in skip_routes):
+        return
+    
+    # Verificar se há sessão ativa (usuário ou admin)
+    has_session = session.get('user_id') or session.get('admin_id')
+    
+    if has_session:
+        from services.session_timeout_manager import SessionTimeoutManager
+        
+        # Verificar status da sessão
+        timeout_status = SessionTimeoutManager.check_session_timeout()
+        
+        if timeout_status['expired']:
+            # Sessão expirada - limpar e redirecionar
+            SessionTimeoutManager.invalidate_session()
+            
+            # Log da expiração
+            app.logger.info(
+                f"Sessão expirada - User: {session.get('user_id')}, "
+                f"Admin: {session.get('admin_id')}, Motivo: {timeout_status.get('reason')}"
+            )
+            
+            # Se for requisição AJAX, retornar JSON
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'error': 'session_expired',
+                    'message': timeout_status.get('message', 'Sua sessão expirou'),
+                    'redirect': url_for('auth.user_login') if session.get('user_id') else url_for('auth.admin_login')
+                }), 401
+            
+            # Limpar sessão e redirecionar
+            session.clear()
+            flash('Sua sessão expirou por inatividade. Faça login novamente.', 'warning')
+            
+            # Redirecionar baseado no tipo de usuário
+            if session.get('admin_id'):
+                return redirect(url_for('auth.admin_login'))
+            else:
+                return redirect(url_for('auth.user_login'))
+        
+        # Se não expirou, atualizar última atividade para requisições importantes
+        if request.method in ['POST', 'PUT', 'DELETE', 'PATCH']:
+            SessionTimeoutManager.extend_session()
 
 @app.errorhandler(Exception)
 def handle_validation_errors(error):
@@ -330,6 +491,78 @@ def inject_admin_stats():
     
     return dict()
 
+@app.context_processor
+def inject_mobile_notifications():
+    """
+    Injetar contagens de notificações para badges da navegação mobile
+    
+    Task 8: Adicionar badge para notificações
+    Requirement 4: Navegação Simplificada - Badge para notificações pendentes
+    """
+    from flask_login import current_user
+    from models import Invite, PreOrder, Order
+    
+    # Inicializar contadores
+    pending_invites = 0
+    pending_pre_orders = 0
+    pending_orders = 0
+    
+    # Só calcular se houver usuário autenticado
+    if current_user and current_user.is_authenticated:
+        try:
+            user_id = current_user.id
+            
+            # Contar convites pendentes (recebidos e não respondidos)
+            if hasattr(current_user, 'roles'):
+                if 'prestador' in current_user.roles:
+                    # Prestador: convites recebidos aguardando resposta
+                    pending_invites = Invite.query.filter_by(
+                        prestador_id=user_id,
+                        status='pendente'
+                    ).count()
+                    
+                    # Prestador: pré-ordens aguardando ação (propostas do cliente)
+                    pending_pre_orders = PreOrder.query.filter(
+                        PreOrder.prestador_id == user_id,
+                        PreOrder.status.in_(['aguardando_prestador', 'proposta_cliente'])
+                    ).count()
+                    
+                    # Prestador: ordens aguardando ação
+                    pending_orders = Order.query.filter(
+                        Order.prestador_id == user_id,
+                        Order.status.in_(['aceita', 'em_andamento'])
+                    ).count()
+                    
+                elif 'cliente' in current_user.roles:
+                    # Cliente: convites enviados aguardando resposta
+                    pending_invites = Invite.query.filter_by(
+                        cliente_id=user_id,
+                        status='pendente'
+                    ).count()
+                    
+                    # Cliente: pré-ordens aguardando ação (propostas do prestador)
+                    pending_pre_orders = PreOrder.query.filter(
+                        PreOrder.cliente_id == user_id,
+                        PreOrder.status.in_(['aguardando_cliente', 'proposta_prestador'])
+                    ).count()
+                    
+                    # Cliente: ordens aguardando confirmação ou em disputa
+                    pending_orders = Order.query.filter(
+                        Order.client_id == user_id,
+                        Order.status.in_(['concluida_aguardando_confirmacao', 'em_disputa'])
+                    ).count()
+                    
+        except Exception as e:
+            app.logger.error(f"Erro ao calcular notificações mobile: {str(e)}")
+            # Em caso de erro, retornar contadores zerados
+            pass
+    
+    return dict(
+        pending_invites=pending_invites,
+        pending_pre_orders=pending_pre_orders,
+        pending_orders=pending_orders
+    )
+
 # ==============================================================================
 #  INICIALIZAÇÃO DO BANCO DE DADOS
 # ==============================================================================
@@ -347,6 +580,83 @@ def init_db():
             db.session.add(admin)
             db.session.commit()
             print("✅ Administrador padrão criado: admin@combinado.com / admin123")
+
+# ==============================================================================
+#  ROTAS DE SESSÃO
+# ==============================================================================
+
+@app.route('/session/check-status')
+def check_session_status():
+    """Verifica o status da sessão e retorna informações sobre expiração"""
+    from datetime import datetime, timedelta
+    
+    # Verificar se há sessão ativa
+    user_id = session.get('user_id')
+    admin_id = session.get('admin_id')
+    session_expires = session.get('session_expires')
+    
+    if not (user_id or admin_id) or not session_expires:
+        return jsonify({
+            'authenticated': False,
+            'message': 'Sessão não encontrada'
+        }), 401
+    
+    # Converter string para datetime se necessário
+    if isinstance(session_expires, str):
+        session_expires = datetime.fromisoformat(session_expires)
+    
+    now = datetime.utcnow()
+    time_remaining = session_expires - now
+    minutes_remaining = int(time_remaining.total_seconds() / 60)
+    
+    # Mostrar aviso se faltarem 5 minutos ou menos
+    should_warn = minutes_remaining <= 5 and minutes_remaining > 0
+    
+    return jsonify({
+        'authenticated': True,
+        'should_warn': should_warn,
+        'minutes_remaining': minutes_remaining,
+        'expires_at': session_expires.isoformat()
+    })
+
+@app.route('/session/extend', methods=['POST'])
+def extend_session():
+    """Estende a sessão do usuário"""
+    from datetime import datetime, timedelta
+    
+    # Verificar se há sessão ativa
+    user_id = session.get('user_id')
+    admin_id = session.get('admin_id')
+    session_id = session.get('session_id')
+    
+    if not (user_id or admin_id) or not session_id:
+        return jsonify({
+            'success': False,
+            'message': 'Sessão não encontrada'
+        }), 401
+    
+    try:
+        # Estender sessão por mais 30 minutos
+        new_expiration = datetime.utcnow() + timedelta(minutes=30)
+        session['session_expires'] = new_expiration.isoformat()
+        session.modified = True
+        
+        app.logger.info(f"Sessão estendida - Session: {session_id}, "
+                       f"User: {user_id}, Admin: {admin_id}, "
+                       f"Nova expiração: {new_expiration}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Sessão estendida com sucesso',
+            'new_expiration': new_expiration.isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao estender sessão: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Erro ao estender sessão'
+        }), 500
 
 # ==============================================================================
 #  ROTA DE TESTE
@@ -458,6 +768,37 @@ def forbidden_error(error):
     app.logger.warning(f"Erro 403 - Acesso negado: {request.url} | Contexto: {user_context}")
     
     return render_template('errors/403.html'), 403
+
+@app.errorhandler(400)
+def csrf_error(error):
+    """Tratamento específico para erros CSRF"""
+    # Verificar se é erro CSRF
+    if 'CSRF' in str(error) or 'csrf' in str(error).lower():
+        user_context = {
+            'admin_id': session.get('admin_id'),
+            'user_id': session.get('user_id'),
+            'url': request.url,
+            'method': request.method,
+            'ip': request.remote_addr,
+            'user_agent': request.headers.get('User-Agent', 'N/A')
+        }
+        
+        app.logger.warning(f"Erro CSRF detectado: {request.url} | Contexto: {user_context}")
+        
+        # Se for requisição AJAX, retornar JSON
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            from flask import jsonify
+            return jsonify({
+                'error': 'csrf_error',
+                'message': 'Token de segurança inválido. Recarregue a página e tente novamente.'
+            }), 400
+        
+        # Para requisições normais, mostrar mensagem e redirecionar
+        flash('Token de segurança inválido. Tente novamente.', 'error')
+        return redirect(request.referrer or get_safe_redirect_url())
+    
+    # Se não for erro CSRF, deixar o Flask lidar normalmente
+    raise error
 
 # ==============================================================================
 #  INICIALIZAÇÃO

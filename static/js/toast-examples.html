@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toast Feedback - Exemplos de Uso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/toast-feedback.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #333;
+            margin-top: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-error {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-clear {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e83e8c;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎉 Sistema de Toast Feedback</h1>
+    <p class="subtitle">Componente de notificações não-bloqueantes para feedback do usuário</p>
+
+    <div class="section">
+        <h2>📋 Características</h2>
+        <ul class="feature-list">
+            <li>Toast não-bloqueante no topo da tela</li>
+            <li>4 tipos semânticos: sucesso, erro, aviso e informação</li>
+            <li>Auto-dismiss após 5 segundos (configurável)</li>
+            <li>Botão de fechar manual</li>
+            <li>Barra de progresso visual</li>
+            <li>Pausa ao passar o mouse</li>
+            <li>Animações suaves de entrada/saída</li>
+            <li>Responsivo e otimizado para mobile</li>
+            <li>Acessível (ARIA labels, alto contraste)</li>
+            <li>Suporte a modo escuro</li>
+            <li>Conversão automática de mensagens Flask</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎨 Exemplos Interativos</h2>
+        
+        <h3>Tipos de Toast</h3>
+        <div class="button-group">
+            <button class="btn-success" onclick="toast.success('Operação realizada com sucesso!')">
+                <i class="fas fa-check"></i> Sucesso
+            </button>
+            <button class="btn-error" onclick="toast.error('Erro ao processar a solicitação')">
+                <i class="fas fa-times"></i> Erro
+            </button>
+            <button class="btn-warning" onclick="toast.warning('Atenção: verifique os dados antes de continuar')">
+                <i class="fas fa-exclamation-triangle"></i> Aviso
+            </button>
+            <button class="btn-info" onclick="toast.info('Informação: sua sessão expira em 5 minutos')">
+                <i class="fas fa-info-circle"></i> Info
+            </button>
+        </div>
+
+        <h3 style="margin-top: 30px;">Durações Personalizadas</h3>
+        <div class="button-group">
+            <button class="btn-info" onclick="toast.info('Toast rápido (2s)', 2000)">
+                2 segundos
+            </button>
+            <button class="btn-info" onclick="toast.info('Toast padrão (5s)', 5000)">
+                5 segundos (padrão)
+            </button>
+            <button class="btn-info" onclick="toast.info('Toast longo (10s)', 10000)">
+                10 segundos
+            </button>
+            <button class="btn-info" onclick="toast.info('Toast permanente (passe o mouse)', 0)">
+                Permanente
+            </button>
+        </div>
+
+        <h3 style="margin-top: 30px;">Múltiplos Toasts</h3>
+        <div class="button-group">
+            <button class="btn-success" onclick="showMultipleToasts()">
+                <i class="fas fa-layer-group"></i> Mostrar 3 Toasts
+            </button>
+            <button class="btn-clear" onclick="toast.hideAll()">
+                <i class="fas fa-trash"></i> Limpar Todos
+            </button>
+        </div>
+
+        <h3 style="margin-top: 30px;">Mensagens Longas</h3>
+        <div class="button-group">
+            <button class="btn-warning" onclick="toast.warning('Esta é uma mensagem muito longa que demonstra como o toast se comporta com textos extensos. O componente ajusta automaticamente a altura e quebra o texto de forma adequada.')">
+                Mensagem Longa
+            </button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💻 Como Usar</h2>
+        
+        <h3>1. API JavaScript Simples</h3>
+        <div class="code-block">
+            <code>
+// Métodos de conveniência<br>
+toast.success('Operação concluída!');<br>
+toast.error('Algo deu errado');<br>
+toast.warning('Cuidado!');<br>
+toast.info('Informação importante');<br>
+<br>
+// Com duração personalizada (em milissegundos)<br>
+toast.success('Salvo!', 3000);<br>
+<br>
+// Método genérico<br>
+showToast('Mensagem', 'success', 5000);<br>
+<br>
+// Esconder toast específico<br>
+const id = toast.success('Mensagem');<br>
+toast.hide(id);<br>
+<br>
+// Esconder todos os toasts<br>
+toast.hideAll();
+            </code>
+        </div>
+
+        <h3>2. Integração com Flask</h3>
+        <div class="code-block">
+            <code>
+# No seu código Python<br>
+from flask import flash<br>
+<br>
+flash('Usuário criado com sucesso!', 'success')<br>
+flash('Erro ao salvar dados', 'error')<br>
+flash('Verifique os campos', 'warning')<br>
+flash('Processando...', 'info')<br>
+<br>
+# As mensagens flash serão automaticamente<br>
+# convertidas em toasts pelo JavaScript
+            </code>
+        </div>
+
+        <h3>3. Uso em Formulários</h3>
+        <div class="code-block">
+            <code>
+// Após submeter formulário<br>
+fetch('/api/save', {<br>
+&nbsp;&nbsp;method: 'POST',<br>
+&nbsp;&nbsp;body: formData<br>
+})<br>
+.then(response => {<br>
+&nbsp;&nbsp;if (response.ok) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;toast.success('Dados salvos com sucesso!');<br>
+&nbsp;&nbsp;} else {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;toast.error('Erro ao salvar dados');<br>
+&nbsp;&nbsp;}<br>
+})<br>
+.catch(() => {<br>
+&nbsp;&nbsp;toast.error('Erro de conexão');<br>
+});
+            </code>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>♿ Acessibilidade</h2>
+        <ul class="feature-list">
+            <li>ARIA roles e labels apropriados</li>
+            <li>Contraste de cores WCAG AA compliant</li>
+            <li>Suporte a leitores de tela</li>
+            <li>Navegação por teclado (Tab + Enter para fechar)</li>
+            <li>Respeita preferências de movimento reduzido</li>
+            <li>Suporte a modo de alto contraste</li>
+            <li>Touch targets de 48px mínimo</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📱 Mobile-First</h2>
+        <ul class="feature-list">
+            <li>Layout responsivo que se adapta a qualquer tela</li>
+            <li>Touch targets otimizados (48x48px mínimo)</li>
+            <li>Animações suaves e performáticas</li>
+            <li>Posicionamento fixo que não interfere com conteúdo</li>
+            <li>Fonte legível em telas pequenas (16px mínimo)</li>
+        </ul>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Toast Template -->
+    <template id="toast-template">
+        <div class="toast-feedback" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-content">
+                <div class="toast-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="toast-message">
+                    <span class="toast-text"></span>
+                </div>
+                <button type="button" class="toast-close" aria-label="Fechar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="toast-progress"></div>
+        </div>
+    </template>
+
+    <script src="../js/toast-feedback.js"></script>
+    <script>
+        function showMultipleToasts() {
+            toast.success('Primeiro toast de sucesso');
+            setTimeout(() => toast.warning('Segundo toast de aviso'), 300);
+            setTimeout(() => toast.info('Terceiro toast informativo'), 600);
+        }
+    </script>
+</body>
+</html>

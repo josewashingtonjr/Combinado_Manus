@@ -1,0 +1,572 @@
+/**
+ * Skeleton Loading Components
+ * Componentes de skeleton para melhorar percepção de velocidade
+ * 
+ * Requirements: 8.2
+ */
+
+/* ========================================
+   ANIMAÇÕES BASE
+   ======================================== */
+
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: -468px 0;
+    }
+    100% {
+        background-position: 468px 0;
+    }
+}
+
+@keyframes skeleton-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ========================================
+   ELEMENTOS BASE
+   ======================================== */
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 0px,
+        #f8f8f8 40px,
+        #f0f0f0 80px
+    );
+    background-size: 468px;
+    animation: skeleton-shimmer 1.2s ease-in-out infinite;
+    border-radius: 4px;
+}
+
+.skeleton-text {
+    height: 16px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-text-title {
+    height: 24px;
+    width: 60%;
+    margin-bottom: 12px;
+}
+
+.skeleton-text-subtitle {
+    height: 18px;
+    width: 40%;
+    margin-bottom: 8px;
+}
+
+.skeleton-text-short {
+    width: 70%;
+}
+
+.skeleton-text-medium {
+    width: 85%;
+}
+
+.skeleton-text-long {
+    width: 95%;
+}
+
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.skeleton-avatar-small {
+    width: 32px;
+    height: 32px;
+}
+
+.skeleton-avatar-large {
+    width: 64px;
+    height: 64px;
+}
+
+.skeleton-button {
+    height: 48px;
+    border-radius: 8px;
+    width: 100%;
+}
+
+.skeleton-button-small {
+    height: 36px;
+    width: 120px;
+}
+
+.skeleton-badge {
+    height: 24px;
+    width: 80px;
+    border-radius: 12px;
+}
+
+/* ========================================
+   SKELETON CARD - CONVITE
+   ======================================== */
+
+.skeleton-convite-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-convite-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.skeleton-convite-title-group {
+    flex: 1;
+}
+
+.skeleton-convite-body {
+    margin-bottom: 16px;
+}
+
+.skeleton-convite-info-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.skeleton-convite-info-item {
+    flex: 1;
+}
+
+.skeleton-convite-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.skeleton-convite-actions .skeleton-button {
+    flex: 1;
+}
+
+/* ========================================
+   SKELETON CARD - ORDEM
+   ======================================== */
+
+.skeleton-ordem-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-ordem-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.skeleton-ordem-id {
+    height: 20px;
+    width: 120px;
+}
+
+.skeleton-ordem-body {
+    margin-bottom: 16px;
+}
+
+.skeleton-ordem-value {
+    height: 32px;
+    width: 150px;
+    margin-bottom: 12px;
+}
+
+.skeleton-ordem-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.skeleton-ordem-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-ordem-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.skeleton-ordem-actions .skeleton-button {
+    flex: 1;
+    min-width: 140px;
+}
+
+/* ========================================
+   SKELETON LIST - LISTA DE CONVITES
+   ======================================== */
+
+.skeleton-convites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skeleton-convite-list-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.skeleton-convite-list-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.skeleton-convite-list-content {
+    flex: 1;
+}
+
+.skeleton-convite-list-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ========================================
+   SKELETON LIST - LISTA DE ORDENS
+   ======================================== */
+
+.skeleton-ordens-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-ordem-list-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.skeleton-ordem-list-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-ordem-list-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+/* ========================================
+   SKELETON DETAIL - DETALHES DO CONVITE
+   ======================================== */
+
+.skeleton-convite-detail {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-convite-detail-header {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.skeleton-convite-detail-section {
+    margin-bottom: 24px;
+}
+
+.skeleton-convite-detail-section-title {
+    height: 20px;
+    width: 150px;
+    margin-bottom: 16px;
+}
+
+.skeleton-convite-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.skeleton-convite-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-convite-detail-label {
+    height: 14px;
+    width: 100px;
+}
+
+.skeleton-convite-detail-value {
+    height: 18px;
+    width: 80%;
+}
+
+.skeleton-convite-detail-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+/* ========================================
+   SKELETON DETAIL - DETALHES DA ORDEM
+   ======================================== */
+
+.skeleton-ordem-detail {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-ordem-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.skeleton-ordem-detail-timeline {
+    margin-bottom: 24px;
+}
+
+.skeleton-ordem-detail-timeline-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.skeleton-ordem-detail-timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.skeleton-ordem-detail-timeline-content {
+    flex: 1;
+}
+
+/* ========================================
+   SKELETON TABLE
+   ======================================== */
+
+.skeleton-table {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.skeleton-table-header {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.skeleton-table-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.skeleton-table-row:last-child {
+    border-bottom: none;
+}
+
+.skeleton-table-cell {
+    height: 16px;
+}
+
+/* ========================================
+   SKELETON DASHBOARD
+   ======================================== */
+
+.skeleton-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.skeleton-stat-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.skeleton-stat-label {
+    height: 14px;
+    width: 100px;
+    margin-bottom: 12px;
+}
+
+.skeleton-stat-value {
+    height: 32px;
+    width: 120px;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .skeleton-convite-card,
+    .skeleton-ordem-card {
+        padding: 16px;
+    }
+
+    .skeleton-convite-info-row,
+    .skeleton-ordem-details {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-convite-actions,
+    .skeleton-ordem-actions {
+        flex-direction: column;
+    }
+
+    .skeleton-convite-actions .skeleton-button,
+    .skeleton-ordem-actions .skeleton-button {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .skeleton-convite-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-ordem-detail-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .skeleton-table-header,
+    .skeleton-table-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .skeleton-dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-ordem-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .skeleton-ordem-list-right {
+        width: 100%;
+        align-items: flex-start;
+    }
+}
+
+/* ========================================
+   ACESSIBILIDADE
+   ======================================== */
+
+.skeleton[aria-busy="true"] {
+    pointer-events: none;
+}
+
+.skeleton-container[aria-live="polite"] {
+    /* Anuncia mudanças para leitores de tela */
+}
+
+/* ========================================
+   DARK MODE (OPCIONAL)
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    .skeleton {
+        background: linear-gradient(
+            90deg,
+            #2a2a2a 0px,
+            #333333 40px,
+            #2a2a2a 80px
+        );
+    }
+
+    .skeleton-convite-card,
+    .skeleton-ordem-card,
+    .skeleton-convite-list-item,
+    .skeleton-ordem-list-item,
+    .skeleton-convite-detail,
+    .skeleton-ordem-detail,
+    .skeleton-table,
+    .skeleton-stat-card {
+        background: #1a1a1a;
+        border-color: #333333;
+    }
+
+    .skeleton-table-header {
+        background: #222222;
+        border-bottom-color: #333333;
+    }
+}
+
+/* ========================================
+   PERFORMANCE
+   ======================================== */
+
+.skeleton-container {
+    contain: layout style paint;
+    will-change: contents;
+}
+
+.skeleton {
+    will-change: background-position;
+}
+
+/* Reduz animação para usuários que preferem movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: skeleton-pulse 2s ease-in-out infinite;
+    }
+}

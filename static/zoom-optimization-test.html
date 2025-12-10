@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Otimização para Zoom - Sistema Combinado</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS Mobile-First -->
+    <link href="css/mobile-first.css" rel="stylesheet">
+    <!-- CSS Touch Targets -->
+    <link href="css/touch-targets.css" rel="stylesheet">
+    <!-- CSS Otimização para Zoom -->
+    <link href="css/zoom-optimization.css" rel="stylesheet">
+    
+    <style>
+        /* Controles de teste */
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            max-width: 300px;
+        }
+        
+        .test-controls h5 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .test-controls button {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        
+        .zoom-level-indicator {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 10000;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+        }
+        
+        .test-section h3 {
+            color: #3d4fa8;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Controles de Teste -->
+    <div class="test-controls">
+        <h5><i class="fas fa-search-plus"></i> Controles de Zoom</h5>
+        <button class="btn btn-primary btn-sm" onclick="setZoom(1)">
+            <i class="fas fa-compress"></i> 100% (Normal)
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="setZoom(1.5)">
+            <i class="fas fa-search-plus"></i> 150%
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="setZoom(2)">
+            <i class="fas fa-search-plus"></i> 200%
+        </button>
+        <hr>
+        <small class="text-muted">
+            <i class="fas fa-info-circle"></i> Use Ctrl + / Ctrl - no navegador para testar zoom real
+        </small>
+    </div>
+    
+    <!-- Indicador de Nível de Zoom -->
+    <div class="zoom-level-indicator" id="zoomIndicator">
+        <i class="fas fa-search"></i> Zoom: <span id="zoomLevel">100%</span>
+    </div>
+    
+    <!-- Conteúdo de Teste -->
+    <div class="container my-5">
+        <h1 class="text-center mb-4">
+            <i class="fas fa-vial"></i> Teste de Otimização para Zoom
+        </h1>
+        <p class="lead text-center mb-5">
+            Esta página testa se o layout funciona corretamente com zoom de até 200%
+        </p>
+        
+        <!-- Seção 1: Tipografia -->
+        <div class="test-section">
+            <h3><i class="fas fa-font"></i> 1. Tipografia</h3>
+            <h1>Título H1 - Deve ser legível e não quebrar o layout</h1>
+            <h2>Título H2 - Texto deve quebrar adequadamente</h2>
+            <h3>Título H3 - Sem overflow horizontal</h3>
+            <h4>Título H4 - Tamanho flexível</h4>
+            <h5>Título H5 - Responsivo ao zoom</h5>
+            <h6>Título H6 - Mantém legibilidade</h6>
+            <p>
+                Parágrafo de texto normal. Este texto deve quebrar automaticamente e não causar 
+                scroll horizontal mesmo com zoom de 200%. Palavras muito longas como 
+                supercalifragilisticexpialidocious devem quebrar adequadamente.
+            </p>
+            <p class="text-muted">
+                Texto secundário com cor mais clara mas ainda legível.
+            </p>
+        </div>
+        
+        <!-- Seção 2: Botões -->
+        <div class="test-section">
+            <h3><i class="fas fa-hand-pointer"></i> 2. Botões e Elementos Interativos</h3>
+            <div class="mb-3">
+                <button class="btn btn-primary">
+                    <i class="fas fa-check"></i> Botão Primário
+                </button>
+                <button class="btn btn-success">
+                    <i class="fas fa-thumbs-up"></i> Aceitar
+                </button>
+                <button class="btn btn-danger">
+                    <i class="fas fa-times"></i> Recusar
+                </button>
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Aviso
+                </button>
+                <button class="btn btn-info">
+                    <i class="fas fa-info-circle"></i> Informação
+                </button>
+                <button class="btn btn-secondary">
+                    <i class="fas fa-cog"></i> Secundário
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary">
+                    <i class="fas fa-edit"></i> Outline Primário
+                </button>
+                <button class="btn btn-outline-danger">
+                    <i class="fas fa-trash"></i> Outline Perigo
+                </button>
+            </div>
+        </div>
+        
+        <!-- Seção 3: Formulários -->
+        <div class="test-section">
+            <h3><i class="fas fa-edit"></i> 3. Formulários</h3>
+            <form>
+                <div class="mb-3">
+                    <label for="testInput1" class="form-label">Campo de Texto</label>
+                    <input type="text" class="form-control" id="testInput1" 
+                           placeholder="Digite algo aqui">
+                </div>
+                <div class="mb-3">
+                    <label for="testEmail" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="testEmail" 
+                           placeholder="seu@email.com">
+                </div>
+                <div class="mb-3">
+                    <label for="testSelect" class="form-label">Seleção</label>
+                    <select class="form-control" id="testSelect">
+                        <option>Opção 1</option>
+                        <option>Opção 2</option>
+                        <option>Opção 3</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="testTextarea" class="form-label">Área de Texto</label>
+                    <textarea class="form-control" id="testTextarea" rows="3" 
+                              placeholder="Digite uma mensagem mais longa aqui"></textarea>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="testCheck">
+                    <label class="form-check-label" for="testCheck">
+                        Concordo com os termos
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
+            </form>
+        </div>
+        
+        <!-- Seção 4: Cards -->
+        <div class="test-section">
+            <h3><i class="fas fa-id-card"></i> 4. Cards</h3>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-star text-warning"></i> Card 1
+                            </h5>
+                            <p class="card-text">
+                                Este é um card de teste. O conteúdo deve se adaptar ao zoom.
+                            </p>
+                            <button class="btn btn-primary btn-sm">
+                                <i class="fas fa-arrow-right"></i> Ação
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-heart text-danger"></i> Card 2
+                            </h5>
+                            <p class="card-text">
+                                Cards devem empilhar verticalmente com zoom alto.
+                            </p>
+                            <button class="btn btn-success btn-sm">
+                                <i class="fas fa-check"></i> Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="fas fa-bolt text-primary"></i> Card 3
+                            </h5>
+                            <p class="card-text">
+                                Sem scroll horizontal mesmo com zoom de 200%.
+                            </p>
+                            <button class="btn btn-info btn-sm">
+                                <i class="fas fa-info"></i> Detalhes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção 5: Tabelas -->
+        <div class="test-section">
+            <h3><i class="fas fa-table"></i> 5. Tabelas</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-zoom-stack">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Status</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="ID">1</td>
+                            <td data-label="Nome">Serviço de Teste 1</td>
+                            <td data-label="Status">
+                                <span class="badge bg-success">Ativo</span>
+                            </td>
+                            <td data-label="Valor">R$ 150,00</td>
+                            <td data-label="Ações">
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td data-label="ID">2</td>
+                            <td data-label="Nome">Serviço de Teste 2</td>
+                            <td data-label="Status">
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                            </td>
+                            <td data-label="Valor">R$ 250,00</td>
+                            <td data-label="Ações">
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td data-label="ID">3</td>
+                            <td data-label="Nome">Serviço de Teste 3</td>
+                            <td data-label="Status">
+                                <span class="badge bg-danger">Cancelado</span>
+                            </td>
+                            <td data-label="Valor">R$ 100,00</td>
+                            <td data-label="Ações">
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted">
+                <i class="fas fa-info-circle"></i> 
+                Com zoom alto, a tabela deve empilhar ou permitir scroll horizontal controlado.
+            </p>
+        </div>
+        
+        <!-- Seção 6: Alertas -->
+        <div class="test-section">
+            <h3><i class="fas fa-bell"></i> 6. Alertas e Mensagens</h3>
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                <strong>Sucesso!</strong> Esta é uma mensagem de sucesso que deve quebrar adequadamente.
+            </div>
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Atenção!</strong> Esta é uma mensagem de aviso com texto mais longo para testar quebra de linha.
+            </div>
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-times-circle"></i>
+                <strong>Erro!</strong> Esta é uma mensagem de erro que não deve causar overflow horizontal.
+            </div>
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle"></i>
+                <strong>Informação!</strong> Mensagens devem permanecer legíveis mesmo com zoom de 200%.
+            </div>
+        </div>
+        
+        <!-- Seção 7: Navegação -->
+        <div class="test-section">
+            <h3><i class="fas fa-bars"></i> 7. Navegação</h3>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="#">
+                        <i class="fas fa-home"></i> Logo
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#navbarTest">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarTest">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#">
+                                    <i class="fas fa-home"></i> Início
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">
+                                    <i class="fas fa-envelope"></i> Convites
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">
+                                    <i class="fas fa-box"></i> Ordens
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Seção 8: Badges e Labels -->
+        <div class="test-section">
+            <h3><i class="fas fa-tags"></i> 8. Badges e Labels</h3>
+            <p>
+                <span class="badge bg-primary">Primário</span>
+                <span class="badge bg-success">Sucesso</span>
+                <span class="badge bg-danger">Perigo</span>
+                <span class="badge bg-warning text-dark">Aviso</span>
+                <span class="badge bg-info">Info</span>
+                <span class="badge bg-secondary">Secundário</span>
+            </p>
+            <p>
+                <span class="badge bg-primary">Badge com texto mais longo para testar quebra</span>
+            </p>
+        </div>
+        
+        <!-- Seção 9: Listas -->
+        <div class="test-section">
+            <h3><i class="fas fa-list"></i> 9. Listas</h3>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <i class="fas fa-check text-success"></i> Item de lista 1
+                </li>
+                <li class="list-group-item">
+                    <i class="fas fa-check text-success"></i> Item de lista 2 com texto mais longo
+                </li>
+                <li class="list-group-item active">
+                    <i class="fas fa-star"></i> Item ativo
+                </li>
+                <li class="list-group-item">
+                    <i class="fas fa-check text-success"></i> Item de lista 4
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Seção 10: Modal (Exemplo) -->
+        <div class="test-section">
+            <h3><i class="fas fa-window-maximize"></i> 10. Modal</h3>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" 
+                    data-bs-target="#testModal">
+                <i class="fas fa-external-link-alt"></i> Abrir Modal de Teste
+            </button>
+        </div>
+        
+        <!-- Checklist de Validação -->
+        <div class="test-section bg-light">
+            <h3><i class="fas fa-clipboard-check"></i> Checklist de Validação</h3>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check1">
+                <label class="form-check-label" for="check1">
+                    ✓ Layout não quebra com zoom de 150%
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check2">
+                <label class="form-check-label" for="check2">
+                    ✓ Layout não quebra com zoom de 200%
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check3">
+                <label class="form-check-label" for="check3">
+                    ✓ Sem scroll horizontal em nenhum zoom
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check4">
+                <label class="form-check-label" for="check4">
+                    ✓ Texto não é cortado
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check5">
+                <label class="form-check-label" for="check5">
+                    ✓ Botões permanecem clicáveis
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check6">
+                <label class="form-check-label" for="check6">
+                    ✓ Formulários permanecem funcionais
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check7">
+                <label class="form-check-label" for="check7">
+                    ✓ Cards empilham corretamente
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="check8">
+                <label class="form-check-label" for="check8">
+                    ✓ Tabelas são legíveis (empilhadas ou com scroll)
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Teste -->
+    <div class="modal fade" id="testModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle"></i> Modal de Teste
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Este modal deve funcionar corretamente mesmo com zoom de 200%.</p>
+                    <p>O conteúdo deve ser legível e não deve causar scroll horizontal.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
+                    <button type="button" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script de Controle de Zoom -->
+    <script>
+        function setZoom(level) {
+            document.body.style.zoom = level;
+            document.getElementById('zoomLevel').textContent = (level * 100) + '%';
+            
+            // Adicionar classe para testes
+            document.body.classList.remove('test-zoom-150', 'test-zoom-200');
+            if (level === 1.5) {
+                document.body.classList.add('test-zoom-150');
+            } else if (level === 2) {
+                document.body.classList.add('test-zoom-200');
+            }
+        }
+        
+        // Detectar zoom do navegador
+        window.addEventListener('resize', function() {
+            const zoom = Math.round(window.devicePixelRatio * 100);
+            if (zoom !== 100) {
+                document.getElementById('zoomLevel').textContent = zoom + '% (navegador)';
+            }
+        });
+        
+        // Instruções ao carregar
+        window.addEventListener('load', function() {
+            console.log('=== INSTRUÇÕES DE TESTE ===');
+            console.log('1. Use os botões no canto superior direito para simular zoom');
+            console.log('2. Ou use Ctrl + / Ctrl - para zoom real do navegador');
+            console.log('3. Verifique se não há scroll horizontal');
+            console.log('4. Verifique se o texto não é cortado');
+            console.log('5. Verifique se todos os elementos permanecem funcionais');
+            console.log('6. Marque os itens do checklist conforme valida');
+        });
+    </script>
+</body>
+</html>

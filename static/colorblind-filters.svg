@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display: none;">
+  <defs>
+    <!-- 
+      Filtros SVG para Simulação de Daltonismo
+      Baseado em pesquisas de visão de cores
+    -->
+    
+    <!-- Protanopia: Dificuldade com vermelho -->
+    <filter id="protanopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.567, 0.433, 0.000, 0, 0
+        0.558, 0.442, 0.000, 0, 0
+        0.000, 0.242, 0.758, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Deuteranopia: Dificuldade com verde -->
+    <filter id="deuteranopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.625, 0.375, 0.000, 0, 0
+        0.700, 0.300, 0.000, 0, 0
+        0.000, 0.300, 0.700, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Tritanopia: Dificuldade com azul -->
+    <filter id="tritanopia-filter">
+      <feColorMatrix type="matrix" values="
+        0.950, 0.050, 0.000, 0, 0
+        0.000, 0.433, 0.567, 0, 0
+        0.000, 0.475, 0.525, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Protanomaly: Fraqueza com vermelho (parcial) -->
+    <filter id="protanomaly-filter">
+      <feColorMatrix type="matrix" values="
+        0.817, 0.183, 0.000, 0, 0
+        0.333, 0.667, 0.000, 0, 0
+        0.000, 0.125, 0.875, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Deuteranomaly: Fraqueza com verde (parcial) -->
+    <filter id="deuteranomaly-filter">
+      <feColorMatrix type="matrix" values="
+        0.800, 0.200, 0.000, 0, 0
+        0.258, 0.742, 0.000, 0, 0
+        0.000, 0.142, 0.858, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Tritanomaly: Fraqueza com azul (parcial) -->
+    <filter id="tritanomaly-filter">
+      <feColorMatrix type="matrix" values="
+        0.967, 0.033, 0.000, 0, 0
+        0.000, 0.733, 0.267, 0, 0
+        0.000, 0.183, 0.817, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Achromatopsia: Visão em escala de cinza (monocromático) -->
+    <filter id="achromatopsia-filter">
+      <feColorMatrix type="matrix" values="
+        0.299, 0.587, 0.114, 0, 0
+        0.299, 0.587, 0.114, 0, 0
+        0.299, 0.587, 0.114, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+    
+    <!-- Achromatomaly: Fraqueza monocromática (parcial) -->
+    <filter id="achromatomaly-filter">
+      <feColorMatrix type="matrix" values="
+        0.618, 0.320, 0.062, 0, 0
+        0.163, 0.775, 0.062, 0, 0
+        0.163, 0.320, 0.516, 0, 0
+        0.000, 0.000, 0.000, 1, 0
+      "/>
+    </filter>
+  </defs>
+</svg>

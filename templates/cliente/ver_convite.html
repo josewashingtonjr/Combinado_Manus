@@ -1,0 +1,287 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Convite: {{ invite.service_title }} - Sistema Combinado{% endblock %}
+
+{% block cliente_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Detalhes do Convite</h1>
+    <a href="{{ url_for('cliente.convites') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<!-- Status do Convite -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% set current_state = invite.get_current_state() %}
+        <div class="alert 
+            {% if current_state.value == 'pendente' and not invite.is_expired %}alert-warning
+            {% elif current_state.value == 'aceito' or invite.status == 'convertido_pre_ordem' %}alert-success
+            {% elif invite.status == 'recusado' %}alert-danger
+            {% elif invite.status == 'expirado' or invite.is_expired %}alert-secondary
+            {% elif invite.status == 'convertido' %}alert-primary
+            {% else %}alert-secondary{% endif %}" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    {% if current_state.value == 'pendente' and not invite.is_expired %}
+                        <i class="fas fa-clock fa-2x"></i>
+                    {% elif current_state.value == 'aceito' or invite.status == 'convertido_pre_ordem' %}
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    {% elif invite.status == 'recusado' %}
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    {% elif invite.status == 'expirado' or invite.is_expired %}
+                        <i class="fas fa-calendar-times fa-2x"></i>
+                    {% elif invite.status == 'convertido' %}
+                        <i class="fas fa-exchange-alt fa-2x"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h5 class="mb-1">
+                        {% if current_state.value == 'pendente' and not invite.is_expired %}
+                            Aguardando Resposta do Prestador
+                        {% elif current_state.value == 'aceito' or invite.status == 'convertido_pre_ordem' %}
+                            Convite Aceito!
+                        {% elif invite.status == 'recusado' %}
+                            Convite Recusado
+                        {% elif invite.status == 'expirado' or invite.is_expired %}
+                            Convite Expirado
+                        {% elif invite.status == 'convertido' %}
+                            Convertido em Ordem de Serviço
+                        {% endif %}
+                    </h5>
+                    <p class="mb-0">
+                        {% if current_state.value == 'pendente' and not invite.is_expired %}
+                            O prestador tem até {{ invite.expires_at.strftime('%d/%m/%Y') }} para responder.
+                        {% elif current_state.value == 'aceito' or invite.status == 'convertido_pre_ordem' %}
+                            O prestador aceitou seu convite. Uma pré-ordem foi criada para negociação.
+                            {% if invite.pre_order %}
+                            <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=invite.pre_order.id) }}" class="btn btn-sm btn-light ms-2">
+                                <i class="fas fa-handshake me-1"></i>Ver Pré-Ordem
+                            </a>
+                            {% endif %}
+                        {% elif invite.status == 'recusado' %}
+                            O prestador não pôde aceitar este convite.
+                        {% elif invite.status == 'expirado' or invite.is_expired %}
+                            Este convite expirou sem resposta.
+                        {% elif invite.status == 'convertido' %}
+                            Este convite foi convertido em uma ordem de serviço.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detalhes do Convite -->
+<div class="row">
+    <div class="col-lg-8 col-md-7">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Serviço</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="text-primary mb-3">{{ invite.service_title }}</h4>
+                
+                <div class="mb-4">
+                    <h6><i class="fas fa-align-left me-2"></i>Descrição:</h6>
+                    <p class="text-muted">{{ invite.service_description }}</p>
+                </div>
+                
+                {% if invite.service_category %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-tools me-2"></i>Categoria:</h6>
+                    <span class="badge bg-secondary">{{ invite.service_category|title }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <h6><i class="fas fa-phone me-2"></i>Prestador:</h6>
+                        <p>{{ invite.invited_phone }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <h6><i class="fas fa-calendar me-2"></i>Data de Entrega:</h6>
+                        <p class="text-primary fw-bold">{{ invite.delivery_date.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h6><i class="fas fa-calendar-plus me-2"></i>Enviado em:</h6>
+                        <p>{{ invite.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <h6><i class="fas fa-calendar-times me-2"></i>Expira em:</h6>
+                        <p class="text-danger">{{ invite.expires_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-5">
+        <!-- Informações Financeiras -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Valor do Serviço</h6>
+            </div>
+            <div class="card-body">
+                <div class="h3 text-primary mb-0">
+                    <i class="fas fa-tag me-2"></i>{{ invite.original_value|format_currency }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Link do Convite -->
+        {% if invite.status == 'pendente' and not invite.is_expired %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-share-alt me-2"></i>Compartilhar Convite</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-2">Envie este link para o prestador:</p>
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control form-control-sm" id="inviteLink" 
+                           value="{{ url_for('auth.convite_acesso', token=invite.token, _external=True) }}" readonly>
+                    <button class="btn btn-outline-primary" type="button" onclick="copyInviteLink()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <div id="copyFeedback" class="text-success small" style="display: none;">
+                    <i class="fas fa-check me-1"></i>Link copiado!
+                </div>
+                
+                <!-- Botões de compartilhamento -->
+                <div class="d-grid gap-2 mt-3">
+                    <a href="https://wa.me/?text=Olá! Você recebeu um convite para um serviço: {{ url_for('auth.convite_acesso', token=invite.token, _external=True) }}" 
+                       target="_blank" class="btn btn-success">
+                        <i class="fab fa-whatsapp me-2"></i>Enviar por WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Status e Ações -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info me-2"></i>Status</h6>
+            </div>
+            <div class="card-body">
+                {% if invite.status == 'pendente' and not invite.is_expired %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-hourglass-half me-2"></i>
+                        <strong>Aguardando</strong><br>
+                        O prestador ainda não respondeu.
+                    </div>
+                    
+                    <p class="text-muted small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Quando o prestador aceitar, você poderá negociar valores na tela de pré-ordem.
+                    </p>
+                    
+                {% elif invite.status == 'aceito' or invite.status == 'convertido_pre_ordem' %}
+                    <div class="alert alert-success mb-3">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Aceito!</strong><br>
+                        O prestador aceitou seu convite.
+                        {% if invite.status == 'convertido_pre_ordem' %}
+                        Uma pré-ordem foi criada para negociação.
+                        {% endif %}
+                    </div>
+                    
+                    {% if invite.pre_order %}
+                    <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=invite.pre_order.id) }}" 
+                       class="btn btn-success btn-lg w-100" style="min-height: 56px;">
+                        <i class="fas fa-handshake me-2"></i>Ver Pré-Ordem
+                    </a>
+                    <p class="text-muted small mt-2 text-center">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Negocie valores e prazos na pré-ordem antes de confirmar.
+                    </p>
+                    {% endif %}
+                    
+                {% elif invite.status == 'convertido' %}
+                    <div class="alert alert-primary mb-3">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        <strong>Convertido!</strong><br>
+                        Este convite virou uma ordem de serviço.
+                    </div>
+                    
+                    {% if invite.order_id %}
+                    <a href="{{ url_for('cliente.ver_ordem', order_id=invite.order_id) }}" 
+                       class="btn btn-primary btn-lg w-100" style="min-height: 56px;">
+                        <i class="fas fa-eye me-2"></i>Ver Ordem
+                    </a>
+                    {% endif %}
+                    
+                {% elif invite.status == 'recusado' %}
+                    <div class="alert alert-danger mb-3">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>Recusado</strong><br>
+                        O prestador não pôde aceitar.
+                        {% if invite.rejection_reason %}
+                            <hr class="my-2">
+                            <small>Motivo: {{ invite.rejection_reason }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="{{ url_for('cliente.criar_convite') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-plus me-2"></i>Criar Novo Convite
+                    </a>
+                    
+                {% elif invite.status == 'expirado' or invite.is_expired %}
+                    <div class="alert alert-secondary mb-3">
+                        <i class="fas fa-calendar-times me-2"></i>
+                        <strong>Expirado</strong><br>
+                        O prazo para resposta acabou.
+                    </div>
+                    
+                    <a href="{{ url_for('cliente.criar_convite') }}" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fas fa-redo me-2"></i>Reenviar Convite
+                    </a>
+                {% endif %}
+                
+                <!-- Excluir convites finalizados -->
+                {% if invite.status in ['recusado', 'expirado'] %}
+                    <hr class="my-3">
+                    <form method="POST" action="{{ url_for('cliente.excluir_convite', invite_id=invite.id) }}" 
+                          onsubmit="return confirm('Excluir este convite?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-trash me-2"></i>Excluir Convite
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyInviteLink() {
+    const linkInput = document.getElementById('inviteLink');
+    const feedback = document.getElementById('copyFeedback');
+    
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(linkInput.value).then(function() {
+        feedback.style.display = 'block';
+        setTimeout(function() {
+            feedback.style.display = 'none';
+        }, 3000);
+    }).catch(function() {
+        // Fallback para navegadores antigos
+        document.execCommand('copy');
+        feedback.style.display = 'block';
+        setTimeout(function() {
+            feedback.style.display = 'none';
+        }, 3000);
+    });
+}
+</script>
+{% endblock %}

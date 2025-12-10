@@ -1,0 +1,30 @@
+{# 
+  Skeleton Loading - Lista de Ordens
+  Componente de skeleton para lista de ordens
+  Requirements: 8.2
+  
+  Parâmetros:
+  - count: número de itens skeleton (padrão: 3)
+#}
+
+{% set skeleton_count = count|default(3) %}
+
+<div class="skeleton-ordens-list" role="status" aria-busy="true" aria-label="Carregando lista de ordens...">
+    {% for i in range(skeleton_count) %}
+    <div class="skeleton-ordem-list-item">
+        <div class="skeleton-ordem-list-left">
+            <div class="skeleton skeleton-text-title"></div>
+            <div class="skeleton skeleton-text-subtitle"></div>
+            <div class="skeleton skeleton-text-short"></div>
+        </div>
+
+        <div class="skeleton-ordem-list-right">
+            <div class="skeleton skeleton-badge"></div>
+            <div class="skeleton skeleton-text" style="width: 100px; height: 24px;"></div>
+            <div class="skeleton skeleton-button-small"></div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <span class="sr-only">Carregando {{ skeleton_count }} ordens...</span>
+</div>

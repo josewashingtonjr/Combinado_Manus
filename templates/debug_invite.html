@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Convite de Serviço</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .debug-success { border-color: #198754; background-color: #d1e7dd; }
+        .debug-warning { border-color: #ffc107; background-color: #fff3cd; }
+        .debug-error { border-color: #dc3545; background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">🔍 Debug - Convite de Serviço</h4>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Informações do Convite -->
+                        <h5>📋 Informações do Convite</h5>
+                        <div class="debug-info debug-success">
+                            <strong>Token:</strong> {{ token }}<br>
+                            <strong>Título:</strong> {{ invite.service_title }}<br>
+                            <strong>Cliente:</strong> {{ invite.client.nome }}<br>
+                            <strong>Valor:</strong> R$ {{ "%.2f"|format(invite.original_value) }}<br>
+                            <strong>Status:</strong> {{ invite.status }}<br>
+                            <strong>Expirado:</strong> {{ invite.is_expired }}
+                        </div>
+                        
+                        <!-- Teste de JavaScript -->
+                        <h5>🔧 Teste de JavaScript</h5>
+                        <div class="debug-info" id="jsTest">
+                            Testando JavaScript...
+                        </div>
+                        
+                        <!-- Teste de Formulário -->
+                        <h5>📝 Teste de Formulário</h5>
+                        <div class="debug-info">
+                            <form method="POST" action="{{ url_for('auth.aceitar_convite_inicial', token=token) }}" id="debugForm">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Método de Teste:</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="testMethod" id="method1" value="direct" checked>
+                                        <label class="form-check-label" for="method1">
+                                            Submit Direto (sem JavaScript)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="testMethod" id="method2" value="confirm">
+                                        <label class="form-check-label" for="method2">
+                                            Com Confirmação JavaScript
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-success" id="testSubmit">
+                                    🧪 Testar Aceitação
+                                </button>
+                                
+                                <button type="button" class="btn btn-info" onclick="runDiagnostics()">
+                                    🔍 Executar Diagnósticos
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Logs de Debug -->
+                        <h5>📊 Logs de Debug</h5>
+                        <div class="debug-info" id="debugLogs">
+                            Aguardando testes...
+                        </div>
+                        
+                        <!-- Link Original -->
+                        <h5>🔗 Link Original</h5>
+                        <div class="debug-info">
+                            <a href="{{ url_for('auth.convite_acesso', token=token) }}" class="btn btn-outline-primary">
+                                ← Voltar ao Convite Original
+                            </a>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Teste de JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            const jsTest = document.getElementById('jsTest');
+            
+            try {
+                // Testar funcionalidades básicas
+                const tests = [
+                    { name: 'DOM Ready', test: () => document.readyState === 'complete' || document.readyState === 'interactive' },
+                    { name: 'Console Available', test: () => typeof console !== 'undefined' },
+                    { name: 'Confirm Available', test: () => typeof confirm === 'function' },
+                    { name: 'Form Element', test: () => document.getElementById('debugForm') !== null },
+                    { name: 'Submit Button', test: () => document.getElementById('testSubmit') !== null },
+                    { name: 'Local Storage', test: () => typeof localStorage !== 'undefined' },
+                    { name: 'Session Storage', test: () => typeof sessionStorage !== 'undefined' }
+                ];
+                
+                let results = '<strong>Testes JavaScript:</strong><br>';
+                let allPassed = true;
+                
+                tests.forEach(test => {
+                    try {
+                        const passed = test.test();
+                        results += `${passed ? '✅' : '❌'} ${test.name}<br>`;
+                        if (!passed) allPassed = false;
+                    } catch (e) {
+                        results += `❌ ${test.name} (Erro: ${e.message})<br>`;
+                        allPassed = false;
+                    }
+                });
+                
+                jsTest.innerHTML = results;
+                jsTest.className = `debug-info ${allPassed ? 'debug-success' : 'debug-warning'}`;
+                
+            } catch (e) {
+                jsTest.innerHTML = `❌ Erro no teste JavaScript: ${e.message}`;
+                jsTest.className = 'debug-info debug-error';
+            }
+        });
+        
+        // Configurar formulário
+        document.getElementById('debugForm').addEventListener('submit', function(e) {
+            const method = document.querySelector('input[name="testMethod"]:checked').value;
+            const logs = document.getElementById('debugLogs');
+            
+            if (method === 'confirm') {
+                if (!confirm('Teste: Tem certeza que deseja aceitar este convite?\n\nVocê será direcionado para fazer login ou criar sua conta.')) {
+                    e.preventDefault();
+                    logs.innerHTML = '❌ Usuário cancelou na confirmação';
+                    logs.className = 'debug-info debug-warning';
+                    return false;
+                }
+            }
+            
+            logs.innerHTML = '⏳ Enviando formulário...';
+            logs.className = 'debug-info debug-warning';
+            
+            // Log adicional
+            console.log('Debug: Formulário sendo enviado', {
+                method: method,
+                action: this.action,
+                token: '{{ token }}'
+            });
+            
+            return true;
+        });
+        
+        // Função de diagnósticos
+        function runDiagnostics() {
+            const logs = document.getElementById('debugLogs');
+            
+            let diagnostics = '<strong>Diagnósticos Completos:</strong><br><br>';
+            
+            // Informações do navegador
+            diagnostics += '<strong>Navegador:</strong><br>';
+            diagnostics += `User Agent: ${navigator.userAgent}<br>`;
+            diagnostics += `Cookies Habilitados: ${navigator.cookieEnabled}<br>`;
+            diagnostics += `JavaScript Habilitado: ✅<br>`;
+            diagnostics += `Linguagem: ${navigator.language}<br><br>`;
+            
+            // Informações da página
+            diagnostics += '<strong>Página:</strong><br>';
+            diagnostics += `URL: ${window.location.href}<br>`;
+            diagnostics += `Protocolo: ${window.location.protocol}<br>`;
+            diagnostics += `Host: ${window.location.host}<br><br>`;
+            
+            // Informações do formulário
+            const form = document.getElementById('debugForm');
+            diagnostics += '<strong>Formulário:</strong><br>';
+            diagnostics += `Action: ${form.action}<br>`;
+            diagnostics += `Method: ${form.method}<br>`;
+            diagnostics += `Elementos: ${form.elements.length}<br><br>`;
+            
+            // Teste de CSRF
+            const csrfToken = document.querySelector('input[name="csrf_token"]');
+            diagnostics += '<strong>CSRF:</strong><br>';
+            diagnostics += `Token presente: ${csrfToken ? '✅' : '❌'}<br>`;
+            if (csrfToken) {
+                diagnostics += `Token: ${csrfToken.value.substring(0, 20)}...<br>`;
+            }
+            
+            logs.innerHTML = diagnostics;
+            logs.className = 'debug-info debug-success';
+        }
+        
+        // Log de carregamento
+        console.log('Debug page loaded for token: {{ token }}');
+    </script>
+</body>
+</html>

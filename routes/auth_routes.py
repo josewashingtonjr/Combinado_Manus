@@ -5,8 +5,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from models import User, AdminUser
 from services.auth_service import login_required
 from services.invite_service import InviteService
+from datetime import datetime
 import secrets
-# CSRF removido para APIs AJAX
 
 # Criar blueprint para autenticação
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -69,6 +69,10 @@ def user_login():
         primary_role = roles[0] if roles else 'cliente'
         session['active_role'] = primary_role
         
+        # Inicializar timeout de sessão
+        from services.session_timeout_manager import SessionTimeoutManager
+        SessionTimeoutManager.initialize_session_timeout()
+        
         return jsonify({
             'ok': True,
             'token': token,
@@ -97,6 +101,10 @@ def user_login():
     
     session['user_id'] = user.id
     session['user_role'] = user.roles
+    
+    # Inicializar timeout de sessão
+    from services.session_timeout_manager import SessionTimeoutManager
+    SessionTimeoutManager.initialize_session_timeout()
     
     # Redirecionamento baseado no papel
     roles = user.roles.split(',') if user.roles else []
@@ -145,6 +153,10 @@ def admin_login():
         session['admin_token'] = token
         session['admin_role'] = admin.papel
         
+        # Inicializar timeout de sessão
+        from services.session_timeout_manager import SessionTimeoutManager
+        SessionTimeoutManager.initialize_session_timeout()
+        
         return jsonify({
             'ok': True,
             'token': token,
@@ -172,6 +184,10 @@ def admin_login():
     
     session['admin_id'] = admin.id
     session['admin_role'] = admin.papel
+    
+    # Inicializar timeout de sessão
+    from services.session_timeout_manager import SessionTimeoutManager
+    SessionTimeoutManager.initialize_session_timeout()
     
     return redirect(url_for('admin.dashboard'))
 
@@ -252,12 +268,20 @@ def register():
 @auth_bp.route('/logout')
 def logout():
     """Logout de usuários (clientes/prestadores)"""
+    # Invalidar sessão no sistema de timeout
+    from services.session_timeout_manager import SessionTimeoutManager
+    SessionTimeoutManager.invalidate_session()
+    
     session.clear()
     return redirect(url_for('home.index'))
 
 @auth_bp.route('/admin-logout')
 def admin_logout():
     """Logout de administradores"""
+    # Invalidar sessão no sistema de timeout
+    from services.session_timeout_manager import SessionTimeoutManager
+    SessionTimeoutManager.invalidate_session()
+    
     session.clear()
     return redirect(url_for('auth.admin_login'))
 
@@ -299,24 +323,33 @@ def convite_acesso(token):
         # Verificar se o convite existe e é válido
         invite = InviteService.get_invite_by_token(token)
         
+        # Verificar se o convite já foi aceito e tem pré-ordem
+        if invite.status == 'convertido_pre_ordem' and invite.pre_order:
+            flash('Este convite já foi aceito! Faça login para acessar a pré-ordem.', 'info')
+            return redirect(url_for('auth.user_login'))
+        
+        # Verificar se o convite já foi aceito (aguardando aceitação mútua)
+        if invite.status == 'aceito':
+            flash('Este convite já foi aceito! Faça login para continuar.', 'info')
+            return redirect(url_for('auth.user_login'))
+        
         # Verificar se o convite pode ser acessado
-        if invite.status != 'pendente' or invite.is_expired:
-            flash('Este convite não está mais disponível ou expirou.', 'error')
+        if invite.status not in ['pendente'] or invite.is_expired:
+            if invite.status == 'recusado':
+                flash('Este convite foi recusado.', 'error')
+            elif invite.status == 'expirado' or invite.is_expired:
+                flash('Este convite expirou.', 'error')
+            elif invite.status == 'convertido':
+                flash('Este convite já foi convertido em ordem de serviço.', 'info')
+            else:
+                flash('Este convite não está mais disponível.', 'error')
             return redirect(url_for('auth.user_login'))
         
-        # Verificar se já existe um usuário com este telefone
-        existing_user = User.query.filter_by(phone=invite.invited_phone).first()
-        
-        if existing_user:
-            # Usuário já existe, redirecionar para login
-            flash(f'Você já tem uma conta. Faça login para ver o convite.', 'info')
-            session['invite_token'] = token  # Salvar token para após o login
-            return redirect(url_for('auth.user_login'))
-        else:
-            # Usuário não existe, mostrar página de cadastro
-            return render_template('auth/convite_cadastro.html', 
-                                 invite=invite, 
-                                 token=token)
+        # Sempre mostrar a página de convite com opções de cadastro e login
+        # Qualquer prestador pode responder ao convite, não apenas o telefone específico
+        return render_template('auth/convite_cadastro.html', 
+                             invite=invite, 
+                             token=token)
         
     except ValueError as e:
         flash('Convite não encontrado ou inválido.', 'error')
@@ -336,8 +369,14 @@ def processar_cadastro_convite(token):
             flash('Este convite não está mais disponível ou expirou.', 'error')
             return redirect(url_for('auth.user_login'))
         
+        # Verificar se o usuário aceitou o convite na sessão
+        if session.get('invite_accepted') != token:
+            flash('Você precisa aceitar o convite primeiro.', 'warning')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
         # Obter dados do formulário
         nome = request.form.get('nome', '').strip()
+        email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         cpf = request.form.get('cpf', '').strip()
@@ -345,30 +384,30 @@ def processar_cadastro_convite(token):
         terms = request.form.get('terms') == 'on'
         
         # Validações
-        if not nome or not password or not cpf:
-            flash('Nome, senha e CPF são obrigatórios.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+        if not nome or not email or not password or not cpf:
+            flash('Nome, email, senha e CPF são obrigatórios.', 'error')
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
         if len(password) < 6:
             flash('A senha deve ter pelo menos 6 caracteres.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
         if password != confirm_password:
             flash('As senhas não coincidem.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
         if not terms:
             flash('Você deve aceitar os termos de uso.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
-        # Verificar se já existe usuário com este telefone ou CPF
+        # Verificar se já existe usuário com este email, telefone ou CPF
         existing_user = User.query.filter(
-            (User.phone == invite.invited_phone) | (User.cpf == cpf)
+            (User.email == email) | (User.phone == phone) | (User.cpf == cpf)
         ).first()
         
         if existing_user:
-            flash('Já existe uma conta com este telefone ou CPF.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+            flash('Já existe uma conta com este email, telefone ou CPF.', 'error')
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
         # Criar novo usuário
         from models import db
@@ -376,7 +415,7 @@ def processar_cadastro_convite(token):
             nome=nome,
             email=email,  # Email fornecido no cadastro
             cpf=cpf,
-            phone=invite.invited_phone,  # Telefone do convite
+            phone=phone,  # Telefone fornecido no cadastro (pode ser diferente do convite)
             roles='cliente,prestador',  # Papéis duais por padrão
             active=True
         )
@@ -392,7 +431,18 @@ def processar_cadastro_convite(token):
         # Fazer login automático
         session['user_id'] = user.id
         session['user_role'] = user.roles
-        session['invite_token'] = token  # Manter token para redirecionamento
+        session['active_role'] = 'prestador'  # Definir papel ativo como prestador
+        
+        # Inicializar timeout de sessão
+        from services.session_timeout_manager import SessionTimeoutManager
+        SessionTimeoutManager.initialize_session_timeout()
+        
+        # Armazenar token do convite na sessão para permitir acesso
+        session['invite_token'] = token
+        
+        # Limpar dados de aceitação do convite da sessão
+        session.pop('invite_accepted', None)
+        session.pop('invite_acceptance_time', None)
         
         flash(f'Conta criada com sucesso! Bem-vindo, {nome}!', 'success')
         
@@ -404,7 +454,7 @@ def processar_cadastro_convite(token):
         return redirect(url_for('auth.user_login'))
     except Exception as e:
         flash(f'Erro ao criar conta: {str(e)}', 'error')
-        return redirect(url_for('auth.convite_acesso', token=token))
+        return redirect(url_for('auth.convite_login_cadastro', token=token))
 
 @auth_bp.route('/convite/<token>/login', methods=['POST'])
 def processar_login_convite(token):
@@ -417,6 +467,11 @@ def processar_login_convite(token):
             flash('Este convite não está mais disponível ou expirou.', 'error')
             return redirect(url_for('auth.user_login'))
         
+        # Verificar se o usuário aceitou o convite na sessão
+        if session.get('invite_accepted') != token:
+            flash('Você precisa aceitar o convite primeiro.', 'warning')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
         # Obter dados do formulário
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
@@ -424,24 +479,37 @@ def processar_login_convite(token):
         # Validações
         if not email or not password:
             flash('Email e senha são obrigatórios.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
-        # Verificar se o email corresponde ao convite
-        if email != invite.invited_email:
-            flash('Este convite foi enviado para outro email.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
-        
-        # Buscar usuário
+        # Buscar usuário pelo email fornecido
         user = User.query.filter_by(email=email, active=True).first()
         
+        # Verificar se o usuário existe e a senha está correta
         if not user or not user.check_password(password):
             flash('Email ou senha incorretos.', 'error')
-            return redirect(url_for('auth.convite_acesso', token=token))
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
+        
+        # Verificar se o usuário tem o papel de prestador
+        user_roles = user.roles.split(',') if user.roles else []
+        if 'prestador' not in user_roles:
+            flash('Apenas prestadores podem responder a convites. Entre em contato com o suporte para ativar seu perfil de prestador.', 'warning')
+            return redirect(url_for('auth.convite_login_cadastro', token=token))
         
         # Fazer login
         session['user_id'] = user.id
         session['user_role'] = user.roles
+        session['active_role'] = 'prestador'  # Definir papel ativo como prestador
+        
+        # Inicializar timeout de sessão
+        from services.session_timeout_manager import SessionTimeoutManager
+        SessionTimeoutManager.initialize_session_timeout()
+        
+        # Armazenar token do convite na sessão para permitir acesso
         session['invite_token'] = token
+        
+        # Limpar dados de aceitação do convite da sessão
+        session.pop('invite_accepted', None)
+        session.pop('invite_acceptance_time', None)
         
         flash(f'Login realizado com sucesso! Bem-vindo, {user.nome}!', 'success')
         
@@ -453,4 +521,142 @@ def processar_login_convite(token):
         return redirect(url_for('auth.user_login'))
     except Exception as e:
         flash(f'Erro ao fazer login: {str(e)}', 'error')
+        return redirect(url_for('auth.convite_login_cadastro', token=token))
+
+@auth_bp.route('/convite/<token>/aceitar-inicial', methods=['POST'])
+def aceitar_convite_inicial(token):
+    """Aceitar convite inicialmente e redirecionar para login/cadastro"""
+    try:
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite.status != 'pendente' or invite.is_expired:
+            flash('Este convite não está mais disponível ou expirou.', 'error')
+            return redirect(url_for('auth.user_login'))
+        
+        # Armazenar na sessão que o usuário aceitou o convite
+        session['invite_accepted'] = token
+        session['invite_acceptance_time'] = datetime.now().isoformat()
+        
+        flash('Convite aceito! Agora complete seu cadastro ou faça login para prosseguir.', 'success')
+        
+        # Redirecionar para página de login/cadastro com contexto do convite
+        return redirect(url_for('auth.convite_login_cadastro', token=token))
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash(f'Erro ao aceitar convite: {str(e)}', 'error')
         return redirect(url_for('auth.convite_acesso', token=token))
+
+@auth_bp.route('/convite/<token>/login-cadastro')
+def convite_login_cadastro(token):
+    """Página de login/cadastro após aceitar o convite"""
+    try:
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite.status != 'pendente' or invite.is_expired:
+            flash('Este convite não está mais disponível ou expirou.', 'error')
+            return redirect(url_for('auth.user_login'))
+        
+        # Verificar se o usuário aceitou o convite na sessão
+        if session.get('invite_accepted') != token:
+            flash('Você precisa aceitar o convite primeiro.', 'warning')
+            return redirect(url_for('auth.convite_acesso', token=token))
+        
+        # Verificar se a aceitação não expirou (30 minutos)
+        acceptance_time_str = session.get('invite_acceptance_time')
+        if acceptance_time_str:
+            from datetime import datetime, timedelta
+            acceptance_time = datetime.fromisoformat(acceptance_time_str)
+            if datetime.now() - acceptance_time > timedelta(minutes=30):
+                session.pop('invite_accepted', None)
+                session.pop('invite_acceptance_time', None)
+                flash('Sua aceitação expirou. Aceite o convite novamente.', 'warning')
+                return redirect(url_for('auth.convite_acesso', token=token))
+        
+        return render_template('auth/convite_login_cadastro.html', 
+                             invite=invite, 
+                             token=token)
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash('Erro ao processar convite. Tente novamente.', 'error')
+        return redirect(url_for('auth.user_login'))
+
+@auth_bp.route('/convite/<token>/rejeitar', methods=['POST'])
+def rejeitar_convite(token):
+    """Rejeitar um convite sem necessidade de login"""
+    try:
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        if invite.status != 'pendente' or invite.is_expired:
+            flash('Este convite não está mais disponível ou expirou.', 'error')
+            return redirect(url_for('auth.user_login'))
+        
+        # Obter motivo da rejeição (opcional)
+        reason = request.form.get('reason', '').strip()
+        
+        # Rejeitar o convite (sem provider_id para rejeição anônima)
+        InviteService.reject_invite(invite, reason=reason)
+        
+        flash('Convite rejeitado com sucesso. O cliente foi notificado e poderá enviar para outro prestador.', 'info')
+        
+        # Redirecionar para página inicial
+        return redirect(url_for('home.index'))
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash(f'Erro ao rejeitar convite: {str(e)}', 'error')
+        return redirect(url_for('auth.convite_acesso', token=token))
+
+
+@auth_bp.route('/convite/<token>/debug')
+def debug_convite(token):
+    """Página de debug para convites"""
+    try:
+        from services.invite_service import InviteService
+        
+        # Verificar se o convite existe e é válido
+        invite = InviteService.get_invite_by_token(token)
+        
+        return render_template('debug_invite.html', 
+                             invite=invite, 
+                             token=token)
+        
+    except ValueError as e:
+        flash('Convite não encontrado ou inválido.', 'error')
+        return redirect(url_for('auth.user_login'))
+    except Exception as e:
+        flash('Erro ao processar convite. Tente novamente.', 'error')
+        return redirect(url_for('auth.user_login'))
+
+
+@auth_bp.route('/convite/<token>/propor-alteracao', methods=['POST'])
+def propor_alteracao_convite(token):
+    """
+    DEPRECATED: Rota removida conforme otimização mobile.
+    
+    A negociação de termos agora acontece na pré-ordem após aceitação mútua.
+    Esta rota agora apenas informa o usuário sobre o novo fluxo.
+    
+    Novo fluxo simplificado:
+    1. Aceite o convite
+    2. Uma pré-ordem será criada automaticamente
+    3. Negocie os termos na tela de pré-ordem
+    
+    Requirements: Otimização Mobile - Requirement 1 (Simplificação da Interface de Convites)
+    """
+    flash(
+        'A negociação de valores foi simplificada! '
+        'Aceite o convite primeiro e depois você poderá negociar os termos na pré-ordem.',
+        'info'
+    )
+    return redirect(url_for('auth.convite_acesso', token=token))

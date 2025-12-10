@@ -44,13 +44,49 @@
     </div>
 </div>
 
+<!-- Informação sobre convite copiado -->
+{% if copied_invite %}
+<div class="alert alert-info mb-4">
+    <div class="d-flex align-items-start">
+        <i class="fas fa-copy fa-2x me-3 mt-1"></i>
+        <div class="flex-grow-1">
+            <h6 class="alert-heading mb-2">Dados Copiados de Convite Rejeitado</h6>
+            <p class="mb-2">
+                <strong>Convite original:</strong> {{ copied_invite.service_title }}<br>
+                <strong>Rejeitado em:</strong> {{ copied_invite.responded_at.strftime('%d/%m/%Y às %H:%M') if copied_invite.responded_at else 'Data não disponível' }}
+            </p>
+            {% if copied_invite.rejection_reason %}
+            <div class="mt-2">
+                <strong>Motivo da rejeição:</strong>
+                <blockquote class="blockquote-footer mt-1 mb-0">
+                    {{ copied_invite.rejection_reason }}
+                </blockquote>
+            </div>
+            {% endif %}
+            {% if edit_mode %}
+            <div class="mt-2">
+                <small class="text-muted">
+                    <i class="fas fa-edit me-1"></i>
+                    Modo de edição ativo - revise e ajuste as informações baseado no feedback recebido.
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Formulário de Criação -->
 <div class="card">
     <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Dados do Convite</h5>
+        <h5 class="mb-0">
+            <i class="fas fa-{{ 'edit' if copied_invite else 'plus' }} me-2"></i>
+            {{ 'Recriar Convite' if copied_invite else 'Dados do Convite' }}
+        </h5>
     </div>
     <div class="card-body">
         <form method="POST" action="{{ url_for('cliente.processar_criar_convite') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
@@ -58,6 +94,7 @@
                             <i class="fas fa-phone me-1"></i>Telefone do Prestador *
                         </label>
                         <input type="tel" class="form-control" id="invited_phone" name="invited_phone" 
+                               value="{{ copied_invite.invited_phone if copied_invite else '' }}"
                                placeholder="(11) 99999-9999" required>
                         <div class="form-text">Telefone para envio do link do convite</div>
                     </div>
@@ -67,7 +104,8 @@
                         <label for="delivery_date" class="form-label">
                             <i class="fas fa-calendar me-1"></i>Data de Entrega *
                         </label>
-                        <input type="date" class="form-control" id="delivery_date" name="delivery_date" required>
+                        <input type="date" class="form-control" id="delivery_date" name="delivery_date" 
+                               value="{{ copied_invite.delivery_date.strftime('%Y-%m-%d') if copied_invite else '' }}" required>
                         <div class="form-text">Quando você precisa que o serviço seja concluído</div>
                     </div>
                 </div>
@@ -80,6 +118,7 @@
                             <i class="fas fa-tag me-1"></i>Título do Serviço *
                         </label>
                         <input type="text" class="form-control" id="service_title" name="service_title" 
+                               value="{{ copied_invite.service_title if copied_invite else '' }}"
                                placeholder="Ex: Limpeza Residencial, Consultoria, Desenvolvimento..." 
                                maxlength="200" required>
                         <div class="form-text">Título claro e objetivo do serviço solicitado</div>
@@ -119,7 +158,7 @@
                     <i class="fas fa-align-left me-1"></i>Descrição Detalhada *
                 </label>
                 <textarea class="form-control" id="service_description" name="service_description" 
-                          rows="4" placeholder="Descreva detalhadamente o que você precisa..." required></textarea>
+                          rows="4" placeholder="Descreva detalhadamente o que você precisa..." required>{{ copied_invite.service_description if copied_invite else '' }}</textarea>
                 <div class="form-text">Seja específico sobre o que você espera do serviço</div>
             </div>
             
@@ -132,6 +171,7 @@
                         <div class="input-group">
                             <span class="input-group-text">R$</span>
                             <input type="number" class="form-control" id="original_value" name="original_value" 
+                                   value="{{ copied_invite.original_value if copied_invite else '' }}"
                                    min="1" step="0.01" placeholder="0,00" required>
                         </div>
                         <div class="form-text">Valor que você está disposto a pagar pelo serviço</div>

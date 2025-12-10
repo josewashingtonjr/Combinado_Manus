@@ -20,7 +20,17 @@ from config import TestConfig
 @pytest.fixture(scope='session')
 def app():
     """Cria uma instância da aplicação para testes"""
-    app = create_app(TestConfig)
+    from flask import Flask
+    
+    app = Flask(__name__)
+    app.config.from_object(TestConfig)
+    
+    # Inicializar db com a aplicação
+    db.init_app(app)
+    
+    # Registrar blueprints necessários para os testes
+    from routes.admin_routes import admin_bp
+    app.register_blueprint(admin_bp)
     
     with app.app_context():
         db.create_all()

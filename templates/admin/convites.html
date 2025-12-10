@@ -1,0 +1,243 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Gestão de Convites - Admin{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-3">
+                <i class="fas fa-envelope"></i> Gestão de Convites
+            </h2>
+        </div>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Convites</h5>
+                    <h2 class="mb-0">{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pendentes</h5>
+                    <h2 class="mb-0">{{ stats.pendentes }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Aceitos</h5>
+                    <h2 class="mb-0">{{ stats.aceitos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Recusados</h5>
+                    <h2 class="mb-0">{{ stats.recusados }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Expirados</h5>
+                    <h2 class="mb-0">{{ stats.expirados }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Convertidos</h5>
+                    <h2 class="mb-0">{{ stats.convertidos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-dark text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Com Propostas Ativas</h5>
+                    <h2 class="mb-0">{{ stats.com_propostas }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Filtrar por Status</label>
+                    <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                        <option value="todos" {% if status_filter == 'todos' %}selected{% endif %}>Todos</option>
+                        <option value="pendente" {% if status_filter == 'pendente' %}selected{% endif %}>Pendentes</option>
+                        <option value="aceito" {% if status_filter == 'aceito' %}selected{% endif %}>Aceitos</option>
+                        <option value="convertido_pre_ordem" {% if status_filter == 'convertido_pre_ordem' %}selected{% endif %}>Pré-Ordens</option>
+                        <option value="recusado" {% if status_filter == 'recusado' %}selected{% endif %}>Recusados</option>
+                        <option value="expirado" {% if status_filter == 'expirado' %}selected{% endif %}>Expirados</option>
+                        <option value="convertido" {% if status_filter == 'convertido' %}selected{% endif %}>Convertidos em Ordem</option>
+                    </select>
+                </div>
+                {% if status_filter != 'todos' %}
+                <div class="col-md-8 d-flex align-items-end">
+                    <div class="alert alert-info mb-0 py-2">
+                        <i class="fas fa-filter me-2"></i>Filtro ativo: <strong>{{ status_filter|title }}</strong>
+                        <a href="{{ url_for('admin.convites') }}" class="btn btn-sm btn-outline-primary ms-3">
+                            <i class="fas fa-times me-1"></i>Limpar Filtro
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Convites -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Lista de Convites</h5>
+        </div>
+        <div class="card-body">
+            {% if convites.items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Serviço</th>
+                            <th>Telefone Convidado</th>
+                            <th>Valor Original</th>
+                            <th>Valor Efetivo</th>
+                            <th>Status</th>
+                            <th>Data Criação</th>
+                            <th>Data Entrega</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for convite in convites.items %}
+                        <tr>
+                            <td>{{ convite.id }}</td>
+                            <td>
+                                {% if convite.client %}
+                                    {{ convite.client.nome }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ convite.service_title }}</strong>
+                                {% if convite.service_category %}
+                                <br><small class="text-muted">{{ convite.service_category }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ convite.invited_phone }}</td>
+                            <td>R$ {{ "%.2f"|format(convite.original_value|float) }}</td>
+                            <td>
+                                {% if convite.effective_value %}
+                                    R$ {{ "%.2f"|format(convite.effective_value|float) }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if convite.status == 'pendente' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% elif convite.status == 'aceito' %}
+                                    <span class="badge bg-success">Aceito</span>
+                                {% elif convite.status == 'convertido_pre_ordem' %}
+                                    <span class="badge bg-success">Pré-Ordem</span>
+                                {% elif convite.status == 'recusado' %}
+                                    <span class="badge bg-danger">Recusado</span>
+                                {% elif convite.status == 'expirado' %}
+                                    <span class="badge bg-secondary">Expirado</span>
+                                {% elif convite.status == 'convertido' %}
+                                    <span class="badge bg-info">Convertido</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ convite.status }}</span>
+                                {% endif %}
+                                
+                                {% if convite.has_active_proposal %}
+                                    <br><span class="badge bg-primary mt-1">Com Proposta</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ convite.created_at.strftime('%d/%m/%Y %H:%M') if convite.created_at else 'N/A' }}</td>
+                            <td>{{ convite.delivery_date.strftime('%d/%m/%Y') if convite.delivery_date else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.ver_convite', invite_id=convite.id) }}" 
+                                   class="btn btn-sm btn-info" 
+                                   title="Ver Detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            {% if convites.pages > 1 %}
+            <nav aria-label="Navegação de convites">
+                <ul class="pagination justify-content-center mt-4">
+                    {% if convites.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.convites', page=convites.prev_num, status=status_filter) }}">
+                            Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in convites.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == convites.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.convites', page=page_num, status=status_filter) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if convites.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.convites', page=convites.next_num, status=status_filter) }}">
+                            Próxima
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Nenhum convite encontrado com os filtros selecionados.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

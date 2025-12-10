@@ -143,6 +143,15 @@
                         </td>
                         <td>
                             <strong class="text-success">R$ {{ "%.2f"|format(solicitacao.amount) }}</strong>
+                            {% if solicitacao.admin_notes and 'Quantidade ajustada' in solicitacao.admin_notes %}
+                            <span class="badge bg-warning text-dark ms-1" 
+                                  data-bs-toggle="tooltip" 
+                                  data-bs-placement="top" 
+                                  data-bs-html="true"
+                                  title="<strong>Quantidade Ajustada</strong><br>{{ solicitacao.admin_notes.split('[AJUSTE]')[1].split('\n')[0] if '[AJUSTE]' in solicitacao.admin_notes else 'Valor foi ajustado pelo administrador' }}">
+                                <i class="fas fa-edit"></i> Ajustado
+                            </span>
+                            {% endif %}
                         </td>
                         <td>
                             <span class="badge bg-info">
@@ -151,13 +160,28 @@
                         </td>
                         <td>
                             {% if solicitacao.receipt_filename %}
-                                <a href="{{ url_for('admin.view_receipt', request_id=solicitacao.id) }}" 
-                                   class="btn btn-sm btn-outline-primary" target="_blank" title="Ver comprovante">
-                                    <i class="fas fa-file-image"></i>
-                                </a>
-                                <br><small class="text-muted">{{ solicitacao.receipt_original_name[:20] }}...</small>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-success me-2" 
+                                          data-bs-toggle="tooltip" 
+                                          data-bs-placement="top" 
+                                          title="Comprovante anexado">
+                                        <i class="fas fa-paperclip"></i>
+                                    </span>
+                                    <a href="{{ url_for('admin.view_receipt', request_id=solicitacao.id) }}" 
+                                       class="btn btn-sm btn-primary" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       title="Visualizar comprovante em nova aba">
+                                        <i class="fas fa-eye me-1"></i>Ver Comprovante
+                                    </a>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-file me-1"></i>{{ solicitacao.receipt_original_name[:25] }}{% if solicitacao.receipt_original_name|length > 25 %}...{% endif %}
+                                </small>
                             {% else %}
-                                <span class="text-muted">Sem comprovante</span>
+                                <span class="text-muted">
+                                    <i class="fas fa-times-circle me-1"></i>Sem comprovante
+                                </span>
                             {% endif %}
                         </td>
                         <td>
@@ -179,8 +203,18 @@
                         <td>
                             {% if solicitacao.status == 'pending' %}
                             <div class="btn-group btn-group-sm" role="group">
+                                <!-- Botão de ajustar quantidade -->
+                                <button type="button" 
+                                        class="btn btn-warning btn-sm btn-ajustar" 
+                                        data-request-id="{{ solicitacao.id }}"
+                                        data-amount="{{ solicitacao.amount }}"
+                                        title="Ajustar Quantidade">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
                                 <!-- Formulários diretos para teste -->
                                 <form method="POST" action="{{ url_for('admin.processar_solicitacao_token', request_id=solicitacao.id) }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="action" value="approve">
                                     <button type="submit" class="btn btn-success btn-sm" 
                                             onclick="return confirm('Aprovar esta solicitação?')"
@@ -189,6 +223,7 @@
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ url_for('admin.processar_solicitacao_token', request_id=solicitacao.id) }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="action" value="reject">
                                     <button type="submit" class="btn btn-danger btn-sm" 
                                             onclick="return confirm('Rejeitar esta solicitação?')"
@@ -196,8 +231,8 @@
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </form>
-                                <button type="button" class="btn btn-info btn-sm" 
-                                        onclick="console.log('Botão detalhes clicado'); verDetalhes({{ solicitacao.id }})"
+                                <button type="button" class="btn btn-info btn-sm btn-detalhes" 
+                                        data-request-id="{{ solicitacao.id }}"
                                         title="Ver Detalhes">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -234,6 +269,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="processarForm" method="POST" onsubmit="console.log('Form sendo submetido:', this.action, 'Action:', document.getElementById('modalAction').value)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="modal-body">
                     <input type="hidden" name="action" id="modalAction">
                     
@@ -256,12 +292,154 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Ajustar Quantidade -->
+<div class="modal fade" id="ajustarQuantidadeModal" tabindex="-1" aria-labelledby="ajustarQuantidadeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ajustarQuantidadeModalLabel">
+                    <i class="fas fa-edit me-2"></i>Ajustar Quantidade de Tokens
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="ajustarQuantidadeForm">
+                <div class="modal-body">
+                    <input type="hidden" id="adjust_request_id" name="request_id">
+                    
+                    <div class="alert alert-info">
+                        <strong><i class="fas fa-info-circle me-1"></i>Valor Solicitado Original:</strong> 
+                        <span class="fs-5">R$ <span id="original_amount">0,00</span></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_amount" class="form-label">
+                            Nova Quantidade (R$) <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" 
+                               class="form-control" 
+                               id="new_amount" 
+                               name="new_amount" 
+                               step="0.01" 
+                               min="0.01" 
+                               required
+                               placeholder="0,00">
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Insira o valor que corresponde ao pagamento efetivamente realizado
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="adjustment_reason" class="form-label">
+                            Justificativa (Opcional)
+                        </label>
+                        <textarea class="form-control" 
+                                  id="adjustment_reason" 
+                                  name="adjustment_reason" 
+                                  rows="3" 
+                                  maxlength="500"
+                                  placeholder="Ex: Comprovante mostra pagamento de apenas R$ 50,00"></textarea>
+                        <div class="form-text">
+                            <span id="char_count">0</span>/500 caracteres
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Salvar Ajuste
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Melhorias visuais para comprovantes */
+    .badge.bg-success {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .btn-primary {
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Garantir que modais tenham z-index adequado */
+    .modal {
+        z-index: 1050;
+    }
+    
+    .modal-backdrop {
+        z-index: 1040;
+    }
+    
+    /* Estilo para ícone de comprovante */
+    .badge.bg-success i {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+    
+    /* Melhorar aparência da tabela */
+    .table td {
+        vertical-align: middle;
+    }
+    
+    /* Estilo para alertas flutuantes */
+    .alert-floating {
+        animation: slideInRight 0.3s ease-out;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Script atualizado em 2025-11-20 14:45 - Versão 2.0
+// Se você está vendo erros, pressione Ctrl+F5 para recarregar completamente a página
+
 // Filtros por status
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== Script de Solicitações v2.0 carregado ===');
+    console.log('DOM carregado');
+    console.log('Bootstrap disponível?', typeof bootstrap !== 'undefined');
+    console.log('Modal element existe?', document.getElementById('ajustarQuantidadeModal') !== null);
+    
+    // Inicializar tooltips do Bootstrap
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
     const tabs = document.querySelectorAll('#status-tabs button');
     const tableRows = document.querySelectorAll('tbody tr');
     
@@ -286,7 +464,396 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    
+    // Event listener para contador de caracteres
+    const adjustmentReasonField = document.getElementById('adjustment_reason');
+    if (adjustmentReasonField) {
+        adjustmentReasonField.addEventListener('input', function() {
+            const charCount = document.getElementById('char_count');
+            if (charCount) {
+                charCount.textContent = this.value.length;
+            }
+        });
+    }
+    
+    // Event listener para botões de ajuste
+    const botoesAjustar = document.querySelectorAll('.btn-ajustar');
+    console.log('Botões de ajuste encontrados:', botoesAjustar.length);
+    botoesAjustar.forEach(botao => {
+        botao.addEventListener('click', function() {
+            const requestId = parseInt(this.getAttribute('data-request-id'));
+            const amount = parseFloat(this.getAttribute('data-amount'));
+            console.log('Botão de ajuste clicado:', requestId, amount);
+            abrirModalAjuste(requestId, amount);
+        });
+    });
+    
+    // Event listener para botões de detalhes
+    const botoesDetalhes = document.querySelectorAll('.btn-detalhes');
+    console.log('Botões de detalhes encontrados:', botoesDetalhes.length);
+    botoesDetalhes.forEach(botao => {
+        botao.addEventListener('click', function() {
+            const requestId = parseInt(this.getAttribute('data-request-id'));
+            console.log('Botão de detalhes clicado:', requestId);
+            verDetalhes(requestId);
+        });
+    });
+    
+    /**
+     * Handler do formulário de ajuste de quantidade
+     * 
+     * Este event listener é acionado quando o administrador submete o formulário
+     * de ajuste no modal. Ele intercepta o submit padrão, faz uma requisição AJAX
+     * para o backend e atualiza a interface dinamicamente baseado na resposta.
+     * 
+     * Fluxo de execução:
+     * 1. Previne o comportamento padrão do formulário (que recarregaria a página)
+     * 2. Coleta os dados do formulário (ID, novo valor, justificativa)
+     * 3. Faz requisição POST para o endpoint de ajuste
+     * 4. Processa a resposta do servidor
+     * 5. Em caso de sucesso:
+     *    - Fecha o modal
+     *    - Exibe alerta de sucesso
+     *    - Atualiza a tabela dinamicamente
+     * 6. Em caso de erro:
+     *    - Exibe alerta de erro com a mensagem retornada
+     * 
+     * Benefícios da abordagem AJAX:
+     * - Não recarrega a página (melhor UX)
+     * - Feedback imediato ao usuário
+     * - Mantém o estado da página (filtros, posição de scroll, etc)
+     * - Permite validação e tratamento de erros mais refinado
+     */
+    const ajustarForm = document.getElementById('ajustarQuantidadeForm');
+    console.log('Formulário de ajuste encontrado?', ajustarForm !== null);
+    if (ajustarForm) {
+        ajustarForm.addEventListener('submit', async function(e) {
+            console.log('Submit do formulário de ajuste interceptado');
+            // PASSO 1: Prevenir comportamento padrão do formulário
+            // Isso evita que a página seja recarregada
+            e.preventDefault();
+            
+            // PASSO 2: Coletar dados do formulário
+            const requestId = document.getElementById('adjust_request_id').value;
+            const newAmount = document.getElementById('new_amount').value;
+            const reason = document.getElementById('adjustment_reason').value;
+            
+            try {
+                // PASSO 3: Fazer requisição AJAX para o backend
+                const url = `/admin/tokens/solicitacoes/${requestId}/ajustar`;
+                console.log('URL da requisição:', url);
+                console.log('Dados a enviar:', {
+                    new_amount: parseFloat(newAmount),
+                    adjustment_reason: reason
+                });
+                console.log('CSRF Token:', getCsrfToken());
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()  // Token CSRF para segurança
+                    },
+                    body: JSON.stringify({
+                        new_amount: parseFloat(newAmount),  // Converter para número
+                        adjustment_reason: reason
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                // PASSO 4: Parsear resposta JSON do servidor
+                const data = await response.json();
+                
+                // PASSO 5: Processar resposta baseado no sucesso
+                if (data.success) {
+                    // SUCESSO: Fechar modal
+                    const modalElement = document.getElementById('ajustarQuantidadeModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Exibir mensagem de sucesso
+                    showAlert('success', data.message);
+                    
+                    // Atualizar valor na tabela sem recarregar a página
+                    updateTableAmount(requestId, data.new_amount);
+                } else {
+                    // ERRO: Exibir mensagem de erro retornada pelo servidor
+                    showAlert('error', data.error);
+                }
+            } catch (error) {
+                // PASSO 6: Tratar erros de rede ou parsing
+                // Isso captura erros como falha de conexão, timeout, JSON inválido, etc
+                showAlert('error', 'Erro ao ajustar quantidade: ' + error.message);
+            }
+        });
+    }
 });
+
+/**
+ * Abre o modal de ajuste de quantidade de tokens
+ * 
+ * Esta função é chamada quando o administrador clica no botão "Ajustar Quantidade"
+ * na tabela de solicitações. Ela prepara o modal com os dados da solicitação
+ * selecionada e o exibe para o usuário.
+ * 
+ * @param {number} requestId - ID da solicitação a ser ajustada
+ * @param {number} currentAmount - Valor atual da solicitação em tokens
+ * 
+ * Fluxo de execução:
+ * 1. Preenche o campo oculto com o ID da solicitação
+ * 2. Exibe o valor original formatado (com vírgula decimal)
+ * 3. Limpa os campos de entrada (novo valor e justificativa)
+ * 4. Reseta o contador de caracteres
+ * 5. Exibe o modal usando Bootstrap
+ * 
+ * Exemplo de uso:
+ *   <button onclick="abrirModalAjuste(123, 100.00)">Ajustar</button>
+ */
+function abrirModalAjuste(requestId, currentAmount) {
+    console.log('=== abrirModalAjuste v2.0 ===');
+    console.log('Parâmetros:', { requestId, currentAmount });
+    
+    // Aguardar um tick para garantir que o DOM está pronto
+    setTimeout(() => {
+        // Preencher campo oculto com ID da solicitação
+        const requestIdField = document.getElementById('adjust_request_id');
+        console.log('Campo adjust_request_id:', requestIdField);
+        if (requestIdField) {
+            requestIdField.value = requestId;
+        } else {
+            console.error('Campo adjust_request_id não encontrado!');
+        }
+        
+        // Exibir valor original formatado
+        const originalAmountField = document.getElementById('original_amount');
+        console.log('Campo original_amount:', originalAmountField);
+        if (originalAmountField) {
+            originalAmountField.textContent = currentAmount.toFixed(2).replace('.', ',');
+        } else {
+            console.error('Campo original_amount não encontrado!');
+        }
+        
+        // Limpar campo de novo valor
+        const newAmountField = document.getElementById('new_amount');
+        console.log('Campo new_amount:', newAmountField);
+        if (newAmountField) {
+            newAmountField.value = '';
+        } else {
+            console.error('Campo new_amount não encontrado!');
+        }
+        
+        // Limpar campo de justificativa
+        const adjustmentReasonField = document.getElementById('adjustment_reason');
+        console.log('Campo adjustment_reason:', adjustmentReasonField);
+        if (adjustmentReasonField) {
+            adjustmentReasonField.value = '';
+        } else {
+            console.error('Campo adjustment_reason não encontrado!');
+        }
+        
+        // Resetar contador de caracteres
+        const charCountField = document.getElementById('char_count');
+        console.log('Campo char_count:', charCountField);
+        if (charCountField) {
+            charCountField.textContent = '0';
+        } else {
+            console.error('Campo char_count não encontrado!');
+        }
+        
+        // Criar instância do modal Bootstrap e exibir
+        const modalElement = document.getElementById('ajustarQuantidadeModal');
+        console.log('Modal element:', modalElement);
+        
+        if (!modalElement) {
+            console.error('Modal ajustarQuantidadeModal não encontrado!');
+            alert('Erro: Modal não encontrado. Por favor, recarregue a página (Ctrl+F5).');
+            return;
+        }
+        
+        try {
+            const modal = new bootstrap.Modal(modalElement);
+            console.log('Modal criado:', modal);
+            modal.show();
+            console.log('Modal exibido com sucesso!');
+        } catch (error) {
+            console.error('Erro ao criar/mostrar modal:', error);
+            alert('Erro ao abrir modal: ' + error.message + '\nPor favor, recarregue a página (Ctrl+F5).');
+        }
+    }, 10);
+}
+
+/**
+ * Atualiza o valor exibido na tabela após um ajuste bem-sucedido
+ * 
+ * Esta função é chamada após o servidor confirmar que o ajuste foi realizado
+ * com sucesso. Ela atualiza dinamicamente a célula da tabela que exibe o valor
+ * da solicitação, adicionando um badge "Ajustado" para indicar visualmente
+ * que houve uma modificação.
+ * 
+ * @param {number} requestId - ID da solicitação que foi ajustada
+ * @param {number} newAmount - Novo valor da solicitação após o ajuste
+ * 
+ * Fluxo de execução:
+ * 1. Localiza a linha da tabela correspondente ao requestId
+ * 2. Localiza a célula que exibe o valor (3ª coluna)
+ * 3. Atualiza o HTML da célula com:
+ *    - Novo valor formatado (com vírgula decimal)
+ *    - Badge "Ajustado" com ícone de edição
+ *    - Tooltip explicativo
+ * 4. Inicializa o tooltip do Bootstrap no novo badge
+ * 
+ * Benefícios:
+ * - Atualização sem recarregar a página (melhor UX)
+ * - Feedback visual imediato do ajuste
+ * - Mantém o usuário na mesma posição da tabela
+ */
+function updateTableAmount(requestId, newAmount) {
+    // Localizar linha da tabela usando o atributo data-request-id
+    const row = document.querySelector(`tr[data-request-id="${requestId}"]`);
+    if (row) {
+        // Localizar célula de valor (3ª coluna: ID, Usuário, Valor)
+        const amountCell = row.querySelector('td:nth-child(3)');
+        if (amountCell) {
+            // Formatar valor para padrão brasileiro (vírgula como separador decimal)
+            const formattedAmount = newAmount.toFixed(2).replace('.', ',');
+            
+            // Atualizar HTML da célula com novo valor e badge "Ajustado"
+            amountCell.innerHTML = `
+                <strong class="text-success">R$ ${formattedAmount}</strong>
+                <span class="badge bg-warning text-dark ms-1" 
+                      data-bs-toggle="tooltip" 
+                      data-bs-placement="top" 
+                      title="Quantidade foi ajustada pelo administrador">
+                    <i class="fas fa-edit"></i> Ajustado
+                </span>
+            `;
+            
+            // Inicializar tooltip do Bootstrap no novo badge
+            // Necessário porque o badge foi criado dinamicamente
+            const newBadge = amountCell.querySelector('[data-bs-toggle="tooltip"]');
+            if (newBadge) {
+                new bootstrap.Tooltip(newBadge);
+            }
+        }
+    }
+}
+
+/**
+ * Exibe um alerta flutuante (toast) no canto superior direito da tela
+ * 
+ * Esta função cria e exibe alertas temporários para fornecer feedback visual
+ * ao usuário sobre o resultado de operações (sucesso ou erro). Os alertas
+ * aparecem com animação, permanecem visíveis por 5 segundos e podem ser
+ * fechados manualmente pelo usuário.
+ * 
+ * @param {string} type - Tipo do alerta: 'success' para sucesso, qualquer outro valor para erro
+ * @param {string} message - Mensagem a ser exibida no alerta
+ * 
+ * Características:
+ * - Posicionamento fixo no canto superior direito
+ * - Animação de entrada (slideInRight)
+ * - Auto-fechamento após 5 segundos
+ * - Botão de fechar manual
+ * - Remove alertas anteriores antes de exibir novo
+ * - Estilo diferenciado para sucesso (verde) e erro (vermelho)
+ * 
+ * Fluxo de execução:
+ * 1. Remove alertas anteriores para evitar acúmulo
+ * 2. Cria novo elemento div com classes Bootstrap
+ * 3. Aplica estilos inline para posicionamento fixo
+ * 4. Define ícone e cor baseado no tipo
+ * 5. Adiciona conteúdo HTML com ícone, título e mensagem
+ * 6. Anexa ao body do documento
+ * 7. Agenda remoção automática após 5 segundos
+ * 
+ * Exemplo de uso:
+ *   showAlert('success', 'Quantidade ajustada com sucesso');
+ *   showAlert('error', 'Erro ao processar solicitação');
+ */
+function showAlert(type, message) {
+    // PASSO 1: Remover alertas anteriores para evitar múltiplos alertas na tela
+    const existingAlerts = document.querySelectorAll('.alert-floating');
+    existingAlerts.forEach(alert => alert.remove());
+    
+    // PASSO 2: Criar novo elemento div para o alerta
+    const alertDiv = document.createElement('div');
+    
+    // PASSO 3: Definir classes Bootstrap baseadas no tipo
+    // 'success' usa alert-success (verde), outros usam alert-danger (vermelho)
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show alert-floating`;
+    
+    // PASSO 4: Aplicar estilos inline para posicionamento fixo no canto superior direito
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';  // Z-index alto para ficar acima de outros elementos
+    alertDiv.style.minWidth = '300px';
+    alertDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';  // Sombra para destaque
+    
+    // PASSO 5: Definir ícone baseado no tipo
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+    
+    // PASSO 6: Construir HTML interno do alerta
+    alertDiv.innerHTML = `
+        <i class="fas ${icon} me-2"></i>
+        <strong>${type === 'success' ? 'Sucesso!' : 'Erro!'}</strong> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // PASSO 7: Adicionar alerta ao body do documento
+    document.body.appendChild(alertDiv);
+    
+    // PASSO 8: Agendar remoção automática após 5 segundos
+    setTimeout(() => {
+        // Remover classe 'show' para iniciar animação de saída
+        alertDiv.classList.remove('show');
+        // Aguardar animação terminar (150ms) antes de remover do DOM
+        setTimeout(() => alertDiv.remove(), 150);
+    }, 5000);
+}
+
+/**
+ * Obtém o token CSRF da página para proteção contra ataques CSRF
+ * 
+ * CSRF (Cross-Site Request Forgery) é um tipo de ataque onde um site malicioso
+ * tenta fazer requisições em nome do usuário autenticado. O token CSRF é uma
+ * medida de segurança que valida que a requisição realmente veio da nossa aplicação.
+ * 
+ * Esta função busca o token CSRF que foi inserido no HTML pelo Flask e o retorna
+ * para ser incluído nos cabeçalhos das requisições AJAX.
+ * 
+ * @returns {string} O valor do token CSRF ou string vazia se não encontrado
+ * 
+ * Fluxo de execução:
+ * 1. Busca no DOM por um input com name="csrf_token"
+ * 2. Se encontrado, retorna o valor do input
+ * 3. Se não encontrado, retorna string vazia
+ * 
+ * Uso típico:
+ *   fetch('/api/endpoint', {
+ *       method: 'POST',
+ *       headers: {
+ *           'X-CSRFToken': getCsrfToken()
+ *       }
+ *   });
+ * 
+ * Nota de segurança:
+ * - O token CSRF deve ser incluído em TODAS as requisições POST, PUT, DELETE
+ * - O Flask valida automaticamente o token no backend
+ * - Requisições sem token válido são rejeitadas com erro 400
+ */
+function getCsrfToken() {
+    // Buscar input oculto que contém o token CSRF
+    // Este input é gerado automaticamente pelo Flask-WTF
+    const tokenInput = document.querySelector('input[name="csrf_token"]');
+    
+    // Retornar valor do token ou string vazia se não encontrado
+    return tokenInput ? tokenInput.value : '';
+}
 
 // Processar solicitação
 function processarSolicitacao(requestId, action) {
@@ -389,13 +956,5 @@ Data: ${data}
     
     alert(detalhes);
 }
-
-// Atualizar página a cada 30 segundos para solicitações pendentes
-setInterval(function() {
-    const pendingCount = {{ stats.pendentes or 0 }};
-    if (pendingCount > 0) {
-        location.reload();
-    }
-}, 30000);
 </script>
 {% endblock %}

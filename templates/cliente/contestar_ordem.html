@@ -1,0 +1,571 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Contestar Ordem #{{ order.id }} - Sistema Combinado{% endblock %}
+
+{% block cliente_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Contestar Ordem #{{ order.id }}</h1>
+    <a href="{{ url_for('order.ver_ordem', order_id=order.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar
+    </a>
+</div>
+
+<!-- Alerta Importante com Prazo -->
+<div class="alert alert-danger border-danger shadow-sm mb-4">
+    <div class="d-flex align-items-start">
+        <div class="me-3">
+            <i class="fas fa-exclamation-triangle fa-3x"></i>
+        </div>
+        <div class="flex-grow-1">
+            <h5 class="mb-3"><i class="fas fa-clock me-2"></i>Atenção: Prazo para Contestar!</h5>
+            <p class="mb-2"><strong>Você tem até {{ order.confirmation_deadline.strftime('%d/%m/%Y às %H:%M') }} para abrir esta contestação.</strong></p>
+            <div class="alert alert-light mb-3">
+                <i class="fas fa-hourglass-half me-2"></i>
+                <strong>Tempo restante: <span id="time-remaining">{{ "%.1f"|format(order.hours_until_auto_confirmation) }}</span> horas</strong>
+            </div>
+            <p class="mb-2"><strong>Ao contestar este serviço, você deve estar ciente de que:</strong></p>
+            <ul class="mb-0">
+                <li>Uma taxa de contestação de <strong>{{ (order.contestation_fee_at_creation or 10.00)|format_currency }}</strong> será cobrada da sua garantia bloqueada</li>
+                <li>Um administrador analisará as provas apresentadas por ambas as partes</li>
+                <li>A decisão do administrador é <strong>final e irrevogável</strong></li>
+                <li><strong>Se você ganhar:</strong> receberá o valor total do serviço de volta ({{ order.value|format_currency }})</li>
+                <li><strong>Se perder:</strong> o prestador receberá o pagamento e você perderá a taxa de contestação</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da Ordem -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações da Ordem</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6 class="text-muted"><i class="fas fa-briefcase me-2"></i>Serviço:</h6>
+                <p class="mb-0"><strong>{{ order.title }}</strong></p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted"><i class="fas fa-user me-2"></i>Prestador:</h6>
+                <p class="mb-0"><strong>{{ order.provider.nome }}</strong></p>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h6 class="text-muted"><i class="fas fa-dollar-sign me-2"></i>Valor do Serviço:</h6>
+                <p class="mb-0 h4 text-success">{{ order.value|format_currency }}</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-muted"><i class="fas fa-check-circle me-2"></i>Marcado como concluído em:</h6>
+                <p class="mb-0">{{ order.completed_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+            </div>
+        </div>
+        {% if order.description %}
+        <div class="row">
+            <div class="col-12">
+                <h6 class="text-muted"><i class="fas fa-align-left me-2"></i>Descrição do Serviço:</h6>
+                <p class="mb-0">{{ order.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Formulário de Contestação -->
+<form method="POST" action="{{ url_for('order.contestar_servico', order_id=order.id) }}" enctype="multipart/form-data" id="dispute-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Motivo da Contestação</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="reason" class="form-label fw-bold">
+                    <i class="fas fa-comment-dots me-2"></i>Descreva detalhadamente o problema com o serviço *
+                </label>
+                <textarea class="form-control" id="reason" name="reason" rows="8" required
+                          minlength="20" maxlength="1000"
+                          placeholder="Explique o que aconteceu, por que você não está satisfeito com o serviço, e quais problemas foram encontrados. Seja específico e detalhado..."></textarea>
+                <div class="form-text d-flex justify-content-between">
+                    <span>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Mínimo 20 caracteres, máximo 1000. Seja claro e objetivo.
+                    </span>
+                    <span id="char-count" class="text-muted">0 / 1000</span>
+                </div>
+                <div id="reason-validation" class="invalid-feedback">
+                    Por favor, forneça uma descrição com pelo menos 20 caracteres.
+                </div>
+            </div>
+            
+            <div class="alert alert-info border-info">
+                <h6 class="mb-2">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Dicas para uma contestação eficaz:</strong>
+                </h6>
+                <ul class="mb-0">
+                    <li><strong>Seja específico:</strong> Descreva exatamente o que está errado com o serviço</li>
+                    <li><strong>Compare expectativa vs realidade:</strong> O que foi combinado e o que foi entregue</li>
+                    <li><strong>Mencione a gravidade:</strong> O serviço foi parcialmente ou totalmente mal executado?</li>
+                    <li><strong>Adicione provas:</strong> Fotos, vídeos ou documentos que comprovem o problema</li>
+                    <li><strong>Seja objetivo:</strong> Evite emoções excessivas, foque nos fatos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-camera me-2"></i>Provas (Opcional mas Altamente Recomendado)</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="evidence" class="form-label fw-bold">
+                    <i class="fas fa-paperclip me-2"></i>Adicione fotos, vídeos ou documentos que comprovem o problema
+                </label>
+                <input type="file" class="form-control" id="evidence" name="evidence" 
+                       multiple accept=".jpg,.jpeg,.png,.pdf,.mp4" data-max-files="5" data-max-size="10485760">
+                <div class="form-text">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Você pode adicionar até <strong>5 arquivos</strong>. 
+                    Formatos aceitos: <strong>JPG, JPEG, PNG, PDF, MP4</strong>.
+                    <br>
+                    <i class="fas fa-weight-hanging me-1"></i>
+                    Tamanho máximo por arquivo: <strong>10MB</strong>
+                </div>
+            </div>
+            
+            <!-- Preview de Arquivos -->
+            <div id="file-preview" class="mb-3" style="display: none;">
+                <h6 class="mb-2"><i class="fas fa-eye me-2"></i>Arquivos Selecionados:</h6>
+                <div id="file-list" class="list-group"></div>
+            </div>
+            
+            <div class="alert alert-warning border-warning">
+                <div class="d-flex align-items-start">
+                    <div class="me-3">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-2"><strong>Importante sobre as provas:</strong></h6>
+                        <ul class="mb-0">
+                            <li><strong>Provas visuais aumentam significativamente suas chances</strong> de ganhar a contestação</li>
+                            <li>Tire <strong>fotos claras e bem iluminadas</strong> que mostrem o problema</li>
+                            <li>Se possível, inclua <strong>fotos de diferentes ângulos</strong></li>
+                            <li>Vídeos podem ser muito úteis para demonstrar problemas funcionais</li>
+                            <li>Documentos (contratos, mensagens) podem servir como prova do que foi combinado</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Custos e Possíveis Resultados</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card bg-light border-warning">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-receipt me-2"></i>Taxa de Contestação
+                            </h6>
+                            <p class="h3 text-warning mb-2">{{ (order.contestation_fee_at_creation or 10.00)|format_currency }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-lock me-1"></i>
+                                Será debitada da sua garantia bloqueada
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light border-primary">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-hand-holding-usd me-2"></i>Valor em Disputa
+                            </h6>
+                            <p class="h3 text-primary mb-2">{{ order.value|format_currency }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-balance-scale me-1"></i>
+                                Valor do serviço contestado
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-light border">
+                <h6 class="mb-3">
+                    <i class="fas fa-gavel me-2"></i>
+                    <strong>Possíveis Resultados da Arbitragem:</strong>
+                </h6>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="text-success mb-2">
+                                    <i class="fas fa-check-circle me-2"></i>Se Você Ganhar:
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Você recebe <strong>{{ order.value|format_currency }}</strong> de volta</li>
+                                    <li>O prestador <strong>não recebe</strong> o pagamento</li>
+                                    <li>A taxa de contestação vai para a plataforma</li>
+                                    <li>Sua reclamação foi considerada válida</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-danger">
+                            <div class="card-body">
+                                <h6 class="text-danger mb-2">
+                                    <i class="fas fa-times-circle me-2"></i>Se Você Perder:
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>O prestador recebe o <strong>pagamento integral</strong></li>
+                                    <li>Você <strong>perde</strong> a taxa de contestação</li>
+                                    <li>A taxa vai para a plataforma</li>
+                                    <li>O serviço foi considerado adequado</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4 shadow-sm border-danger">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fas fa-check-square me-2"></i>Confirmação Obrigatória</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-check mb-3 p-3 bg-light rounded">
+                <input class="form-check-input" type="checkbox" id="confirm" name="confirm" required>
+                <label class="form-check-label" for="confirm">
+                    <strong>Eu confirmo que li e compreendi todas as informações acima, e declaro que:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Li e entendi completamente as <strong>consequências da contestação</strong></li>
+                        <li>Estou ciente da taxa de <strong>{{ (order.contestation_fee_at_creation or 10.00)|format_currency }}</strong> que será cobrada</li>
+                        <li>Todas as <strong>informações fornecidas são verdadeiras</strong> e precisas</li>
+                        <li>A <strong>decisão do administrador será final</strong> e irrevogável</li>
+                        <li>Compreendo os <strong>possíveis resultados</strong> (ganhar ou perder a contestação)</li>
+                        <li>Tenho <strong>provas suficientes</strong> para fundamentar minha contestação</li>
+                    </ul>
+                </label>
+            </div>
+            
+            <div class="alert alert-warning mb-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Atenção:</strong> Esta ação não pode ser desfeita. Certifique-se de que realmente deseja contestar este serviço antes de prosseguir.
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-warning btn-lg" id="submit-btn">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Abrir Contestação
+                </button>
+                <a href="{{ url_for('order.ver_ordem', order_id=order.id) }}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-times me-2"></i>Cancelar e Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Estilos Customizados -->
+<style>
+.file-item {
+    transition: all 0.3s ease;
+}
+
+.file-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.file-icon {
+    font-size: 2rem;
+}
+
+.file-size-valid {
+    color: #28a745;
+}
+
+.file-size-invalid {
+    color: #dc3545;
+}
+
+.remove-file-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-file-btn:hover {
+    transform: scale(1.2);
+    color: #dc3545;
+}
+
+#char-count {
+    font-weight: bold;
+}
+
+#char-count.text-danger {
+    color: #dc3545 !important;
+}
+
+#char-count.text-success {
+    color: #28a745 !important;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .file-icon {
+        font-size: 1.5rem;
+    }
+    
+    .image-preview {
+        max-height: 100px;
+    }
+}
+</style>
+
+<!-- Script para validação e preview de arquivos -->
+<script>
+(function() {
+    'use strict';
+    
+    // Elementos do DOM
+    const reasonTextarea = document.getElementById('reason');
+    const charCount = document.getElementById('char-count');
+    const evidenceInput = document.getElementById('evidence');
+    const filePreview = document.getElementById('file-preview');
+    const fileList = document.getElementById('file-list');
+    const submitBtn = document.getElementById('submit-btn');
+    const disputeForm = document.getElementById('dispute-form');
+    
+    // Configurações
+    const MAX_FILES = 5;
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB em bytes
+    const ALLOWED_TYPES = {
+        'image/jpeg': { icon: 'fa-file-image', color: 'text-primary' },
+        'image/jpg': { icon: 'fa-file-image', color: 'text-primary' },
+        'image/png': { icon: 'fa-file-image', color: 'text-primary' },
+        'application/pdf': { icon: 'fa-file-pdf', color: 'text-danger' },
+        'video/mp4': { icon: 'fa-file-video', color: 'text-info' }
+    };
+    
+    let selectedFiles = [];
+    
+    // Contador de caracteres
+    reasonTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = `${length} / 1000`;
+        
+        if (length < 20) {
+            charCount.classList.remove('text-success');
+            charCount.classList.add('text-danger');
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        } else {
+            charCount.classList.remove('text-danger');
+            charCount.classList.add('text-success');
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        }
+    });
+    
+    // Validação e preview de arquivos
+    evidenceInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        // Validar número de arquivos
+        if (files.length > MAX_FILES) {
+            alert(`Você pode selecionar no máximo ${MAX_FILES} arquivos.`);
+            this.value = '';
+            return;
+        }
+        
+        selectedFiles = [];
+        fileList.innerHTML = '';
+        
+        files.forEach((file, index) => {
+            // Validar tipo de arquivo
+            if (!ALLOWED_TYPES[file.type]) {
+                alert(`Arquivo "${file.name}" não é um formato válido. Use JPG, PNG, PDF ou MP4.`);
+                return;
+            }
+            
+            // Validar tamanho
+            const isValidSize = file.size <= MAX_FILE_SIZE;
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            
+            if (!isValidSize) {
+                alert(`Arquivo "${file.name}" excede o tamanho máximo de 10MB (${sizeMB}MB).`);
+                return;
+            }
+            
+            selectedFiles.push(file);
+            
+            // Criar item de preview
+            const fileItem = createFilePreviewItem(file, index, sizeMB);
+            fileList.appendChild(fileItem);
+        });
+        
+        // Mostrar/ocultar preview
+        if (selectedFiles.length > 0) {
+            filePreview.style.display = 'block';
+        } else {
+            filePreview.style.display = 'none';
+            this.value = '';
+        }
+    });
+    
+    // Criar item de preview
+    function createFilePreviewItem(file, index, sizeMB) {
+        const fileType = ALLOWED_TYPES[file.type];
+        const listItem = document.createElement('div');
+        listItem.className = 'list-group-item file-item d-flex align-items-center justify-content-between';
+        
+        const leftContent = document.createElement('div');
+        leftContent.className = 'd-flex align-items-center flex-grow-1';
+        
+        // Ícone do arquivo
+        const icon = document.createElement('i');
+        icon.className = `fas ${fileType.icon} ${fileType.color} file-icon me-3`;
+        leftContent.appendChild(icon);
+        
+        // Preview de imagem (se for imagem)
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'image-preview me-3';
+                img.alt = file.name;
+                leftContent.insertBefore(img, leftContent.children[1]);
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Informações do arquivo
+        const fileInfo = document.createElement('div');
+        fileInfo.innerHTML = `
+            <div class="fw-bold">${file.name}</div>
+            <small class="text-muted file-size-valid">
+                <i class="fas fa-check-circle me-1"></i>
+                ${sizeMB} MB - Tamanho válido
+            </small>
+        `;
+        leftContent.appendChild(fileInfo);
+        
+        // Botão de remover
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'remove-file-btn text-danger';
+        removeBtn.innerHTML = '<i class="fas fa-times-circle fa-2x"></i>';
+        removeBtn.title = 'Remover arquivo';
+        removeBtn.onclick = function() {
+            removeFile(index);
+        };
+        
+        listItem.appendChild(leftContent);
+        listItem.appendChild(removeBtn);
+        
+        return listItem;
+    }
+    
+    // Remover arquivo
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        
+        // Recriar DataTransfer com arquivos restantes
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        evidenceInput.files = dt.files;
+        
+        // Atualizar preview
+        fileList.innerHTML = '';
+        selectedFiles.forEach((file, idx) => {
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            const fileItem = createFilePreviewItem(file, idx, sizeMB);
+            fileList.appendChild(fileItem);
+        });
+        
+        if (selectedFiles.length === 0) {
+            filePreview.style.display = 'none';
+        }
+    }
+    
+    // Validação do formulário antes de enviar
+    disputeForm.addEventListener('submit', function(e) {
+        const reason = reasonTextarea.value.trim();
+        const confirm = document.getElementById('confirm').checked;
+        
+        // Validar motivo
+        if (reason.length < 20) {
+            e.preventDefault();
+            alert('Por favor, forneça uma descrição com pelo menos 20 caracteres.');
+            reasonTextarea.focus();
+            return false;
+        }
+        
+        // Validar confirmação
+        if (!confirm) {
+            e.preventDefault();
+            alert('Você precisa confirmar que leu e compreendeu todas as informações antes de prosseguir.');
+            return false;
+        }
+        
+        // Confirmar ação crítica
+        const confirmSubmit = confirm(
+            'Você tem certeza que deseja abrir esta contestação?\n\n' +
+            'Esta ação não pode ser desfeita e uma taxa de {{ (order.contestation_fee_at_creation or 10.00)|format_currency }} será cobrada.\n\n' +
+            'Clique em OK para confirmar ou Cancelar para revisar.'
+        );
+        
+        if (!confirmSubmit) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Desabilitar botão para evitar duplo envio
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando Contestação...';
+    });
+    
+    // Prevenir saída acidental
+    let formChanged = false;
+    reasonTextarea.addEventListener('input', function() {
+        formChanged = true;
+    });
+    
+    evidenceInput.addEventListener('change', function() {
+        formChanged = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged && !disputeForm.submitted) {
+            e.preventDefault();
+            e.returnValue = 'Você tem alterações não salvas. Deseja realmente sair?';
+            return e.returnValue;
+        }
+    });
+    
+    disputeForm.addEventListener('submit', function() {
+        formChanged = false;
+        disputeForm.submitted = true;
+    });
+})();
+</script>
+
+{% endblock %}

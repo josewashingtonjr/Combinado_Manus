@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Pré-Ordem Expirada{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-secondary">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-clock"></i> Pré-Ordem Expirada
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-secondary" role="alert">
+                        <h5 class="alert-heading">⏰ Prazo de negociação expirado</h5>
+                        <hr>
+                        <p class="mb-0">
+                            A pré-ordem #{{ pre_order.id }} expirou em {{ pre_order.expires_at.strftime('%d/%m/%Y às %H:%M') }}.
+                            O prazo de negociação terminou sem que ambas as partes chegassem a um acordo.
+                        </p>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Informações da Pré-Ordem Expirada</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Serviço:</strong> {{ pre_order.title }}</li>
+                                <li><strong>Valor:</strong> R$ {{ "%.2f"|format(pre_order.current_value) }}</li>
+                                <li><strong>Criada em:</strong> {{ pre_order.created_at.strftime('%d/%m/%Y às %H:%M') }}</li>
+                                <li><strong>Expirou em:</strong> {{ pre_order.expires_at.strftime('%d/%m/%Y às %H:%M') }}</li>
+                                {% if user_type == 'cliente' %}
+                                <li><strong>Prestador:</strong> {{ other_party_name }}</li>
+                                {% else %}
+                                <li><strong>Cliente:</strong> {{ other_party_name }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-info">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">📊 Status da Negociação</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Cliente:</strong></p>
+                                    {% if pre_order.client_accepted_terms %}
+                                    <span class="badge bg-success">✅ Aceitou os termos</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">❌ Não aceitou</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Prestador:</strong></p>
+                                    {% if pre_order.provider_accepted_terms %}
+                                    <span class="badge bg-success">✅ Aceitou os termos</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">❌ Não aceitou</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if negotiation_rounds %}
+                            <hr>
+                            <p class="mb-0">
+                                <strong>Rodadas de Negociação:</strong> {{ negotiation_rounds }}
+                                {% if negotiation_rounds > 5 %}
+                                <span class="text-muted">(negociação intensa)</span>
+                                {% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="alert alert-success border-success" role="alert">
+                        <i class="fas fa-check-circle"></i> <strong>Sem Prejuízos:</strong> 
+                        Como a pré-ordem expirou antes da conversão em ordem, 
+                        nenhum valor foi bloqueado e não há cobranças ou penalidades para nenhuma das partes.
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle"></i> O que aconteceu:</h6>
+                        <ul class="mb-0">
+                            <li>A pré-ordem foi cancelada automaticamente pelo sistema</li>
+                            <li>Nenhuma ordem foi criada</li>
+                            <li>Nenhum valor foi debitado de nenhuma das partes</li>
+                            <li>O histórico da negociação foi preservado para referência</li>
+                        </ul>
+                    </div>
+
+                    {% if user_type == 'cliente' %}
+                    <div class="alert alert-light border" role="alert">
+                        <h6><i class="fas fa-lightbulb"></i> Próximos Passos:</h6>
+                        <ul class="mb-0">
+                            <li>Se ainda precisa do serviço, crie um novo convite</li>
+                            <li>Considere ajustar os termos para facilitar o acordo</li>
+                            <li>Você pode convidar o mesmo prestador ou buscar outro</li>
+                            <li>Defina prazos mais realistas para a negociação</li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light border" role="alert">
+                        <h6><i class="fas fa-lightbulb"></i> Próximos Passos:</h6>
+                        <ul class="mb-0">
+                            <li>Continue disponível para novos convites</li>
+                            <li>Responda rapidamente às oportunidades futuras</li>
+                            <li>Mantenha seu perfil atualizado</li>
+                            <li>Seja flexível nas negociações para fechar mais acordos</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="text-center mt-4">
+                        {% if user_type == 'cliente' %}
+                        <a href="{{ url_for('cliente.dashboard') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-home"></i> Voltar ao Dashboard
+                        </a>
+                        <a href="{{ url_for('cliente.criar_convite') }}" class="btn btn-success btn-lg ms-2">
+                            <i class="fas fa-plus"></i> Criar Novo Convite
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('prestador.dashboard') }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-home"></i> Voltar ao Dashboard
+                        </a>
+                        <a href="{{ url_for('prestador.convites') }}" class="btn btn-success btn-lg ms-2">
+                            <i class="fas fa-envelope"></i> Ver Convites Disponíveis
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

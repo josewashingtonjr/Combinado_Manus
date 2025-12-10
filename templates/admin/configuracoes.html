@@ -24,6 +24,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="tipo" value="taxas">
                     
                     <div class="mb-3">
@@ -67,6 +68,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="tipo" value="multas">
                     
                     <div class="mb-3">
@@ -117,6 +119,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="tipo" value="seguranca">
                     
                     <div class="mb-3">
@@ -173,6 +176,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="tipo" value="backup">
                     
                     <div class="form-check mb-3">
@@ -249,6 +253,7 @@
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('admin.salvar_configuracoes') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="tipo" value="monitoramento">
                     
                     <div class="form-check mb-3">

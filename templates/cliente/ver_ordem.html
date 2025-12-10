@@ -1,0 +1,677 @@
+{% extends "cliente/base_cliente.html" %}
+
+{% block title %}Ordem #{{ order.id }} - Sistema Combinado{% endblock %}
+
+{% block cliente_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-clipboard-list me-2"></i>Ordem #{{ order.id }}</h1>
+    <a href="{{ url_for('order.listar_ordens') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Voltar às Ordens
+    </a>
+</div>
+
+<!-- Status da Ordem com Contador Regressivo -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        {% if order.status == 'servico_executado' and order.is_near_auto_confirmation %}
+        <!-- Alerta Vermelho para menos de 12 horas -->
+        <div class="alert alert-danger border-danger" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-exclamation-circle fa-3x"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h4 class="mb-2">
+                        <i class="fas fa-clock me-2"></i>URGENTE: Menos de 12 horas restantes!
+                    </h4>
+                    <p class="mb-2">
+                        <strong>Você tem apenas <span id="countdown-display">{{ "%.1f"|format(order.hours_until_auto_confirmation) }}</span> horas para confirmar ou contestar este serviço!</strong>
+                    </p>
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Após <strong id="deadline-time">{{ order.confirmation_deadline.strftime('%d/%m/%Y às %H:%M') }}</strong>, 
+                        o serviço será automaticamente confirmado e o pagamento de <strong>{{ (order.value * 0.95)|format_currency }}</strong> 
+                        será liberado para o prestador.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% elif order.status == 'servico_executado' %}
+        <!-- Alerta Azul para mais de 12 horas -->
+        <div class="alert alert-info border-info" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-hourglass-half fa-2x"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-2">
+                        <i class="fas fa-check-circle me-2"></i>Serviço Concluído - Aguardando sua Confirmação
+                    </h5>
+                    <p class="mb-2">
+                        <strong>Você tem <span id="countdown-display">{{ "%.1f"|format(order.hours_until_auto_confirmation) }}</span> horas para confirmar ou contestar!</strong>
+                    </p>
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Prazo até <strong id="deadline-time">{{ order.confirmation_deadline.strftime('%d/%m/%Y às %H:%M') }}</strong>. 
+                        Após este prazo, o serviço será automaticamente confirmado.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Status Normal -->
+        <div class="alert 
+            {% if order.status == 'aguardando_execucao' %}alert-warning
+            {% elif order.status == 'concluida' %}alert-success
+            {% elif order.status == 'cancelada' %}alert-danger
+            {% elif order.status == 'contestada' %}alert-warning
+            {% elif order.status == 'resolvida' %}alert-secondary
+            {% else %}alert-secondary{% endif %}" role="alert">
+            
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="{{ order.status_icon_class }} fa-2x"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">{{ order.status_display }}</h5>
+                    <p class="mb-0">
+                        {% if order.status == 'aguardando_execucao' %}
+                            O prestador está trabalhando no serviço. Prazo de entrega: {{ order.service_deadline.strftime('%d/%m/%Y') }}
+                        {% elif order.status == 'concluida' %}
+                            Serviço confirmado em {{ order.confirmed_at.strftime('%d/%m/%Y às %H:%M') }}. 
+                            {% if order.auto_confirmed %}
+                                <span class="badge bg-info">Confirmação Automática</span>
+                            {% endif %}
+                            Pagamento processado com sucesso.
+                        {% elif order.status == 'cancelada' %}
+                            Ordem cancelada em {{ order.cancelled_at.strftime('%d/%m/%Y às %H:%M') }}.
+                            {% if order.cancellation_reason %}
+                                <br><small>Motivo: {{ order.cancellation_reason }}</small>
+                            {% endif %}
+                        {% elif order.status == 'contestada' %}
+                            Contestação aberta em {{ order.dispute_opened_at.strftime('%d/%m/%Y às %H:%M') }}. 
+                            Aguardando análise do administrador.
+                        {% elif order.status == 'resolvida' %}
+                            Contestação resolvida em {{ order.dispute_resolved_at.strftime('%d/%m/%Y às %H:%M') }}.
+                            {% if order.dispute_winner == 'client' %}
+                                <span class="badge bg-success">Decisão a seu favor</span>
+                            {% else %}
+                                <span class="badge bg-warning">Decisão a favor do prestador</span>
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Detalhes da Ordem -->
+<div class="row">
+    <div class="col-md-8">
+        <!-- Informações do Serviço -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações do Serviço</h5>
+            </div>
+            <div class="card-body">
+                <h4 class="text-primary mb-3">{{ order.title }}</h4>
+                
+                <div class="mb-4">
+                    <h6 class="text-muted"><i class="fas fa-align-left me-2"></i>Descrição:</h6>
+                    <p>{{ order.description }}</p>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted"><i class="fas fa-user me-2"></i>Prestador:</h6>
+                        <p class="mb-0"><strong>{{ order.provider.nome }}</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted"><i class="fas fa-envelope me-2"></i>Email:</h6>
+                        <p class="mb-0">{{ order.provider.email }}</p>
+                    </div>
+                </div>
+                
+                {% if order.provider.phone %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted"><i class="fas fa-phone me-2"></i>Telefone:</h6>
+                        <p class="mb-0">{{ order.provider.phone }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Histórico de Datas -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Histórico de Datas</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-calendar-plus me-2"></i>Ordem Criada</h6>
+                            <p class="text-muted mb-0">{{ order.created_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-calendar-check me-2"></i>Prazo de Entrega</h6>
+                            <p class="text-muted mb-0">{{ order.service_deadline.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if order.completed_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-check me-2"></i>Marcado como Concluído</h6>
+                            <p class="text-muted mb-0">{{ order.completed_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if order.confirmation_deadline and order.status == 'servico_executado' %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-clock me-2"></i>Prazo para Confirmar</h6>
+                            <p class="text-muted mb-0">{{ order.confirmation_deadline.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            <small class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Faltam <span id="countdown-hours">{{ "%.1f"|format(order.hours_until_auto_confirmation) }}</span> horas
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if order.confirmed_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-check-double me-2"></i>Serviço Confirmado</h6>
+                            <p class="text-muted mb-0">{{ order.confirmed_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                            {% if order.auto_confirmed %}
+                            <span class="badge bg-info">Confirmação Automática</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if order.cancelled_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-danger"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-times me-2"></i>Ordem Cancelada</h6>
+                            <p class="text-muted mb-0">{{ order.cancelled_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if order.dispute_opened_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-exclamation-triangle me-2"></i>Contestação Aberta</h6>
+                            <p class="text-muted mb-0">{{ order.dispute_opened_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if order.dispute_resolved_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-secondary"></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1"><i class="fas fa-gavel me-2"></i>Contestação Resolvida</h6>
+                            <p class="text-muted mb-0">{{ order.dispute_resolved_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Cálculo Detalhado de Valores -->
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Cálculo de Valores</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Valor do Serviço:</label>
+                    <div class="h3 text-success mb-0">{{ order.value|format_currency }}</div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-2">
+                    <small class="text-muted d-flex justify-content-between">
+                        <span><i class="fas fa-building me-1"></i>Taxa da Plataforma ({{ order.platform_fee_percentage_at_creation or 5.0 }}%):</span>
+                        <strong>{{ ((order.value * (order.platform_fee_percentage_at_creation or 5.0) / 100))|format_currency }}</strong>
+                    </small>
+                </div>
+                
+                <div class="mb-2">
+                    <small class="text-muted d-flex justify-content-between">
+                        <span><i class="fas fa-shield-alt me-1"></i>Taxa de Contestação (garantia):</span>
+                        <strong>{{ (order.contestation_fee_at_creation or 10.00)|format_currency }}</strong>
+                    </small>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-2">
+                    <small class="text-muted d-flex justify-content-between">
+                        <span><i class="fas fa-hand-holding-usd me-1"></i>Prestador receberá:</span>
+                        <strong class="text-success">{{ ((order.value * (100 - (order.platform_fee_percentage_at_creation or 5.0)) / 100))|format_currency }}</strong>
+                    </small>
+                </div>
+                
+                {% if order.status in ['concluida', 'resolvida'] %}
+                <hr>
+                <div class="alert alert-success mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Pagamento Processado</strong><br>
+                    <small>Sua taxa de contestação foi devolvida.</small>
+                </div>
+                {% elif order.status == 'cancelada' %}
+                <hr>
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Ordem Cancelada</strong><br>
+                    {% if order.cancellation_fee %}
+                    <small>Multa aplicada: {{ order.cancellation_fee|format_currency }}</small>
+                    {% endif %}
+                </div>
+                {% elif order.status == 'aguardando_execucao' %}
+                <hr>
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-lock me-2"></i>
+                    <strong>Valores Bloqueados</strong><br>
+                    <small>{{ (order.value + (order.contestation_fee_at_creation or 10.00))|format_currency }} bloqueados na sua carteira</small>
+                </div>
+                {% elif order.status == 'servico_executado' %}
+                <hr>
+                <div class="alert alert-warning mb-0">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    <strong>Aguardando Confirmação</strong><br>
+                    <small>Valores permanecem bloqueados até confirmação</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Ações Disponíveis -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Ações Disponíveis</h6>
+            </div>
+            <div class="card-body">
+                
+                <!-- Confirmar Serviço -->
+                {% if order.can_be_confirmed %}
+                <button type="button" class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#confirmModal">
+                    <i class="fas fa-check me-2"></i>Confirmar Serviço
+                </button>
+                <small class="text-muted d-block mb-3">
+                    <i class="fas fa-info-circle me-1"></i>Ao confirmar, o pagamento será liberado para o prestador e sua taxa de contestação será devolvida.
+                </small>
+                {% endif %}
+                
+                <!-- Contestar Serviço -->
+                {% if order.can_be_disputed %}
+                <a href="{{ url_for('order.contestar_servico', order_id=order.id) }}" 
+                   class="btn btn-warning w-100 mb-2">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Contestar Serviço
+                </a>
+                <small class="text-muted d-block mb-3">
+                    <i class="fas fa-info-circle me-1"></i>Use se houver problemas com o serviço executado. Um administrador analisará o caso.
+                </small>
+                {% endif %}
+                
+                <!-- Cancelar Ordem -->
+                {% if order.can_be_cancelled %}
+                <button type="button" class="btn btn-danger w-100 mb-2" 
+                        data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <i class="fas fa-times me-2"></i>Cancelar Ordem
+                </button>
+                <small class="text-muted d-block">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Multa de {{ order.cancellation_fee_percentage_at_creation or 10.0 }}% será aplicada.
+                </small>
+                {% endif %}
+                
+                <!-- Mensagem se não há ações -->
+                {% if not order.can_be_confirmed and not order.can_be_disputed and not order.can_be_cancelled %}
+                <div class="alert alert-secondary text-center mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% if order.status == 'concluida' %}
+                        Ordem concluída com sucesso
+                    {% elif order.status == 'cancelada' %}
+                        Ordem cancelada
+                    {% elif order.status == 'contestada' %}
+                        Aguardando análise do administrador
+                    {% elif order.status == 'resolvida' %}
+                        Contestação resolvida
+                    {% else %}
+                        Nenhuma ação disponível no momento
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Confirmar Serviço
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="{{ url_for('order.confirmar_servico', order_id=order.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Você está prestes a confirmar este serviço.</strong>
+                    </div>
+                    
+                    <p>Ao confirmar, você declara que:</p>
+                    <ul>
+                        <li>O serviço foi executado conforme combinado</li>
+                        <li>Você está satisfeito com o resultado</li>
+                        <li>O pagamento será liberado para o prestador</li>
+                        <li>Sua taxa de contestação será devolvida</li>
+                    </ul>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="mb-2">Resumo do Pagamento:</h6>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Prestador receberá:</span>
+                                <strong class="text-success">{{ ((order.value * (100 - (order.platform_fee_percentage_at_creation or 5.0)) / 100))|format_currency }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Taxa da plataforma:</span>
+                                <strong>{{ ((order.value * (order.platform_fee_percentage_at_creation or 5.0) / 100))|format_currency }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Você receberá de volta:</span>
+                                <strong class="text-success">{{ (order.contestation_fee_at_creation or 10.00)|format_currency }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Confirmar Serviço
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Cancelamento -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelModalLabel">
+                    <i class="fas fa-times-circle me-2"></i>Cancelar Ordem
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="{{ url_for('order.cancelar_ordem', order_id=order.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção!</strong> Ao cancelar, você pagará uma multa de {{ order.cancellation_fee_percentage_at_creation or 10.0 }}% do valor do serviço.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Motivo do Cancelamento *
+                        </label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4" required
+                                  placeholder="Explique detalhadamente o motivo do cancelamento. Esta informação será compartilhada com o prestador."></textarea>
+                        <small class="text-muted">Mínimo de 10 caracteres</small>
+                    </div>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="mb-2">Cálculo da Multa:</h6>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Valor do serviço:</span>
+                                <strong>{{ order.value|format_currency }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Multa ({{ order.cancellation_fee_percentage_at_creation or 10.0 }}%):</span>
+                                <strong class="text-danger">{{ ((order.value * (order.cancellation_fee_percentage_at_creation or 10.0) / 100))|format_currency }}</strong>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between">
+                                <span>Você receberá de volta:</span>
+                                <strong class="text-success">{{ ((order.value * (100 - (order.cancellation_fee_percentage_at_creation or 10.0)) / 100) + (order.contestation_fee_at_creation or 10.00))|format_currency }}</strong>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                50% da multa vai para a plataforma, 50% para o prestador como compensação
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Confirmar Cancelamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos Customizados -->
+<style>
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -23px;
+    top: 8px;
+    bottom: -12px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+/* Status Colors */
+.bg-status-aguardando_execucao {
+    background-color: #ffc107 !important;
+}
+
+.bg-status-servico_executado {
+    background-color: #17a2b8 !important;
+}
+
+.bg-status-concluida {
+    background-color: #28a745 !important;
+}
+
+.bg-status-cancelada {
+    background-color: #dc3545 !important;
+}
+
+.bg-status-contestada {
+    background-color: #fd7e14 !important;
+}
+
+.bg-status-resolvida {
+    background-color: #6c757d !important;
+}
+
+/* Card Shadows */
+.shadow-sm {
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+}
+
+/* Countdown Display */
+#countdown-display, #countdown-hours {
+    font-weight: bold;
+    color: #dc3545;
+}
+
+/* Alert Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.alert-danger {
+    animation: pulse 2s infinite;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline-marker {
+        left: -20px;
+        width: 12px;
+        height: 12px;
+    }
+    
+    .timeline-item::before {
+        left: -16px;
+    }
+}
+</style>
+
+<!-- Script para Atualização Automática e Contador -->
+{% if order.status == 'servico_executado' %}
+<script>
+(function() {
+    // Dados da ordem
+    const confirmationDeadline = new Date('{{ order.confirmation_deadline.strftime("%Y-%m-%dT%H:%M:%S") }}');
+    
+    // Função para atualizar o contador
+    function updateCountdown() {
+        const now = new Date();
+        const timeRemaining = confirmationDeadline - now;
+        
+        if (timeRemaining <= 0) {
+            // Prazo expirado, recarregar página
+            location.reload();
+            return;
+        }
+        
+        // Calcular horas e minutos
+        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        
+        // Atualizar displays
+        const hoursDecimal = (hours + minutes / 60).toFixed(1);
+        const countdownDisplays = document.querySelectorAll('#countdown-display, #countdown-hours');
+        
+        countdownDisplays.forEach(display => {
+            if (display) {
+                display.textContent = hoursDecimal;
+            }
+        });
+        
+        // Mudar cor se menos de 12 horas
+        if (hours < 12) {
+            countdownDisplays.forEach(display => {
+                if (display) {
+                    display.style.color = '#dc3545';
+                    display.style.fontWeight = 'bold';
+                }
+            });
+        }
+    }
+    
+    // Atualizar contador a cada 30 segundos
+    updateCountdown();
+    setInterval(updateCountdown, 30000);
+    
+    // Recarregar página a cada 60 segundos para atualizar dados
+    setInterval(function() {
+        location.reload();
+    }, 60000);
+    
+    // Avisar usuário antes de sair da página se estiver próximo do prazo
+    const hoursRemaining = (confirmationDeadline - new Date()) / (1000 * 60 * 60);
+    if (hoursRemaining < 12 && hoursRemaining > 0) {
+        window.addEventListener('beforeunload', function(e) {
+            e.preventDefault();
+            e.returnValue = 'Você tem menos de 12 horas para confirmar ou contestar este serviço. Tem certeza que deseja sair?';
+        });
+    }
+})();
+</script>
+{% endif %}
+
+{% endblock %}

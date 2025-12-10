@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Destaque Página Atual - Mobile Nav</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="static/css/mobile-nav.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+        }
+        
+        .test-section h2 {
+            font-size: 16px;
+            color: #4a5fc1;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .test-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .test-info strong {
+            color: #4a5fc1;
+        }
+        
+        .test-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .test-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .test-btn-primary {
+            background: #4a5fc1;
+            color: white;
+        }
+        
+        .test-btn-primary:hover {
+            background: #3d4fa3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 95, 193, 0.3);
+        }
+        
+        .test-btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .test-btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .content-area {
+            min-height: 300px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 80px;
+        }
+        
+        .page-title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .page-content {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .highlight-demo {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .highlight-demo strong {
+            color: #856404;
+        }
+        
+        /* Simular mobile */
+        @media (min-width: 768px) {
+            .mobile-nav {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 Teste de Destaque</h1>
+        <p class="subtitle">Navegação Mobile - Página Atual</p>
+        
+        <div class="test-section">
+            <h2>📋 Instruções</h2>
+            <div class="test-info">
+                <p><strong>1.</strong> Observe a barra de navegação no rodapé</p>
+                <p><strong>2.</strong> O item "Início" deve estar destacado</p>
+                <p><strong>3.</strong> Clique em outros itens para ver o destaque mudar</p>
+                <p><strong>4.</strong> Verifique os indicadores visuais:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Barra colorida no topo do item</li>
+                    <li>Cor do ícone mais vibrante</li>
+                    <li>Fundo levemente destacado</li>
+                    <li>Texto em negrito</li>
+                    <li>Efeito de brilho no ícone</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎨 Testes Interativos</h2>
+            <div class="test-buttons">
+                <button class="test-btn test-btn-primary" onclick="simulateNavigation('dashboard')">
+                    Simular: Ir para Início
+                </button>
+                <button class="test-btn test-btn-primary" onclick="simulateNavigation('convites')">
+                    Simular: Ir para Convites
+                </button>
+                <button class="test-btn test-btn-primary" onclick="simulateNavigation('pre-ordem')">
+                    Simular: Ir para Negociação
+                </button>
+                <button class="test-btn test-btn-primary" onclick="simulateNavigation('ordem')">
+                    Simular: Ir para Ordens
+                </button>
+                <button class="test-btn test-btn-primary" onclick="simulateNavigation('perfil')">
+                    Simular: Ir para Perfil
+                </button>
+                <button class="test-btn test-btn-secondary" onclick="resetNavigation()">
+                    🔄 Resetar
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>✅ Checklist de Validação</h2>
+            <div class="test-info">
+                <p><strong>Verifique se:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>✓ Barra superior aparece no item ativo</li>
+                    <li>✓ Cor do ícone muda para azul (#4a5fc1)</li>
+                    <li>✓ Fundo fica levemente colorido</li>
+                    <li>✓ Texto fica em negrito</li>
+                    <li>✓ Apenas um item está ativo por vez</li>
+                    <li>✓ Transição é suave ao mudar</li>
+                    <li>✓ Feedback visual ao tocar (mobile)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content-area">
+        <h2 class="page-title" id="pageTitle">Página Inicial</h2>
+        <div class="page-content" id="pageContent">
+            <p>Bem-vindo ao teste de navegação mobile!</p>
+            <div class="highlight-demo">
+                <strong>Dica:</strong> Observe a barra de navegação no rodapé. O item ativo deve estar claramente destacado com múltiplos indicadores visuais.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav animate-in" role="navigation" aria-label="Navegação principal mobile">
+        <ul class="mobile-nav-list">
+            <li class="mobile-nav-item">
+                <a href="#dashboard" 
+                   class="mobile-nav-link active"
+                   aria-label="Página inicial"
+                   aria-current="page"
+                   data-page="dashboard">
+                    <span class="mobile-nav-icon">
+                        <i class="fas fa-home" aria-hidden="true"></i>
+                    </span>
+                    <span class="mobile-nav-label">Início</span>
+                </a>
+            </li>
+            
+            <li class="mobile-nav-item">
+                <a href="#convites" 
+                   class="mobile-nav-link"
+                   aria-label="Convites"
+                   aria-current="false"
+                   data-page="convites">
+                    <span class="mobile-nav-icon">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>
+                        <span class="mobile-nav-badge pulse" aria-label="3 convites pendentes">3</span>
+                    </span>
+                    <span class="mobile-nav-label">Convites</span>
+                </a>
+            </li>
+            
+            <li class="mobile-nav-item">
+                <a href="#pre-ordem" 
+                   class="mobile-nav-link"
+                   aria-label="Pré-Ordens"
+                   aria-current="false"
+                   data-page="pre-ordem">
+                    <span class="mobile-nav-icon">
+                        <i class="fas fa-handshake" aria-hidden="true"></i>
+                        <span class="mobile-nav-badge pulse" aria-label="2 pré-ordens aguardando ação">2</span>
+                    </span>
+                    <span class="mobile-nav-label">Negociação</span>
+                </a>
+            </li>
+            
+            <li class="mobile-nav-item">
+                <a href="#ordem" 
+                   class="mobile-nav-link"
+                   aria-label="Ordens"
+                   aria-current="false"
+                   data-page="ordem">
+                    <span class="mobile-nav-icon">
+                        <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                        <span class="mobile-nav-badge pulse" aria-label="1 ordem aguardando ação">1</span>
+                    </span>
+                    <span class="mobile-nav-label">Ordens</span>
+                </a>
+            </li>
+            
+            <li class="mobile-nav-item">
+                <a href="#perfil" 
+                   class="mobile-nav-link"
+                   aria-label="Perfil e Carteira"
+                   aria-current="false"
+                   data-page="perfil">
+                    <span class="mobile-nav-icon">
+                        <i class="fas fa-user-circle" aria-hidden="true"></i>
+                    </span>
+                    <span class="mobile-nav-label">Perfil</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    
+    <script>
+        // Simular navegação entre páginas
+        function simulateNavigation(page) {
+            // Remover active de todos os links
+            const links = document.querySelectorAll('.mobile-nav-link');
+            links.forEach(link => {
+                link.classList.remove('active');
+                link.setAttribute('aria-current', 'false');
+            });
+            
+            // Adicionar active ao link clicado
+            const activeLink = document.querySelector(`[data-page="${page}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+                activeLink.setAttribute('aria-current', 'page');
+                
+                // Feedback visual
+                activeLink.style.opacity = '0.6';
+                setTimeout(() => {
+                    activeLink.style.opacity = '';
+                }, 200);
+            }
+            
+            // Atualizar conteúdo da página
+            updatePageContent(page);
+        }
+        
+        function updatePageContent(page) {
+            const titles = {
+                'dashboard': 'Página Inicial',
+                'convites': 'Convites',
+                'pre-ordem': 'Negociação',
+                'ordem': 'Ordens',
+                'perfil': 'Perfil'
+            };
+            
+            const contents = {
+                'dashboard': 'Você está na página inicial. Observe como o item "Início" está destacado na navegação.',
+                'convites': 'Você está na página de convites. Observe como o item "Convites" está destacado na navegação.',
+                'pre-ordem': 'Você está na página de negociação. Observe como o item "Negociação" está destacado na navegação.',
+                'ordem': 'Você está na página de ordens. Observe como o item "Ordens" está destacado na navegação.',
+                'perfil': 'Você está na página de perfil. Observe como o item "Perfil" está destacado na navegação.'
+            };
+            
+            document.getElementById('pageTitle').textContent = titles[page] || 'Página';
+            document.getElementById('pageContent').innerHTML = `
+                <p>${contents[page] || 'Conteúdo da página'}</p>
+                <div class="highlight-demo">
+                    <strong>✓ Destaque ativo:</strong> O item "${titles[page]}" deve estar claramente destacado com barra superior, cor diferente e fundo levemente colorido.
+                </div>
+            `;
+        }
+        
+        function resetNavigation() {
+            simulateNavigation('dashboard');
+        }
+        
+        // Adicionar listeners aos links de navegação
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.mobile-nav-link');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    simulateNavigation(page);
+                });
+                
+                // Feedback visual ao tocar
+                link.addEventListener('touchstart', function(e) {
+                    this.style.transform = 'scale(0.95)';
+                }, { passive: true });
+                
+                link.addEventListener('touchend', function(e) {
+                    this.style.transform = '';
+                }, { passive: true });
+            });
+            
+            // Forçar exibição da navegação mobile
+            document.body.classList.add('has-mobile-nav');
+        });
+    </script>
+</body>
+</html>

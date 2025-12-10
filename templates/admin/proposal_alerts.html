@@ -1,0 +1,355 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Gerenciamento de Alertas de Propostas{% endblock %}
+
+{% block extra_css %}
+<style>
+.alert-item {
+    border-left: 4px solid;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.alert-critical {
+    border-left-color: #e74c3c;
+}
+
+.alert-high {
+    border-left-color: #f39c12;
+}
+
+.alert-medium {
+    border-left-color: #3498db;
+}
+
+.alert-low {
+    border-left-color: #95a5a6;
+}
+
+.alert-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.alert-badge.critical {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.alert-badge.high {
+    background-color: #f39c12;
+    color: white;
+}
+
+.alert-badge.medium {
+    background-color: #3498db;
+    color: white;
+}
+
+.alert-badge.low {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.filter-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.alert-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.alert-meta {
+    font-size: 0.9em;
+    color: #7f8c8d;
+    margin-top: 10px;
+}
+
+.pattern-data {
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 0.85em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Gerenciamento de Alertas
+                </h1>
+                <a href="{{ url_for('admin_proposal_monitoring.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row">
+        <div class="col-12">
+            <div class="filter-card">
+                <form method="GET" class="row align-items-end">
+                    <div class="col-md-2">
+                        <label for="severity" class="form-label">Severidade</label>
+                        <select name="severity" id="severity" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="critical" {{ 'selected' if current_severity == 'critical' }}>Crítica</option>
+                            <option value="high" {{ 'selected' if current_severity == 'high' }}>Alta</option>
+                            <option value="medium" {{ 'selected' if current_severity == 'medium' }}>Média</option>
+                            <option value="low" {{ 'selected' if current_severity == 'low' }}>Baixa</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="active" {{ 'selected' if current_status == 'active' }}>Ativo</option>
+                            <option value="investigating" {{ 'selected' if current_status == 'investigating' }}>Investigando</option>
+                            <option value="resolved" {{ 'selected' if current_status == 'resolved' }}>Resolvido</option>
+                            <option value="false_positive" {{ 'selected' if current_status == 'false_positive' }}>Falso Positivo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">Tipo de Alerta</label>
+                        <select name="type" id="type" class="form-select">
+                            <option value="">Todos</option>
+                            {% for alert_type in alert_types %}
+                            <option value="{{ alert_type }}" {{ 'selected' if current_type == alert_type }}>
+                                {{ alert_type.replace('_', ' ').title() }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <a href="{{ url_for('admin_proposal_monitoring.alertas') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Alertas -->
+    <div class="row">
+        <div class="col-12">
+            {% if alerts %}
+                {% for alert in alerts %}
+                <div class="alert-item alert-{{ alert.severity }}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="alert-badge {{ alert.severity }}">{{ alert.severity|upper }}</span>
+                                <h5 class="mb-0 ms-2">{{ alert.title }}</h5>
+                            </div>
+                            
+                            <p class="mb-2">{{ alert.description }}</p>
+                            
+                            {% if alert.user_name %}
+                            <div class="mb-2">
+                                <strong>Usuário:</strong> {{ alert.user_name }}
+                                {% if alert.user_id %}
+                                <a href="{{ url_for('admin_proposal_monitoring.atividade_usuario', user_id=alert.user_id) }}" 
+                                   class="btn btn-sm btn-outline-info ms-2">
+                                    Ver Atividade
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if alert.proposal_id %}
+                            <div class="mb-2">
+                                <strong>Proposta:</strong> #{{ alert.proposal_id }}
+                                <a href="{{ url_for('admin_proposal_monitoring.historico_proposta', proposal_id=alert.proposal_id) }}" 
+                                   class="btn btn-sm btn-outline-info ms-2">
+                                    Ver Histórico
+                                </a>
+                            </div>
+                            {% endif %}
+                            
+                            {% if alert.pattern_data %}
+                            <div class="pattern-data">
+                                <strong>Dados do Padrão:</strong><br>
+                                {% for key, value in alert.pattern_data.items() %}
+                                <div>{{ key.replace('_', ' ').title() }}: {{ value }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <div class="alert-meta">
+                                <i class="fas fa-clock"></i> {{ alert.created_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                                ({{ "%.1f"|format(alert.age_hours) }} horas atrás)
+                                {% if alert.threshold_exceeded %}
+                                | <i class="fas fa-exclamation"></i> Limite excedido: {{ alert.threshold_exceeded }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if alert.status == 'active' %}
+                        <div class="alert-actions">
+                            <button class="btn btn-success btn-sm" onclick="resolverAlerta({{ alert.id }})">
+                                <i class="fas fa-check"></i> Resolver
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="marcarFalsoPositivo({{ alert.id }})">
+                                <i class="fas fa-times"></i> Falso Positivo
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="alert-actions">
+                            <span class="badge bg-secondary">{{ alert.status|title }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Paginação -->
+                {% if pagination.pages > 1 %}
+                <nav aria-label="Paginação de alertas">
+                    <ul class="pagination justify-content-center">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_proposal_monitoring.alertas', page=pagination.prev_num, severity=current_severity, status=current_status, type=current_type) }}">
+                                Anterior
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in pagination.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_proposal_monitoring.alertas', page=page_num, severity=current_severity, status=current_status, type=current_type) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_proposal_monitoring.alertas', page=pagination.next_num, severity=current_severity, status=current_status, type=current_type) }}">
+                                Próxima
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h4>Nenhum alerta encontrado</h4>
+                    <p class="text-muted">Não há alertas que correspondam aos filtros selecionados.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Resolver Alerta -->
+<div class="modal fade" id="resolverAlertaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resolver Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="resolverAlertaForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="resolution_notes" class="form-label">Notas de Resolução</label>
+                        <textarea name="resolution_notes" id="resolution_notes" class="form-control" rows="3" 
+                                  placeholder="Descreva como o alerta foi resolvido..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Resolver Alerta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Falso Positivo -->
+<div class="modal fade" id="falsoPositivoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Marcar como Falso Positivo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="falsoPositivoForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Motivo do Falso Positivo</label>
+                        <textarea name="notes" id="notes" class="form-control" rows="3" 
+                                  placeholder="Explique por que este alerta é um falso positivo..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">Marcar como Falso Positivo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function resolverAlerta(alertId) {
+    const form = document.getElementById('resolverAlertaForm');
+    form.action = `{{ url_for('admin_proposal_monitoring.resolver_alerta', alert_id=0) }}`.replace('0', alertId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('resolverAlertaModal'));
+    modal.show();
+}
+
+function marcarFalsoPositivo(alertId) {
+    const form = document.getElementById('falsoPositivoForm');
+    form.action = `{{ url_for('admin_proposal_monitoring.marcar_falso_positivo', alert_id=0) }}`.replace('0', alertId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('falsoPositivoModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Proposta Recebida{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-envelope"></i> Nova Proposta de Alteração Recebida
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h5 class="alert-heading">📨 Você recebeu uma nova proposta!</h5>
+                        <hr>
+                        <p class="mb-0">
+                            {{ proposer_name }} enviou uma proposta de alteração para a pré-ordem #{{ pre_order.id }}.
+                            Revise as mudanças propostas e decida se aceita ou rejeita.
+                        </p>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Informações da Pré-Ordem</h5>
+                            <p><strong>Serviço:</strong> {{ pre_order.title }}</p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">🔄 Alterações Propostas</h5>
+                            
+                            {% if proposal.proposed_value %}
+                            <div class="mb-3">
+                                <strong>Valor:</strong>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted">R$ {{ "%.2f"|format(pre_order.current_value) }}</span>
+                                    <i class="fas fa-arrow-right text-primary"></i>
+                                    <span class="fw-bold {% if proposal.proposed_value > pre_order.current_value %}text-danger{% else %}text-success{% endif %}">
+                                        R$ {{ "%.2f"|format(proposal.proposed_value) }}
+                                    </span>
+                                    {% set diff = proposal.proposed_value - pre_order.current_value %}
+                                    <span class="badge {% if diff > 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                        {% if diff > 0 %}+{% endif %}R$ {{ "%.2f"|format(diff|abs) }}
+                                        ({% if diff > 0 %}+{% endif %}{{ "%.1f"|format((diff / pre_order.current_value * 100)|abs) }}%)
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if proposal.proposed_delivery_date %}
+                            <div class="mb-3">
+                                <strong>Data de Entrega:</strong>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted">{{ pre_order.delivery_date.strftime('%d/%m/%Y') if pre_order.delivery_date else 'Não definida' }}</span>
+                                    <i class="fas fa-arrow-right text-primary"></i>
+                                    <span class="fw-bold text-primary">{{ proposal.proposed_delivery_date.strftime('%d/%m/%Y') }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if proposal.proposed_description %}
+                            <div class="mb-3">
+                                <strong>Descrição Proposta:</strong>
+                                <div class="border rounded p-2 bg-light mt-1">
+                                    {{ proposal.proposed_description }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-0">
+                                <strong>Justificativa:</strong>
+                                <div class="border rounded p-2 bg-light mt-1">
+                                    {{ proposal.justification }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle"></i> Próximos Passos:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Aceitar:</strong> As alterações propostas serão aplicadas à pré-ordem</li>
+                            <li><strong>Rejeitar:</strong> A pré-ordem mantém os valores atuais e você pode fazer uma contraproposta</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=pre_order.id) }}" 
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye"></i> Ver Proposta e Responder
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

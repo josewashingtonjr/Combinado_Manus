@@ -96,7 +96,7 @@
                             <strong>Contrato em Disputa</strong><br>
                             Este contrato requer análise administrativa.
                         </div>
-                        <a href="{{ url_for('admin.analisar_contestacao', contestacao_id=order.id) }}" 
+                        <a href="{{ url_for('admin.ver_contestacao', order_id=order.id) }}" 
                            class="btn btn-danger w-100 mb-2">
                             <i class="fas fa-gavel me-2"></i>Analisar Disputa
                         </a>

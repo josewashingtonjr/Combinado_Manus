@@ -29,7 +29,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('cliente.ordens') }}">
+                    <a class="nav-link" href="{{ url_for('order.listar_ordens') }}">
                         <i class="fas fa-clipboard-list me-1"></i>Ordens
                     </a>
                 </li>
@@ -111,6 +111,14 @@
                     <a href="{{ url_for('cliente.criar_convite') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-plus-circle me-2"></i>Criar Convite
                     </a>
+                    <a href="{{ url_for('cliente.dashboard') }}#pre-ordens" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-handshake me-2"></i>Pré-Ordens</span>
+                        {% if data and data.pre_orders_needing_action > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ data.pre_orders_needing_action }}</span>
+                        {% elif data and data.pre_orders_count > 0 %}
+                        <span class="badge bg-info rounded-pill">{{ data.pre_orders_count }}</span>
+                        {% endif %}
+                    </a>
                     <a href="{{ url_for('cliente.solicitar_tokens') }}" class="list-group-item list-group-item-action">
                         <i class="fas fa-coins me-2"></i>Adicionar Saldo
                     </a>
@@ -177,4 +185,10 @@
     color: #28a745 !important;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Mobile Navigation Component -->
+{% include 'components/mobile-nav.html' %}
+{{ super() }}
 {% endblock %}

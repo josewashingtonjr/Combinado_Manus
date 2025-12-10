@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Proposta Aceita{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-success">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-circle"></i> Proposta Aceita!
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success" role="alert">
+                        <h5 class="alert-heading">✅ Sua proposta foi aceita!</h5>
+                        <hr>
+                        <p class="mb-0">
+                            {{ acceptor_name }} aceitou sua proposta de alteração para a pré-ordem #{{ pre_order.id }}.
+                            Os novos termos foram aplicados à pré-ordem.
+                        </p>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Informações da Pré-Ordem</h5>
+                            <p><strong>Serviço:</strong> {{ pre_order.title }}</p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-success">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">✅ Alterações Aplicadas</h5>
+                            
+                            {% if proposal.proposed_value %}
+                            <div class="mb-3">
+                                <strong>Novo Valor:</strong>
+                                <span class="fw-bold text-success fs-5 ms-2">
+                                    R$ {{ "%.2f"|format(proposal.proposed_value) }}
+                                </span>
+                                {% set diff = proposal.proposed_value - proposal.original_value %}
+                                {% if diff != 0 %}
+                                <span class="badge {% if diff > 0 %}bg-danger{% else %}bg-success{% endif %} ms-2">
+                                    {% if diff > 0 %}+{% endif %}R$ {{ "%.2f"|format(diff|abs) }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            {% if proposal.proposed_delivery_date %}
+                            <div class="mb-3">
+                                <strong>Nova Data de Entrega:</strong>
+                                <span class="fw-bold text-primary ms-2">
+                                    {{ proposal.proposed_delivery_date.strftime('%d/%m/%Y') }}
+                                </span>
+                            </div>
+                            {% endif %}
+
+                            {% if proposal.proposed_description %}
+                            <div class="mb-0">
+                                <strong>Nova Descrição:</strong>
+                                <div class="border rounded p-2 bg-light mt-1">
+                                    {{ proposal.proposed_description }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle"></i> Próximos Passos:</h6>
+                        <ul class="mb-0">
+                            <li>A pré-ordem foi atualizada com os novos termos</li>
+                            <li>Ambas as partes precisam aceitar os termos finais para converter em ordem</li>
+                            <li>Você pode continuar negociando se necessário</li>
+                            <li>Quando estiver satisfeito, aceite os termos finais</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Atenção:</strong> 
+                        Como houve uma alteração, as aceitações anteriores foram resetadas. 
+                        Ambas as partes precisam aceitar os novos termos.
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=pre_order.id) }}" 
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye"></i> Ver Pré-Ordem Atualizada
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

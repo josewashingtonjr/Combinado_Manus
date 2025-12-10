@@ -1,0 +1,589 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Minhas Ordens - Sistema Combinado{% endblock %}
+
+{% block prestador_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-clipboard-list me-2"></i>Minhas Ordens</h1>
+    <div class="text-muted">
+        <i class="fas fa-sync-alt me-1"></i>
+        <span id="last-update">Atualizado agora</span>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4" id="statistics-cards">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="card stat-card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                <h3 class="mb-0" id="stat-total">{{ statistics.total }}</h3>
+                <p class="mb-0 small">Total</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="card stat-card bg-warning text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h3 class="mb-0" id="stat-aguardando">{{ statistics.aguardando }}</h3>
+                <p class="mb-0 small">Aguardando</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="card stat-card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-hourglass-half fa-2x mb-2"></i>
+                <h3 class="mb-0" id="stat-aguardando-cliente">{{ statistics.aguardando_cliente }}</h3>
+                <p class="mb-0 small">Aguardando Cliente</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="card stat-card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-check-double fa-2x mb-2"></i>
+                <h3 class="mb-0" id="stat-concluidas">{{ statistics.concluidas }}</h3>
+                <p class="mb-0 small">Concluídas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="card stat-card bg-secondary text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-times-circle fa-2x mb-2"></i>
+                <h3 class="mb-0" id="stat-canceladas">{{ statistics.canceladas }}</h3>
+                <p class="mb-0 small">Canceladas</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="card stat-card bg-danger text-white h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h3 class="mb-0" id="stat-contestadas">{{ statistics.contestadas }}</h3>
+                <p class="mb-0 small">Contestadas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros por Status -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="me-2"><i class="fas fa-filter me-1"></i><strong>Filtrar por:</strong></span>
+            <a href="{{ url_for('order.listar_ordens') }}" 
+               class="btn btn-sm {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }}">
+                <i class="fas fa-list me-1"></i>Todas
+            </a>
+            <a href="{{ url_for('order.listar_ordens', status='aguardando_execucao') }}" 
+               class="btn btn-sm {{ 'btn-warning' if status_filter == 'aguardando_execucao' else 'btn-outline-warning' }}">
+                <i class="fas fa-clock me-1"></i>Aguardando
+            </a>
+            <a href="{{ url_for('order.listar_ordens', status='servico_executado') }}" 
+               class="btn btn-sm {{ 'btn-info' if status_filter == 'servico_executado' else 'btn-outline-info' }}">
+                <i class="fas fa-hourglass-half me-1"></i>Aguardando Cliente
+            </a>
+            <a href="{{ url_for('order.listar_ordens', status='concluida') }}" 
+               class="btn btn-sm {{ 'btn-success' if status_filter == 'concluida' else 'btn-outline-success' }}">
+                <i class="fas fa-check-double me-1"></i>Concluídas
+            </a>
+            <a href="{{ url_for('order.listar_ordens', status='cancelada') }}" 
+               class="btn btn-sm {{ 'btn-secondary' if status_filter == 'cancelada' else 'btn-outline-secondary' }}">
+                <i class="fas fa-times-circle me-1"></i>Canceladas
+            </a>
+            <a href="{{ url_for('order.listar_ordens', status='contestada') }}" 
+               class="btn btn-sm {{ 'btn-danger' if status_filter == 'contestada' else 'btn-outline-danger' }}">
+                <i class="fas fa-exclamation-triangle me-1"></i>Contestadas
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Ordens -->
+<div id="orders-container">
+    {% if orders %}
+    <div class="row" id="orders-list">
+        {% for order in orders %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card order-card h-100 shadow-sm hover-shadow">
+                <!-- Header do Card com Status -->
+                <div class="card-header {{ order.status_color_class }} text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="{{ order.status_icon_class }} me-1"></i>
+                            {{ order.status_display }}
+                        </span>
+                        <span class="badge bg-white text-dark">
+                            #{{ order.id }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Corpo do Card -->
+                <div class="card-body">
+                    <!-- Título do Serviço -->
+                    <h5 class="card-title mb-2">
+                        <i class="fas fa-tools me-1 text-warning"></i>
+                        {{ order.title }}
+                    </h5>
+                    
+                    <!-- Cliente -->
+                    <p class="mb-2">
+                        <i class="fas fa-user-tie me-1 text-muted"></i>
+                        <strong>Cliente:</strong> {{ order.client.nome if order.client else 'N/A' }}
+                    </p>
+                    
+                    <!-- Valor -->
+                    <p class="mb-2">
+                        <i class="fas fa-money-bill-wave me-1 text-success"></i>
+                        <strong>Valor:</strong> 
+                        <span class="text-success fw-bold">R$ {{ "%.2f"|format(order.value) }}</span>
+                    </p>
+                    
+                    <!-- Data de Criação -->
+                    <p class="mb-2">
+                        <i class="fas fa-calendar me-1 text-muted"></i>
+                        <strong>Criada em:</strong> {{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else 'N/A' }}
+                    </p>
+                    
+                    <!-- Alertas de Prazo (se aplicável) -->
+                    {% if order.status == 'servico_executado' and order.hours_until_auto_confirmation is not none %}
+                        {% if order.hours_until_auto_confirmation < 12 %}
+                        <div class="alert alert-success alert-sm mb-2 py-2">
+                            <i class="fas fa-clock me-1"></i>
+                            <strong>Confirmação em breve!</strong> Faltam {{ "%.1f"|format(order.hours_until_auto_confirmation) }}h para confirmação automática
+                        </div>
+                        {% elif order.hours_until_auto_confirmation < 36 %}
+                        <div class="alert alert-info alert-sm mb-2 py-2">
+                            <i class="fas fa-hourglass-half me-1"></i>
+                            Aguardando cliente confirmar ({{ "%.1f"|format(order.hours_until_auto_confirmation) }}h restantes)
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Informação de Conclusão -->
+                    {% if order.completed_at %}
+                    <p class="mb-2 text-muted small">
+                        <i class="fas fa-check me-1"></i>
+                        Concluído em: {{ order.completed_at.strftime('%d/%m/%Y %H:%M') }}
+                    </p>
+                    {% endif %}
+                    
+                    <!-- Informação de Confirmação -->
+                    {% if order.confirmed_at %}
+                    <p class="mb-2 text-muted small">
+                        <i class="fas fa-check-double me-1"></i>
+                        Confirmado em: {{ order.confirmed_at.strftime('%d/%m/%Y %H:%M') }}
+                        {% if order.auto_confirmed %}
+                        <span class="badge bg-info">Automático</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Footer com Botões de Ação -->
+                <div class="card-footer bg-light">
+                    <div class="d-flex flex-wrap gap-2 justify-content-between">
+                        <!-- Botão Ver Detalhes -->
+                        <a href="{{ url_for('order.ver_ordem', order_id=order.id) }}" 
+                           class="btn btn-sm btn-primary flex-grow-1">
+                            <i class="fas fa-eye me-1"></i>Ver Detalhes
+                        </a>
+                        
+                        <!-- Botões de Ação Contextual -->
+                        {% if order.status == 'aguardando_execucao' %}
+                            <a href="{{ url_for('order.marcar_concluido', order_id=order.id) }}" 
+                               class="btn btn-sm btn-success flex-grow-1"
+                               onclick="return confirm('Confirmar que o serviço foi concluído?')">
+                                <i class="fas fa-check me-1"></i>Marcar Concluído
+                            </a>
+                            <button type="button" 
+                                    class="btn btn-sm btn-warning flex-grow-1"
+                                    onclick="showCancelModal({{ order.id }})">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </button>
+                        {% elif order.status == 'servico_executado' %}
+                            <div class="btn btn-sm btn-info flex-grow-1 disabled">
+                                <i class="fas fa-hourglass-half me-1"></i>Aguardando Cliente
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Mensagem quando não há ordens -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Nenhuma ordem encontrada</h4>
+            <p class="text-muted">
+                {% if status_filter %}
+                Não há ordens com o status selecionado.
+                {% else %}
+                Você ainda não possui ordens de serviço.
+                {% endif %}
+            </p>
+            {% if status_filter %}
+            <a href="{{ url_for('order.listar_ordens') }}" class="btn btn-primary">
+                <i class="fas fa-list me-1"></i>Ver Todas as Ordens
+            </a>
+            {% else %}
+            <a href="{{ url_for('prestador.convites') }}" class="btn btn-warning">
+                <i class="fas fa-envelope-open-text me-1"></i>Ver Convites Recebidos
+            </a>
+            <a href="{{ url_for('prestador.ordens_disponiveis') }}" class="btn btn-info ms-2">
+                <i class="fas fa-search me-1"></i>Buscar Ordens Disponíveis
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de Cancelamento -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="cancelModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Cancelar Ordem
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form id="cancelForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Atenção:</strong> Ao cancelar, será cobrada uma multa de 10% do valor do serviço.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancelReason" class="form-label">
+                            <strong>Motivo do Cancelamento:</strong> <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" 
+                                  id="cancelReason" 
+                                  name="reason" 
+                                  rows="4" 
+                                  required
+                                  placeholder="Descreva o motivo do cancelamento..."></textarea>
+                        <small class="text-muted">Mínimo de 10 caracteres</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Fechar
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-check me-1"></i>Confirmar Cancelamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Animações e Efeitos */
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
+}
+
+.order-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+}
+
+/* Classes de Cor por Status */
+.bg-status-aguardando_execucao {
+    background: linear-gradient(45deg, #ffc107, #ff9800);
+}
+
+.bg-status-servico_executado {
+    background: linear-gradient(45deg, #17a2b8, #138496);
+}
+
+.bg-status-concluida {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.bg-status-cancelada {
+    background: linear-gradient(45deg, #6c757d, #5a6268);
+}
+
+.bg-status-contestada {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+}
+
+.bg-status-resolvida {
+    background: linear-gradient(45deg, #6f42c1, #5a32a3);
+}
+
+/* Alertas Compactos */
+.alert-sm {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .stat-card h3 {
+        font-size: 1.5rem;
+    }
+    
+    .stat-card .fa-2x {
+        font-size: 1.5em;
+    }
+    
+    .order-card .card-title {
+        font-size: 1rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Loading Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Badges */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Gap utility para navegadores antigos */
+.gap-2 > * {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.gap-2 > *:last-child {
+    margin-right: 0;
+}
+
+/* Tema Prestador - Destaque em Laranja/Amarelo */
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(45deg, #e0a800, #ea6100);
+    color: #212529;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Configuração
+const AUTO_UPDATE_INTERVAL = 30000; // 30 segundos
+let updateTimer;
+
+// Função para atualizar estatísticas
+async function updateStatistics() {
+    try {
+        const response = await fetch('{{ url_for("order.get_estatisticas") }}');
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.statistics;
+            
+            // Atualizar cards de estatísticas
+            document.getElementById('stat-total').textContent = stats.total || 0;
+            document.getElementById('stat-aguardando').textContent = stats.aguardando || 0;
+            document.getElementById('stat-aguardando-cliente').textContent = stats.aguardando_cliente || 0;
+            document.getElementById('stat-concluidas').textContent = stats.concluidas || 0;
+            document.getElementById('stat-canceladas').textContent = stats.canceladas || 0;
+            document.getElementById('stat-contestadas').textContent = stats.contestadas || 0;
+            
+            // Atualizar timestamp
+            updateLastUpdateTime();
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar estatísticas:', error);
+    }
+}
+
+// Função para atualizar timestamp
+function updateLastUpdateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    document.getElementById('last-update').textContent = `Atualizado às ${timeString}`;
+}
+
+// Função para recarregar lista de ordens
+async function reloadOrders() {
+    try {
+        // Recarregar a página mantendo o filtro atual
+        const currentUrl = new URL(window.location.href);
+        const statusFilter = currentUrl.searchParams.get('status');
+        
+        let reloadUrl = '{{ url_for("order.listar_ordens") }}';
+        if (statusFilter) {
+            reloadUrl += `?status=${statusFilter}`;
+        }
+        
+        // Fazer requisição AJAX para obter HTML atualizado
+        const response = await fetch(reloadUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            // Se for uma atualização completa, recarregar a página
+            // Para uma implementação mais sofisticada, poderia atualizar apenas o conteúdo
+            console.log('Ordens atualizadas');
+        }
+    } catch (error) {
+        console.error('Erro ao recarregar ordens:', error);
+    }
+}
+
+// Função para iniciar atualização automática
+function startAutoUpdate() {
+    // Atualizar estatísticas a cada 30 segundos
+    updateTimer = setInterval(() => {
+        updateStatistics();
+    }, AUTO_UPDATE_INTERVAL);
+    
+    console.log('Atualização automática iniciada (a cada 30 segundos)');
+}
+
+// Função para parar atualização automática
+function stopAutoUpdate() {
+    if (updateTimer) {
+        clearInterval(updateTimer);
+        console.log('Atualização automática pausada');
+    }
+}
+
+// Modal de Cancelamento
+function showCancelModal(orderId) {
+    const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    const form = document.getElementById('cancelForm');
+    form.action = `/ordens/${orderId}/cancelar`;
+    document.getElementById('cancelReason').value = '';
+    modal.show();
+}
+
+// Validação do formulário de cancelamento
+document.getElementById('cancelForm')?.addEventListener('submit', function(e) {
+    const reason = document.getElementById('cancelReason').value.trim();
+    
+    if (reason.length < 10) {
+        e.preventDefault();
+        alert('O motivo do cancelamento deve ter pelo menos 10 caracteres.');
+        return false;
+    }
+    
+    if (!confirm('Tem certeza que deseja cancelar esta ordem? Uma multa será aplicada.')) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Inicializar quando o documento estiver pronto
+document.addEventListener('DOMContentLoaded', function() {
+    // Iniciar atualização automática
+    startAutoUpdate();
+    
+    // Parar atualização quando a aba não estiver visível
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoUpdate();
+        } else {
+            startAutoUpdate();
+        }
+    });
+    
+    // Animação de entrada dos cards
+    const cards = document.querySelectorAll('.order-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 50);
+        }, index * 50);
+    });
+    
+    // Tooltip para cards de estatísticas
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const cardText = this.querySelector('p').textContent.trim().toLowerCase();
+            let statusFilter = '';
+            
+            if (cardText === 'aguardando') {
+                statusFilter = 'aguardando_execucao';
+            } else if (cardText === 'aguardando cliente') {
+                statusFilter = 'servico_executado';
+            } else if (cardText === 'concluídas') {
+                statusFilter = 'concluida';
+            } else if (cardText === 'canceladas') {
+                statusFilter = 'cancelada';
+            } else if (cardText === 'contestadas') {
+                statusFilter = 'contestada';
+            }
+            
+            if (statusFilter) {
+                window.location.href = `{{ url_for('order.listar_ordens') }}?status=${statusFilter}`;
+            } else {
+                window.location.href = `{{ url_for('order.listar_ordens') }}`;
+            }
+        });
+    });
+});
+
+// Limpar timer ao sair da página
+window.addEventListener('beforeunload', function() {
+    stopAutoUpdate();
+});
+</script>
+{% endblock %}

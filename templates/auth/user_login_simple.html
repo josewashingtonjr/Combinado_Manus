@@ -25,6 +25,7 @@
                 <div id="message" style="display: none; padding: var(--spacing-3); margin-bottom: var(--spacing-4); border-radius: var(--border-radius-md);"></div>
 
                 <form id="loginForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div style="margin-bottom: var(--spacing-4);">
                         <label for="email" style="display: block; margin-bottom: var(--spacing-2); font-weight: var(--font-weight-medium); color: var(--neutral-gray-700);">
                             E-mail

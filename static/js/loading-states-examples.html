@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplos - Loading States System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .example-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .example-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .code-block {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            margin-top: 10px;
+            border-left: 3px solid #007bff;
+        }
+        .demo-container {
+            min-height: 200px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">
+            <i class="fas fa-spinner fa-spin me-2"></i>
+            Sistema de Loading States - Exemplos
+        </h1>
+        
+        <!-- Exemplo 1: Botão com Loading -->
+        <div class="example-section">
+            <div class="example-title">1. Botão com Loading Automático</div>
+            <p>Adicione <code>data-loading</code> ao botão para ativar loading automático ao clicar.</p>
+            
+            <button class="btn btn-primary" data-loading data-loading-text="Salvando..." data-loading-duration="2000">
+                <i class="fas fa-save me-2"></i>
+                Salvar Dados
+            </button>
+            
+            <div class="code-block">
+&lt;button class="btn btn-primary" data-loading data-loading-text="Salvando..." data-loading-duration="2000"&gt;
+    Salvar Dados
+&lt;/button&gt;
+            </div>
+        </div>
+
+        <!-- Exemplo 2: Botão Manual -->
+        <div class="example-section">
+            <div class="example-title">2. Controle Manual de Loading em Botão</div>
+            <p>Use a API JavaScript para controlar o loading manualmente.</p>
+            
+            <button id="manual-btn" class="btn btn-success">
+                <i class="fas fa-upload me-2"></i>
+                Enviar Arquivo
+            </button>
+            
+            <div class="code-block">
+const button = document.getElementById('manual-btn');
+button.addEventListener('click', async () => {
+    window.loadingStates.showButtonLoading(button, 'Enviando...');
+    
+    // Simula operação assíncrona
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    window.loadingStates.hideButtonLoading(button);
+});
+            </div>
+        </div>
+
+        <!-- Exemplo 3: Formulário com Loading -->
+        <div class="example-section">
+            <div class="example-title">3. Formulário com Loading Automático</div>
+            <p>O loading é aplicado automaticamente ao submeter o formulário.</p>
+            
+            <form id="demo-form" onsubmit="return handleFormSubmit(event)">
+                <div class="mb-3">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-2"></i>
+                    Enviar Formulário
+                </button>
+            </form>
+            
+            <div class="code-block">
+// O sistema detecta automaticamente o submit e adiciona loading
+// Para remover o loading após AJAX:
+window.loadingStates.hideFormLoading(form);
+            </div>
+        </div>
+
+        <!-- Exemplo 4: Skeleton Loading -->
+        <div class="example-section">
+            <div class="example-title">4. Skeleton Loading para Conteúdo</div>
+            <p>Mostre skeleton enquanto carrega dados.</p>
+            
+            <div class="mb-3">
+                <button class="btn btn-info me-2" onclick="showCardSkeleton()">
+                    <i class="fas fa-th-large me-2"></i>
+                    Cards
+                </button>
+                <button class="btn btn-info me-2" onclick="showListSkeleton()">
+                    <i class="fas fa-list me-2"></i>
+                    Lista
+                </button>
+                <button class="btn btn-info me-2" onclick="showTableSkeleton()">
+                    <i class="fas fa-table me-2"></i>
+                    Tabela
+                </button>
+                <button class="btn btn-secondary" onclick="hideSkeleton()">
+                    <i class="fas fa-eye me-2"></i>
+                    Mostrar Conteúdo
+                </button>
+            </div>
+            
+            <div id="skeleton-demo" class="demo-container">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Clique nos botões acima para ver diferentes tipos de skeleton loading
+                </div>
+            </div>
+            
+            <div class="code-block">
+// Mostrar skeleton
+window.loadingStates.showSkeleton(container, 'card', 3);
+
+// Esconder skeleton
+window.loadingStates.hideSkeleton(container);
+            </div>
+        </div>
+
+        <!-- Exemplo 5: AJAX com Loading -->
+        <div class="example-section">
+            <div class="example-title">5. Requisição AJAX com Loading Completo</div>
+            <p>Use o wrapper AJAX que gerencia loading automaticamente.</p>
+            
+            <button id="ajax-btn" class="btn btn-warning">
+                <i class="fas fa-sync me-2"></i>
+                Carregar Dados via AJAX
+            </button>
+            
+            <div id="ajax-result" class="mt-3"></div>
+            
+            <div class="code-block">
+window.loadingStates.ajaxWithLoading({
+    url: '/api/dados',
+    method: 'GET',
+    button: document.getElementById('ajax-btn'),
+    container: document.getElementById('ajax-result'),
+    skeletonType: 'list',
+    onSuccess: (data) => {
+        console.log('Sucesso:', data);
+    },
+    onError: (error) => {
+        console.error('Erro:', error);
+    }
+});
+            </div>
+        </div>
+
+        <!-- Exemplo 6: Fetch com Loading -->
+        <div class="example-section">
+            <div class="example-title">6. Fetch com Loading em Botão</div>
+            <p>Wrapper simples para fetch com loading em botão.</p>
+            
+            <button id="fetch-btn" class="btn btn-danger">
+                <i class="fas fa-download me-2"></i>
+                Baixar Dados
+            </button>
+            
+            <div class="code-block">
+const button = document.getElementById('fetch-btn');
+button.addEventListener('click', async () => {
+    const response = await window.loadingStates.fetchWithLoading(
+        '/api/download',
+        { method: 'GET' },
+        button
+    );
+    const data = await response.json();
+    console.log(data);
+});
+            </div>
+        </div>
+
+        <!-- Exemplo 7: Múltiplos Botões -->
+        <div class="example-section">
+            <div class="example-title">7. Múltiplos Botões Independentes</div>
+            <p>Cada botão mantém seu próprio estado de loading.</p>
+            
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary" data-loading data-loading-duration="1500">
+                    Ação 1
+                </button>
+                <button class="btn btn-outline-primary" data-loading data-loading-duration="2000">
+                    Ação 2
+                </button>
+                <button class="btn btn-outline-primary" data-loading data-loading-duration="2500">
+                    Ação 3
+                </button>
+            </div>
+        </div>
+
+        <!-- Informações de API -->
+        <div class="example-section">
+            <div class="example-title">
+                <i class="fas fa-book me-2"></i>
+                API Disponível
+            </div>
+            
+            <h6>Métodos Principais:</h6>
+            <ul>
+                <li><code>showButtonLoading(button, text)</code> - Adiciona loading a um botão</li>
+                <li><code>hideButtonLoading(button)</code> - Remove loading de um botão</li>
+                <li><code>showFormLoading(form)</code> - Adiciona loading a um formulário</li>
+                <li><code>hideFormLoading(form)</code> - Remove loading de um formulário</li>
+                <li><code>showSkeleton(container, type, count)</code> - Mostra skeleton loading</li>
+                <li><code>hideSkeleton(container)</code> - Remove skeleton loading</li>
+                <li><code>fetchWithLoading(url, options, button)</code> - Fetch com loading</li>
+                <li><code>ajaxWithLoading(config)</code> - AJAX completo com loading</li>
+                <li><code>resetAll()</code> - Reseta todos os estados de loading</li>
+            </ul>
+            
+            <h6 class="mt-3">Tipos de Skeleton:</h6>
+            <ul>
+                <li><code>'card'</code> - Cards com header, body e footer</li>
+                <li><code>'list'</code> - Lista com avatar e conteúdo</li>
+                <li><code>'table'</code> - Tabela com header e linhas</li>
+                <li><code>'generic'</code> - Linhas genéricas</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="loading-states.js"></script>
+    <script>
+        // Exemplo 2: Botão Manual
+        document.getElementById('manual-btn').addEventListener('click', async () => {
+            const button = document.getElementById('manual-btn');
+            window.loadingStates.showButtonLoading(button, 'Enviando...');
+            
+            // Simula operação assíncrona
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            window.loadingStates.hideButtonLoading(button);
+            alert('Arquivo enviado com sucesso!');
+        });
+
+        // Exemplo 3: Formulário
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            
+            // Simula envio
+            setTimeout(() => {
+                window.loadingStates.hideFormLoading(form);
+                alert('Formulário enviado com sucesso!');
+                form.reset();
+            }, 2000);
+            
+            return false;
+        }
+
+        // Exemplo 4: Skeleton Loading
+        const skeletonContainer = document.getElementById('skeleton-demo');
+        const originalContent = skeletonContainer.innerHTML;
+
+        function showCardSkeleton() {
+            window.loadingStates.showSkeleton(skeletonContainer, 'card', 3);
+        }
+
+        function showListSkeleton() {
+            window.loadingStates.showSkeleton(skeletonContainer, 'list', 5);
+        }
+
+        function showTableSkeleton() {
+            window.loadingStates.showSkeleton(skeletonContainer, 'table', 4);
+        }
+
+        function hideSkeleton() {
+            skeletonContainer.innerHTML = originalContent;
+        }
+
+        // Exemplo 5: AJAX
+        document.getElementById('ajax-btn').addEventListener('click', async () => {
+            const button = document.getElementById('ajax-btn');
+            const container = document.getElementById('ajax-result');
+            
+            window.loadingStates.showButtonLoading(button, 'Carregando...');
+            window.loadingStates.showSkeleton(container, 'list', 3);
+            
+            // Simula requisição AJAX
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            window.loadingStates.hideButtonLoading(button);
+            container.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Dados carregados com sucesso!
+                    <ul class="mt-2 mb-0">
+                        <li>Item 1 - Carregado</li>
+                        <li>Item 2 - Carregado</li>
+                        <li>Item 3 - Carregado</li>
+                    </ul>
+                </div>
+            `;
+        });
+
+        // Exemplo 6: Fetch
+        document.getElementById('fetch-btn').addEventListener('click', async () => {
+            const button = document.getElementById('fetch-btn');
+            
+            try {
+                window.loadingStates.showButtonLoading(button, 'Baixando...');
+                
+                // Simula download
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                window.loadingStates.hideButtonLoading(button);
+                alert('Download concluído!');
+            } catch (error) {
+                window.loadingStates.hideButtonLoading(button);
+                alert('Erro no download: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

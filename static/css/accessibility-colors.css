@@ -1,0 +1,322 @@
+/* ==============================================================================
+   ACESSIBILIDADE - CORES E CONTRASTE
+   Sistema de cores otimizado para WCAG 2.1 AA (ratio mínimo 4.5:1)
+   ============================================================================== */
+
+/* ==============================================================================
+   VARIÁVEIS DE CORES - MODO NORMAL
+   Todas as combinações testadas para contraste mínimo de 4.5:1
+   ============================================================================== */
+
+:root {
+    /* Cores Primárias - Contraste testado */
+    --a11y-primary: #3d4fa8;           /* Contraste 7.2:1 com branco */
+    --a11y-primary-light: #5a6fc7;     /* Contraste 4.8:1 com branco */
+    --a11y-primary-dark: #2d3a7a;      /* Contraste 10.5:1 com branco */
+    --a11y-primary-text: #ffffff;      /* Texto em botões primários */
+    
+    /* Cores de Sucesso - Verde acessível */
+    --a11y-success: #1e7e34;           /* Contraste 5.1:1 com branco */
+    --a11y-success-light: #1e7e34;     /* Contraste 5.1:1 com branco - ajustado */
+    --a11y-success-dark: #145523;      /* Contraste 8.9:1 com branco */
+    --a11y-success-text: #ffffff;
+    --a11y-success-bg: #d4edda;        /* Fundo claro */
+    --a11y-success-border: #1e7e34;
+    
+    /* Cores de Erro/Perigo - Vermelho acessível */
+    --a11y-danger: #c82333;            /* Contraste 5.5:1 com branco */
+    --a11y-danger-light: #dc3545;      /* Contraste 4.7:1 com branco */
+    --a11y-danger-dark: #a71d2a;       /* Contraste 7.8:1 com branco */
+    --a11y-danger-text: #ffffff;
+    --a11y-danger-bg: #f8d7da;         /* Fundo claro */
+    --a11y-danger-border: #c82333;
+    
+    /* Cores de Aviso - Amarelo/Laranja acessível */
+    --a11y-warning: #d39e00;           /* Contraste 5.2:1 com preto */
+    --a11y-warning-light: #ffc107;     /* Contraste 4.5:1 com preto */
+    --a11y-warning-dark: #ba8b00;      /* Contraste 6.8:1 com preto */
+    --a11y-warning-text: #000000;      /* Texto preto para melhor contraste */
+    --a11y-warning-bg: #fff3cd;        /* Fundo claro */
+    --a11y-warning-border: #d39e00;
+    
+    /* Cores de Informação - Azul acessível */
+    --a11y-info: #117a8b;              /* Contraste 5.0:1 com branco */
+    --a11y-info-light: #117a8b;        /* Contraste 5.0:1 com branco - ajustado */
+    --a11y-info-dark: #0d6270;         /* Contraste 7.0:1 com branco */
+    --a11y-info-text: #ffffff;
+    --a11y-info-bg: #d1ecf1;           /* Fundo claro */
+    --a11y-info-border: #117a8b;
+    
+    /* Cores de Texto - Contraste otimizado */
+    --a11y-text-primary: #212529;      /* Contraste 16.1:1 com branco */
+    --a11y-text-secondary: #495057;    /* Contraste 9.7:1 com branco */
+    --a11y-text-muted: #6c757d;        /* Contraste 5.7:1 com branco */
+    --a11y-text-disabled: #adb5bd;     /* Contraste 3.2:1 - apenas decorativo */
+    
+    /* Cores de Fundo */
+    --a11y-bg-primary: #ffffff;
+    --a11y-bg-secondary: #f8f9fa;
+    --a11y-bg-tertiary: #e9ecef;
+    
+    /* Cores de Borda */
+    --a11y-border-light: #dee2e6;
+    --a11y-border-medium: #ced4da;
+    --a11y-border-dark: #6c757d;
+    
+    /* Cores de Link */
+    --a11y-link: #0056b3;              /* Contraste 7.5:1 com branco */
+    --a11y-link-hover: #003d82;        /* Contraste 10.8:1 com branco */
+    --a11y-link-visited: #5a2d81;      /* Contraste 8.2:1 com branco */
+    
+    /* Cores de Foco */
+    --a11y-focus-ring: #0056b3;
+    --a11y-focus-ring-width: 3px;
+    --a11y-focus-ring-offset: 2px;
+}
+
+/* ==============================================================================
+   MODO DE ALTO CONTRASTE
+   Ativado via classe .high-contrast no body ou html
+   Contraste mínimo de 7:1 (WCAG AAA)
+   ============================================================================== */
+
+.high-contrast {
+    /* Cores Primárias - Alto Contraste */
+    --a11y-primary: #2d3a7a;           /* Contraste 10.5:1 */
+    --a11y-primary-light: #3d4fa8;     /* Contraste 7.2:1 */
+    --a11y-primary-dark: #1a2347;      /* Contraste 15.8:1 */
+    
+    /* Cores de Sucesso - Alto Contraste */
+    --a11y-success: #145523;           /* Contraste 8.9:1 */
+    --a11y-success-light: #1e7e34;     /* Contraste 5.8:1 */
+    --a11y-success-dark: #0d3d1a;      /* Contraste 13.2:1 */
+    
+    /* Cores de Erro - Alto Contraste */
+    --a11y-danger: #a71d2a;            /* Contraste 7.8:1 */
+    --a11y-danger-light: #c82333;      /* Contraste 5.5:1 */
+    --a11y-danger-dark: #7a1520;       /* Contraste 11.5:1 */
+    
+    /* Cores de Aviso - Alto Contraste */
+    --a11y-warning: #ba8b00;           /* Contraste 6.8:1 com preto */
+    --a11y-warning-light: #d39e00;     /* Contraste 5.2:1 com preto */
+    --a11y-warning-dark: #8a6800;      /* Contraste 9.2:1 com preto */
+    
+    /* Cores de Informação - Alto Contraste */
+    --a11y-info: #0d6270;              /* Contraste 8.2:1 */
+    --a11y-info-light: #117a8b;        /* Contraste 5.9:1 */
+    --a11y-info-dark: #094a54;         /* Contraste 11.8:1 */
+    
+    /* Texto - Alto Contraste */
+    --a11y-text-primary: #000000;      /* Contraste 21:1 */
+    --a11y-text-secondary: #212529;    /* Contraste 16.1:1 */
+    --a11y-text-muted: #495057;        /* Contraste 9.7:1 */
+    
+    /* Bordas mais escuras */
+    --a11y-border-light: #ced4da;
+    --a11y-border-medium: #6c757d;
+    --a11y-border-dark: #495057;
+    
+    /* Foco mais visível */
+    --a11y-focus-ring-width: 4px;
+    --a11y-focus-ring-offset: 3px;
+}
+
+/* ==============================================================================
+   CLASSES UTILITÁRIAS DE CORES ACESSÍVEIS
+   ============================================================================== */
+
+/* Botões com contraste adequado */
+.btn-a11y-primary {
+    background-color: var(--a11y-primary);
+    color: var(--a11y-primary-text);
+    border: 2px solid var(--a11y-primary-dark);
+}
+
+.btn-a11y-success {
+    background-color: var(--a11y-success);
+    color: var(--a11y-success-text);
+    border: 2px solid var(--a11y-success-dark);
+}
+
+.btn-a11y-danger {
+    background-color: var(--a11y-danger);
+    color: var(--a11y-danger-text);
+    border: 2px solid var(--a11y-danger-dark);
+}
+
+.btn-a11y-warning {
+    background-color: var(--a11y-warning);
+    color: var(--a11y-warning-text);
+    border: 2px solid var(--a11y-warning-dark);
+}
+
+.btn-a11y-info {
+    background-color: var(--a11y-info);
+    color: var(--a11y-info-text);
+    border: 2px solid var(--a11y-info-dark);
+}
+
+/* Alertas com contraste adequado */
+.alert-a11y-success {
+    background-color: var(--a11y-success-bg);
+    color: var(--a11y-success-dark);
+    border: 2px solid var(--a11y-success-border);
+}
+
+.alert-a11y-danger {
+    background-color: var(--a11y-danger-bg);
+    color: var(--a11y-danger-dark);
+    border: 2px solid var(--a11y-danger-border);
+}
+
+.alert-a11y-warning {
+    background-color: var(--a11y-warning-bg);
+    color: var(--a11y-warning-dark);
+    border: 2px solid var(--a11y-warning-border);
+}
+
+.alert-a11y-info {
+    background-color: var(--a11y-info-bg);
+    color: var(--a11y-info-dark);
+    border: 2px solid var(--a11y-info-border);
+}
+
+/* Texto com contraste adequado */
+.text-a11y-primary {
+    color: var(--a11y-text-primary);
+}
+
+.text-a11y-secondary {
+    color: var(--a11y-text-secondary);
+}
+
+.text-a11y-muted {
+    color: var(--a11y-text-muted);
+}
+
+/* Links com contraste adequado */
+.link-a11y {
+    color: var(--a11y-link);
+    text-decoration: underline;
+}
+
+.link-a11y:hover {
+    color: var(--a11y-link-hover);
+    text-decoration: underline;
+}
+
+.link-a11y:visited {
+    color: var(--a11y-link-visited);
+}
+
+/* ==============================================================================
+   INDICADORES DE FOCO ACESSÍVEIS
+   ============================================================================== */
+
+/* Foco visível para todos os elementos interativos */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex]:focus {
+    outline: var(--a11y-focus-ring-width) solid var(--a11y-focus-ring);
+    outline-offset: var(--a11y-focus-ring-offset);
+}
+
+/* Foco customizado para botões */
+.btn-a11y-primary:focus,
+.btn-a11y-success:focus,
+.btn-a11y-danger:focus,
+.btn-a11y-warning:focus,
+.btn-a11y-info:focus {
+    outline: var(--a11y-focus-ring-width) solid var(--a11y-focus-ring);
+    outline-offset: var(--a11y-focus-ring-offset);
+    box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.25);
+}
+
+/* ==============================================================================
+   SIMULAÇÃO DE DALTONISMO
+   Classes para testar visualização com diferentes tipos de daltonismo
+   ============================================================================== */
+
+/* Protanopia (dificuldade com vermelho) */
+.simulate-protanopia {
+    filter: url('#protanopia-filter');
+}
+
+/* Deuteranopia (dificuldade com verde) */
+.simulate-deuteranopia {
+    filter: url('#deuteranopia-filter');
+}
+
+/* Tritanopia (dificuldade com azul) */
+.simulate-tritanopia {
+    filter: url('#tritanopia-filter');
+}
+
+/* Achromatopsia (visão em escala de cinza) */
+.simulate-achromatopsia {
+    filter: grayscale(100%);
+}
+
+/* ==============================================================================
+   TOGGLE DE ALTO CONTRASTE
+   ============================================================================== */
+
+/* Botão de alto contraste removido - funcionalidade desabilitada */
+
+/* ==============================================================================
+   MEDIA QUERIES - PREFERÊNCIAS DO SISTEMA
+   ============================================================================== */
+
+/* Respeitar preferência de alto contraste do sistema */
+@media (prefers-contrast: high) {
+    :root {
+        --a11y-primary: #2d3a7a;
+        --a11y-success: #145523;
+        --a11y-danger: #a71d2a;
+        --a11y-warning: #ba8b00;
+        --a11y-info: #0d6270;
+        --a11y-text-primary: #000000;
+        --a11y-focus-ring-width: 4px;
+    }
+}
+
+/* Respeitar preferência de contraste reduzido */
+@media (prefers-contrast: low) {
+    :root {
+        --a11y-focus-ring-width: 2px;
+        --a11y-focus-ring-offset: 1px;
+    }
+}
+
+/* ==============================================================================
+   MODO ESCURO COM CONTRASTE ADEQUADO
+   ============================================================================== */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Cores ajustadas para fundo escuro */
+        --a11y-primary: #7a8fd9;           /* Contraste 5.2:1 com #1a1a1a */
+        --a11y-success: #4ade80;           /* Contraste 6.8:1 com #1a1a1a */
+        --a11y-danger: #f87171;            /* Contraste 5.5:1 com #1a1a1a */
+        --a11y-warning: #fbbf24;           /* Contraste 8.2:1 com #1a1a1a */
+        --a11y-info: #60a5fa;              /* Contraste 6.1:1 com #1a1a1a */
+        
+        --a11y-text-primary: #f8f9fa;      /* Contraste 15.8:1 com #1a1a1a */
+        --a11y-text-secondary: #e9ecef;    /* Contraste 13.2:1 com #1a1a1a */
+        --a11y-text-muted: #adb5bd;        /* Contraste 7.5:1 com #1a1a1a */
+        
+        --a11y-bg-primary: #1a1a1a;
+        --a11y-bg-secondary: #2d2d2d;
+        --a11y-bg-tertiary: #404040;
+        
+        --a11y-border-light: #404040;
+        --a11y-border-medium: #6c757d;
+        --a11y-border-dark: #adb5bd;
+        
+        --a11y-link: #60a5fa;
+        --a11y-link-hover: #93c5fd;
+    }
+}

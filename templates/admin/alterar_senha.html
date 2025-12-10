@@ -33,6 +33,7 @@
                     </div>
 
                     <form method="POST" id="alterarSenhaForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="mb-3">
                             <label for="senha_atual" class="form-label">
                                 <i class="fas fa-lock me-1"></i>Senha Atual

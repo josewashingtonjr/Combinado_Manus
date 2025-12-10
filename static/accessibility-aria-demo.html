@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Acessibilidade ARIA e Labels</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS de Acessibilidade -->
+    <link href="css/accessibility-keyboard.css" rel="stylesheet">
+    
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .demo-section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-section h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+        .example {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+            border-radius: 4px;
+        }
+        .example-title {
+            font-weight: 600;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .keyboard-hint {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-5">
+            <h1>
+                <i class="fas fa-universal-access" aria-hidden="true"></i>
+                Demo - Acessibilidade ARIA e Labels
+            </h1>
+            <p class="lead">Exemplos práticos das melhorias de acessibilidade implementadas</p>
+            <div class="keyboard-hint">
+                <i class="fas fa-keyboard" aria-hidden="true"></i>
+                <strong>Dica:</strong> Pressione <kbd>Tab</kbd> para navegar pelos elementos e ver os indicadores de foco
+            </div>
+        </header>
+
+        <!-- Seção 1: Labels em Formulários -->
+        <section class="demo-section">
+            <h2>
+                <i class="fas fa-tags" aria-hidden="true"></i>
+                1. Labels em Campos de Formulário
+                <span class="status-badge status-success">✓ Implementado</span>
+            </h2>
+            
+            <div class="example">
+                <div class="example-title">Exemplo: Formulário com Labels Adequados</div>
+                <form>
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">
+                            <i class="fas fa-user" aria-hidden="true"></i>
+                            Nome Completo *
+                        </label>
+                        <input type="text" class="form-control" id="nome" name="nome" 
+                               placeholder="Digite seu nome" required>
+                        <small class="form-text text-muted">Este campo é obrigatório</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            E-mail *
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               placeholder="seu@email.com" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="telefone" class="form-label">
+                            <i class="fas fa-phone" aria-hidden="true"></i>
+                            Telefone
+                        </label>
+                        <input type="tel" class="form-control" id="telefone" name="telefone" 
+                               placeholder="(11) 99999-9999">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                        Enviar
+                    </button>
+                </form>
+                
+                <div class="code-block mt-3">
+&lt;!-- O script JavaScript adiciona automaticamente: --&gt;
+&lt;input type="text" id="nome" 
+       aria-label="Nome Completo"
+       aria-required="true"
+       required&gt;
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>O que acontece:</strong>
+                <ul class="mb-0">
+                    <li>Campos com <code>&lt;label for="id"&gt;</code> são associados corretamente</li>
+                    <li>Campos sem label recebem <code>aria-label</code> automaticamente</li>
+                    <li>Campos obrigatórios recebem <code>aria-required="true"</code></li>
+                    <li>Leitores de tela anunciam o label ao focar no campo</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Seção 2: Ícones com ARIA -->
+        <section class="demo-section">
+            <h2>
+                <i class="fas fa-icons" aria-hidden="true"></i>
+                2. Ícones com Atributos ARIA
+                <span class="status-badge status-success">✓ Implementado</span>
+            </h2>
+            
+            <div class="example">
+                <div class="example-title">Exemplo: Ícones Decorativos vs Funcionais</div>
+                
+                <h5>Ícones Decorativos (com texto):</h5>
+                <div class="mb-3">
+                    <button class="btn btn-primary me-2">
+                        <i class="fas fa-home"></i>
+                        Início
+                    </button>
+                    <button class="btn btn-success me-2">
+                        <i class="fas fa-check"></i>
+                        Confirmar
+                    </button>
+                    <button class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        Excluir
+                    </button>
+                </div>
+                
+                <h5>Ícones Funcionais (sem texto):</h5>
+                <div class="mb-3">
+                    <button class="btn btn-outline-primary me-2" title="Buscar">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary me-2" title="Configurações">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="btn btn-outline-info" title="Ajuda">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+                
+                <div class="code-block">
+&lt;!-- Ícone decorativo (script adiciona aria-hidden) --&gt;
+&lt;button&gt;
+    &lt;i class="fas fa-home" aria-hidden="true"&gt;&lt;/i&gt;
+    Início
+&lt;/button&gt;
+
+&lt;!-- Ícone funcional (script adiciona aria-label) --&gt;
+&lt;button&gt;
+    &lt;i class="fas fa-search" aria-label="Buscar" role="img"&gt;&lt;/i&gt;
+&lt;/button&gt;
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>O que acontece:</strong>
+                <ul class="mb-0">
+                    <li>Ícones com texto ao lado recebem <code>aria-hidden="true"</code></li>
+                    <li>Ícones sem texto recebem <code>aria-label</code> descritivo</li>
+                    <li>Mapeamento de 100+ ícones comuns do Font Awesome</li>
+                    <li>Leitores de tela ignoram ícones decorativos e anunciam os funcionais</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Seção 3: Mensagens Dinâmicas -->
+        <section class="demo-section">
+            <h2>
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                3. Mensagens Dinâmicas com aria-live
+                <span class="status-badge status-success">✓ Implementado</span>
+            </h2>
+            
+            <div class="example">
+                <div class="example-title">Exemplo: Diferentes Tipos de Alertas</div>
+                
+                <div class="alert alert-success" role="alert">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    <strong>Sucesso!</strong> Operação realizada com sucesso.
+                </div>
+                
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <strong>Atenção!</strong> Verifique as informações antes de continuar.
+                </div>
+                
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-times-circle" aria-hidden="true"></i>
+                    <strong>Erro!</strong> Não foi possível completar a operação.
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <strong>Informação:</strong> Esta é uma mensagem informativa.
+                </div>
+                
+                <button class="btn btn-primary" onclick="showDynamicAlert()">
+                    <i class="fas fa-plus" aria-hidden="true"></i>
+                    Adicionar Alerta Dinâmico
+                </button>
+                
+                <div id="dynamic-alerts" class="mt-3"></div>
+                
+                <div class="code-block mt-3">
+&lt;!-- O script adiciona automaticamente: --&gt;
+&lt;div class="alert alert-success" 
+     role="alert"
+     aria-live="polite"
+     aria-atomic="true"&gt;
+    Mensagem de sucesso
+&lt;/div&gt;
+
+&lt;div class="alert alert-danger" 
+     role="alert"
+     aria-live="assertive"
+     aria-atomic="true"&gt;
+    Mensagem de erro (mais urgente)
+&lt;/div&gt;
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>O que acontece:</strong>
+                <ul class="mb-0">
+                    <li>Alertas recebem <code>aria-live="polite"</code> ou <code>"assertive"</code></li>
+                    <li>Mensagens de erro usam "assertive" para interromper leitura</li>
+                    <li>Mensagens de sucesso usam "polite" para não interromper</li>
+                    <li>Leitores de tela anunciam mensagens automaticamente</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Seção 4: Navegação por Teclado -->
+        <section class="demo-section">
+            <h2>
+                <i class="fas fa-keyboard" aria-hidden="true"></i>
+                4. Navegação por Teclado
+                <span class="status-badge status-success">✓ Implementado</span>
+            </h2>
+            
+            <div class="example">
+                <div class="example-title">Exemplo: Elementos Focáveis</div>
+                
+                <div class="keyboard-hint mb-3">
+                    <strong>Teste agora:</strong> Pressione <kbd>Tab</kbd> para navegar pelos elementos abaixo
+                </div>
+                
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary">Botão 1</button>
+                    <button class="btn btn-secondary">Botão 2</button>
+                    <a href="#" class="btn btn-success">Link como Botão</a>
+                    <div class="btn btn-info" tabindex="0" role="button">Div como Botão</div>
+                    <input type="text" class="form-control" style="width: 200px;" placeholder="Campo de texto">
+                    <select class="form-select" style="width: 150px;">
+                        <option>Opção 1</option>
+                        <option>Opção 2</option>
+                    </select>
+                </div>
+                
+                <div class="code-block mt-3">
+/* CSS aplicado automaticamente */
+*:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.keyboard-navigation *:focus {
+    outline: 3px solid #ffc107;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.2);
+}
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>O que acontece:</strong>
+                <ul class="mb-0">
+                    <li>Indicadores de foco visíveis e claros (outline amarelo/azul)</li>
+                    <li>Skip link aparece no primeiro Tab (pular para conteúdo)</li>
+                    <li>Elementos customizados recebem <code>tabindex="0"</code></li>
+                    <li>Suporte para Enter e Space em elementos com <code>role="button"</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Seção 5: Navegação Mobile -->
+        <section class="demo-section">
+            <h2>
+                <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                5. Navegação Mobile Acessível
+                <span class="status-badge status-success">✓ Implementado</span>
+            </h2>
+            
+            <div class="example">
+                <div class="example-title">Exemplo: Barra de Navegação Mobile</div>
+                
+                <div style="max-width: 400px; margin: 0 auto; border: 2px solid #ddd; border-radius: 8px; padding: 10px;">
+                    <nav role="navigation" aria-label="Navegação principal mobile" style="background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                        <ul style="list-style: none; padding: 0; margin: 0; display: flex; justify-content: space-around;">
+                            <li>
+                                <a href="#" aria-current="page" style="text-decoration: none; color: #007bff;">
+                                    <i class="fas fa-home" aria-hidden="true"></i>
+                                    <span style="display: block; font-size: 12px;">Início</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" aria-label="Convites (3 pendentes)" style="text-decoration: none; color: #6c757d; position: relative;">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
+                                    <span class="badge bg-danger" style="position: absolute; top: -5px; right: -5px; font-size: 10px;" aria-label="3 convites pendentes">3</span>
+                                    <span style="display: block; font-size: 12px;">Convites</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" style="text-decoration: none; color: #6c757d;">
+                                    <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                                    <span style="display: block; font-size: 12px;">Ordens</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" style="text-decoration: none; color: #6c757d;">
+                                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                                    <span style="display: block; font-size: 12px;">Perfil</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                
+                <div class="code-block mt-3">
+&lt;nav role="navigation" aria-label="Navegação principal mobile"&gt;
+    &lt;a href="#" aria-current="page"&gt;
+        &lt;i class="fas fa-home" aria-hidden="true"&gt;&lt;/i&gt;
+        Início
+    &lt;/a&gt;
+    
+    &lt;a href="#" aria-label="Convites (3 pendentes)"&gt;
+        &lt;i class="fas fa-envelope" aria-hidden="true"&gt;&lt;/i&gt;
+        &lt;span class="badge" aria-label="3 convites pendentes"&gt;3&lt;/span&gt;
+        Convites
+    &lt;/a&gt;
+&lt;/nav&gt;
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>O que acontece:</strong>
+                <ul class="mb-0">
+                    <li>Navegação tem <code>role="navigation"</code> e <code>aria-label</code></li>
+                    <li>Link ativo tem <code>aria-current="page"</code></li>
+                    <li>Badges têm <code>aria-label</code> descritivo</li>
+                    <li>Leitores de tela anunciam página atual e notificações</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Resumo -->
+        <section class="demo-section">
+            <h2>
+                <i class="fas fa-check-double" aria-hidden="true"></i>
+                Resumo das Melhorias
+            </h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>✅ Implementado:</h5>
+                    <ul>
+                        <li>Labels automáticos em formulários</li>
+                        <li>ARIA em ícones (100+ mapeados)</li>
+                        <li>aria-live em mensagens dinâmicas</li>
+                        <li>Indicadores de foco visíveis</li>
+                        <li>Skip links para navegação</li>
+                        <li>Suporte completo a teclado</li>
+                        <li>Navegação mobile acessível</li>
+                        <li>Monitoramento de DOM dinâmico</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>📋 Conformidade WCAG 2.1:</h5>
+                    <ul>
+                        <li><strong>Nível A:</strong> 6 critérios atendidos</li>
+                        <li><strong>Nível AA:</strong> 2 critérios atendidos</li>
+                        <li>1.1.1 - Conteúdo Não Textual ✓</li>
+                        <li>1.3.1 - Informação e Relações ✓</li>
+                        <li>2.1.1 - Teclado ✓</li>
+                        <li>2.4.1 - Ignorar Blocos ✓</li>
+                        <li>2.4.7 - Foco Visível ✓</li>
+                        <li>3.3.2 - Labels ou Instruções ✓</li>
+                        <li>4.1.2 - Nome, Função, Valor ✓</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/accessibility-aria.js"></script>
+    
+    <script>
+        // Função para demonstrar alerta dinâmico
+        function showDynamicAlert() {
+            const container = document.getElementById('dynamic-alerts');
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                <strong>Novo alerta!</strong> Este alerta foi adicionado dinamicamente.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            `;
+            container.appendChild(alert);
+            
+            // Remover após 5 segundos
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+        
+        // Log quando o script de acessibilidade carregar
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('✓ Script de acessibilidade ARIA carregado');
+            console.log('✓ Melhorias aplicadas automaticamente');
+            console.log('✓ Pressione Tab para testar navegação por teclado');
+        });
+    </script>
+</body>
+</html>

@@ -5,9 +5,14 @@
 {% block admin_content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-users me-2"></i>Gestão de Usuários</h2>
-    <a href="{{ url_for('admin.criar_usuario') }}" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i>Novo Usuário
-    </a>
+    <div>
+        <a href="{{ url_for('admin.usuarios_deletados') }}" class="btn btn-outline-secondary me-2">
+            <i class="fas fa-user-slash me-1"></i>Usuários Deletados
+        </a>
+        <a href="{{ url_for('admin.criar_usuario') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Novo Usuário
+        </a>
+    </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -60,11 +65,11 @@
                                 <a href="{{ url_for('admin.editar_usuario', user_id=user.id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form method="POST" action="{{ url_for('admin.deletar_usuario', user_id=user.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este usuário?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ user.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -107,4 +112,65 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Modais de Exclusão -->
+{% for user in users %}
+<div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.deletar_usuario', user_id=user.id) }}">
+                <div class="modal-body">
+                    {{ csrf_token() }}
+                    
+                    <div class="alert alert-warning">
+                        <strong>Atenção:</strong> Esta ação irá marcar o usuário como deletado (soft delete). 
+                        O usuário não será removido permanentemente e poderá ser restaurado posteriormente.
+                    </div>
+                    
+                    <p>Tem certeza que deseja deletar o usuário <strong>{{ user.nome }}</strong>?</p>
+                    
+                    <div class="form-group">
+                        <label for="reason{{ user.id }}">Motivo da exclusão:</label>
+                        <textarea class="form-control" 
+                                  id="reason{{ user.id }}" 
+                                  name="reason" 
+                                  rows="3" 
+                                  placeholder="Descreva o motivo da exclusão (opcional)"></textarea>
+                        <small class="form-text text-muted">
+                            Este motivo será registrado no histórico de auditoria.
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="confirm{{ user.id }}" 
+                                   required>
+                            <label class="form-check-label" for="confirm{{ user.id }}">
+                                Confirmo que desejo deletar este usuário
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>
+                        Deletar Usuário
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 {% endblock %}

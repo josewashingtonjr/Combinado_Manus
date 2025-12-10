@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convite de Serviço - Sistema Combinado</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS Customizado -->
+    <link href="/static/css/style.css" rel="stylesheet">
+    
+    
+<link rel="stylesheet" href="/static/css/invite.css">
+<link rel="stylesheet" href="/static/css/responsive-utilities.css">
+<style>
+/* Página de convite - layout limpo sem navegação */
+body.invite-page {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+/* Ocultar completamente todos os elementos de navegação */
+body.invite-page .sidebar, 
+body.invite-page .col-md-2.d-none.d-md-block,
+body.invite-page .navbar-nav, 
+body.invite-page .navbar-toggler,
+body.invite-page nav.navbar,
+body.invite-page .navbar-brand,
+body.invite-page .navbar-collapse,
+body.invite-page .nav-item,
+body.invite-page .dropdown-menu,
+body.invite-page [class*="sidebar"],
+body.invite-page [class*="nav-"],
+body.invite-page [class*="menu-"] {
+    display: none !important;
+}
+
+/* Layout da página de convite ocupa toda a largura */
+body.invite-page .container-fluid {
+    padding: 0;
+    max-width: 100%;
+}
+
+body.invite-page .container-fluid .row {
+    margin: 0;
+}
+
+/* Forçar o conteúdo principal a ocupar toda a largura */
+body.invite-page .col-md-10 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+/* Container da página de convite */
+body.invite-page .invite-page-container {
+    width: 100%;
+    padding: 20px 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+}
+
+/* Garantir que o footer não apareça na página de convite */
+body.invite-page footer {
+    display: none !important;
+}
+</style>
+
+<script>
+// Adicionar classe específica ao body para identificar página de convite
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('invite-page');
+});
+</script>
+
+</head>
+<body>
+    <!-- Navegação -->
+    
+<!-- Não exibir navbar na página de convite -->
+
+    
+    <!-- Mensagens Flash -->
+    
+        
+    
+    
+    <!-- Conteúdo Principal -->
+    <main>
+        
+<!-- Nova estrutura vertical centralizada -->
+<div class="invite-page-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-8 col-xl-6">
+                
+                <!-- Logo destacada no topo -->
+                <div class="invite-logo-section text-center mb-5">
+                    <img src="/static/images/logo.svg" 
+                         alt="Logo Sistema Combinado" 
+                         class="invite-logo img-fluid"
+                         onerror="handleLogoError(this)">
+                    <div class="logo-fallback" style="display: none;">
+                        <h1 class="mb-0">Sistema<br>Combinado</h1>
+                    </div>
+                </div>
+
+                <!-- Título principal -->
+                <div class="invite-header text-center mb-4">
+                    <h2 class="invite-title">Você foi Convidado!</h2>
+                    <p class="invite-subtitle">José Washington Monteiro Chaves Junior enviou um convite especial para você</p>
+                </div>
+                <!-- Card de informações do convite redesenhado -->
+                <div class="invite-info-card card shadow-lg mb-4">
+                    <div class="card-header invite-card-header">
+                        <div class="header-content">
+                            <div class="header-icon">
+                                <i class="fas fa-envelope-open-text"></i>
+                            </div>
+                            <div class="header-text">
+                                <h5 class="mb-0">Detalhes do Convite</h5>
+                                <small class="text-muted">Informações completas do serviço solicitado</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body invite-card-body">
+                        <!-- Título e descrição do serviço com destaque -->
+                        <div class="service-highlight mb-4">
+                            <div class="service-icon-wrapper">
+                                <i class="fas fa-briefcase service-main-icon"></i>
+                            </div>
+                            <h3 class="service-title mb-2">teste5</h3>
+                            <p class="service-description">teste5</p>
+                        </div>
+                        
+                        <!-- Informações principais organizadas em grid -->
+                        <div class="invite-details-grid">
+                            <!-- Valor oferecido - destaque principal -->
+                            <div class="detail-item detail-item-primary">
+                                <div class="detail-icon detail-icon-value">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Valor Oferecido</div>
+                                    <div class="detail-value detail-value-money">
+                                        R$ 90,00
+                                    </div>
+                                    <div class="detail-subtitle">Pagamento após conclusão</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Data de entrega -->
+                            <div class="detail-item detail-item-secondary">
+                                <div class="detail-icon detail-icon-date">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Prazo de Entrega</div>
+                                    <div class="detail-value detail-value-date">
+                                        10 de November de 2025
+                                    </div>
+                                    <div class="detail-subtitle">
+                                        
+                                        
+                                            3 dias para conclusão
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Informações do cliente -->
+                            <div class="detail-item detail-item-secondary">
+                                <div class="detail-icon detail-icon-client">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Solicitado por</div>
+                                    <div class="detail-value detail-value-client">
+                                        José Washington Monteiro Chaves Junior
+                                    </div>
+                                    <div class="detail-subtitle">Cliente verificado</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status e urgência -->
+                            <div class="detail-item detail-item-info">
+                                <div class="detail-icon detail-icon-status">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Status do Convite</div>
+                                    <div class="detail-value detail-value-status">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-hourglass-half me-1"></i>
+                                            Aguardando Resposta
+                                        </span>
+                                    </div>
+                                    <div class="detail-subtitle">
+                                        Expira em 10/11/2025
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações adicionais em formato compacto -->
+                        <div class="invite-metadata mt-4">
+                            <div class="metadata-row">
+                                <div class="metadata-item">
+                                    <i class="fas fa-calendar-plus text-muted me-2"></i>
+                                    <span class="metadata-label">Criado:</span>
+                                    <span class="metadata-value">06/11/2025 às 23:03</span>
+                                </div>
+                                <div class="metadata-item">
+                                    <i class="fas fa-phone text-muted me-2"></i>
+                                    <span class="metadata-label">Contato:</span>
+                                    <span class="metadata-value">89999999999</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banner de segurança -->
+                <div class="security-banner text-center mb-4">
+                    <div class="security-content">
+                        <i class="fas fa-shield-alt security-icon"></i>
+                        <p class="security-text mb-0">
+                            <strong>Seus dados estão protegidos e seguros</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Painel de instruções -->
+                <div class="instructions-panel card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0 text-center">
+                            <i class="fas fa-list-ol me-2"></i>
+                            Como proceder
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="instruction-steps">
+                            <div class="instruction-step">
+                                <div class="step-icon-wrapper">
+                                    <div class="step-number">1</div>
+                                    <div class="step-icon">
+                                        <i class="fas fa-search"></i>
+                                    </div>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Analise o convite</strong><br>
+                                    <small>Verifique os detalhes do serviço, valor e prazo de entrega</small>
+                                </div>
+                            </div>
+                            <div class="instruction-step">
+                                <div class="step-icon-wrapper">
+                                    <div class="step-number">2</div>
+                                    <div class="step-icon">
+                                        <i class="fas fa-balance-scale"></i>
+                                    </div>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Decida sua resposta</strong><br>
+                                    <small>Aceite para criar sua conta ou rejeite se não puder atender</small>
+                                </div>
+                            </div>
+                            <div class="instruction-step">
+                                <div class="step-icon-wrapper">
+                                    <div class="step-number">3</div>
+                                    <div class="step-icon">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                </div>
+                                <div class="step-content">
+                                    <strong>Complete seu cadastro</strong><br>
+                                    <small>Se aceitar, você será direcionado para criar sua conta no sistema</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dica adicional destacada -->
+                        <div class="instruction-tip mt-3">
+                            <div class="tip-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="tip-content">
+                                <strong>Dica importante:</strong> Você pode rejeitar o convite sem problemas. 
+                                Isso permitirá que o cliente envie para outro prestador.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de ação principais -->
+                <div class="action-buttons text-center mb-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-sm-6">
+                            <form method="POST" action="/auth/convite/HIPgij0QzzlQ6C8fXs2A9lxRBaXczKKa/aceitar-inicial" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="IjBhMGE3MTM5YjJiYWUzMGFiMjY4NGJkM2JiNjRmM2I5YTQ0NzU3ZGUi.aQ0sdA.vWXOmg7mSkLZ4b7J95sBv9QWJnk"/>
+                                <button type="submit" 
+                                        class="btn btn-success btn-lg w-100 accept-btn" 
+                                        aria-label="Aceitar convite e prosseguir para login/cadastro"
+                                        title="Clique para aceitar o convite e prosseguir para login/cadastro">
+                                    <i class="fas fa-check me-2" aria-hidden="true"></i>
+                                    <span class="btn-text">Aceitar Convite</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <button type="button" 
+                                    class="btn btn-danger btn-lg w-100 reject-btn" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#rejectModal"
+                                    aria-label="Rejeitar convite"
+                                    title="Clique para rejeitar este convite">
+                                <i class="fas fa-times me-2" aria-hidden="true"></i>
+                                <span class="btn-text">Rejeitar Convite</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Explicação do fluxo -->
+                    <div class="mt-3">
+                        <p class="small text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Ao aceitar, você será direcionado para fazer login ou criar sua conta
+                        </p>
+                    </div>
+                </div>
+
+
+
+                <!-- Rodapé com ajuda -->
+                <div class="text-center mt-4">
+                    <p class="small text-muted">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Precisa de ajuda? <a href="mailto:suporte@combinado.com">Entre em contato</a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Rejeição Melhorado -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectModalLabel">
+                    <i class="fas fa-times-circle me-2"></i>Rejeitar Convite de Serviço
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="POST" action="/auth/convite/HIPgij0QzzlQ6C8fXs2A9lxRBaXczKKa/rejeitar" id="rejectForm">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="IjBhMGE3MTM5YjJiYWUzMGFiMjY4NGJkM2JiNjRmM2I5YTQ0NzU3ZGUi.aQ0sdA.vWXOmg7mSkLZ4b7J95sBv9QWJnk"/>
+                    
+                    <!-- Resumo do convite -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading mb-2">
+                            <i class="fas fa-info-circle me-2"></i>Resumo do Convite
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Serviço:</strong> teste5<br>
+                                <strong>Cliente:</strong> José Washington Monteiro Chaves Junior
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Valor:</strong> R$ 90,00<br>
+                                <strong>Prazo:</strong> 10/11/2025
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aviso sobre a rejeição -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atenção!</strong> Ao rejeitar este convite:
+                        <ul class="mb-0 mt-2">
+                            <li>O cliente será notificado automaticamente</li>
+                            <li>O cliente poderá enviar o convite para outro prestador</li>
+                            <li>Esta ação não pode ser desfeita</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Campo para motivo da rejeição -->
+                    <div class="mb-3">
+                        <label for="reject_reason" class="form-label">
+                            <i class="fas fa-comment-alt me-1"></i>
+                            <strong>Motivo da rejeição (opcional)</strong>
+                        </label>
+                        <textarea class="form-control" id="reject_reason" name="reason" rows="4" 
+                                  placeholder="Explique brevemente por que não pode aceitar este convite. Exemplos:&#10;- Não tenho disponibilidade na data solicitada&#10;- Não trabalho com este tipo de serviço&#10;- Valor não está adequado para o serviço&#10;- Localização muito distante"></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb text-warning me-1"></i>
+                            Fornecer um motivo ajuda o cliente a entender sua decisão e pode facilitar futuras negociações
+                        </div>
+                    </div>
+                    
+                    <!-- Opções rápidas de motivo -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-list me-1"></i>
+                            <strong>Motivos comuns (clique para usar)</strong>
+                        </label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Não tenho disponibilidade na data solicitada">
+                                <i class="fas fa-calendar-times me-1"></i>Sem disponibilidade
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Não trabalho com este tipo de serviço">
+                                <i class="fas fa-tools me-1"></i>Fora da especialidade
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Localização muito distante">
+                                <i class="fas fa-map-marker-alt me-1"></i>Localização distante
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                    data-reason="Valor não está adequado para o serviço">
+                                <i class="fas fa-dollar-sign me-1"></i>Valor inadequado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger confirm-reject-btn">
+                        <i class="fas fa-times me-2"></i>
+                        <span class="btn-text">Confirmar Rejeição</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    </main>
+    
+    <!-- Rodapé -->
+    
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <h6 class="text-light mb-2">Sistema Combinado</h6>
+                    <p class="mb-1">© 2025 W-jr (89) 98137-5841. Todos os direitos reservados.</p>
+                    <small class="text-muted">Build 20251105001 - 2025-11-05</small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="mb-1">
+                        <i class="fas fa-code me-1"></i>
+                        Versão 1.0.0
+                    </p>
+                    <p class="mb-1">
+                        <i class="fas fa-phone me-1"></i>
+                        Contato: (89) 98137-5841
+                    </p>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>
+                        Build: 2025-11-05
+                    </small>
+                </div>
+            </div>
+            <hr class="my-3 border-secondary">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <small class="text-muted">
+                        Sistema de gestão de serviços com tokenomics interno
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JS Customizado -->
+    <script src="/static/js/main.js"></script>
+    
+    <!-- Sistema de Timeout de Sessão -->
+    
+    
+    
+<script src="/static/js/invite-interactions.js"></script>
+<script>
+
+// Função para lidar com erro de carregamento da logo
+function handleLogoError(img) {
+    img.onerror = null; // Prevenir loop infinito
+    img.src = '/static/images/logo.png';
+    if (img.complete && img.naturalWidth === 0) {
+        img.style.display = 'none';
+        img.nextElementSibling.style.display = 'inline-block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificação aprimorada da logo
+    const logoImg = document.querySelector('.invite-logo');
+    const logoFallback = document.querySelector('.logo-fallback');
+    
+    if (logoImg && logoFallback) {
+        // Função para mostrar fallback
+        function showFallback() {
+            logoImg.style.display = 'none';
+            logoFallback.style.display = 'inline-block';
+        }
+        
+        // Verificar se a imagem carregou corretamente
+        logoImg.addEventListener('load', function() {
+            if (this.naturalWidth === 0 || this.naturalHeight === 0) {
+                showFallback();
+            }
+        });
+        
+        // Verificação adicional após um tempo
+        setTimeout(function() {
+            if (logoImg.complete && (logoImg.naturalWidth === 0 || logoImg.naturalHeight === 0)) {
+                showFallback();
+            }
+        }, 1000);
+    }
+    
+    // Máscaras, validações e interações são gerenciadas pelo invite-interactions.js
+});
+</script>
+
+</body>
+</html>

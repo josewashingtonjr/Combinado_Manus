@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Pré-Ordem Convertida{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-success">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-check-double"></i> Pré-Ordem Convertida em Ordem!
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success" role="alert">
+                        <h5 class="alert-heading">🎉 Negociação concluída com sucesso!</h5>
+                        <hr>
+                        <p class="mb-0">
+                            A pré-ordem #{{ pre_order.id }} foi convertida em ordem definitiva #{{ order.id }}.
+                            Ambas as partes aceitaram os termos finais e os valores foram bloqueados em escrow.
+                        </p>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Detalhes da Ordem</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Número da Ordem:</strong> <span class="badge bg-primary">#{{ order.id }}</span></li>
+                                <li><strong>Serviço:</strong> {{ order.title }}</li>
+                                <li><strong>Descrição:</strong> {{ order.description }}</li>
+                                <li><strong>Valor Final:</strong> <span class="text-success fw-bold fs-5">R$ {{ "%.2f"|format(order.value) }}</span></li>
+                                <li><strong>Data de Entrega:</strong> {{ order.service_deadline.strftime('%d/%m/%Y') if order.service_deadline else 'Não definida' }}</li>
+                                {% if user_type == 'cliente' %}
+                                <li><strong>Prestador:</strong> {{ provider_name }}</li>
+                                {% else %}
+                                <li><strong>Cliente:</strong> {{ client_name }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-info">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">💰 Valores Bloqueados em Escrow</h5>
+                            {% if user_type == 'cliente' %}
+                            <p class="mb-2">
+                                <strong>Valor do Serviço:</strong> 
+                                <span class="text-danger">R$ {{ "%.2f"|format(order.value) }}</span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Taxa de Contestação:</strong> 
+                                <span class="text-warning">R$ {{ "%.2f"|format(order.dispute_fee) if order.dispute_fee else "0.00" }}</span>
+                            </p>
+                            <hr>
+                            <p class="mb-0">
+                                <strong>Total Bloqueado:</strong> 
+                                <span class="fw-bold text-danger fs-5">
+                                    R$ {{ "%.2f"|format(order.value + (order.dispute_fee or 0)) }}
+                                </span>
+                            </p>
+                            {% else %}
+                            <p class="mb-0">
+                                <strong>Taxa de Contestação Bloqueada:</strong> 
+                                <span class="fw-bold text-warning fs-5">
+                                    R$ {{ "%.2f"|format(order.dispute_fee) if order.dispute_fee else "0.00" }}
+                                </span>
+                            </p>
+                            <p class="text-muted small mt-2 mb-0">
+                                Você receberá R$ {{ "%.2f"|format(order.value - (order.platform_fee or 0)) }} 
+                                após a conclusão do serviço (valor líquido após taxa da plataforma).
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if user_type == 'cliente' %}
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle"></i> Próximos Passos para o Cliente:</h6>
+                        <ul class="mb-0">
+                            <li>Aguarde o prestador executar o serviço</li>
+                            <li>Quando o prestador marcar como concluído, você terá 36 horas para confirmar ou contestar</li>
+                            <li>Se não houver contestação, o pagamento será liberado automaticamente</li>
+                            <li>Você pode acompanhar o status da ordem a qualquer momento</li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle"></i> Próximos Passos para o Prestador:</h6>
+                        <ul class="mb-0">
+                            <li>Execute o serviço conforme acordado</li>
+                            <li>Quando finalizar, marque a ordem como concluída</li>
+                            <li>O cliente terá 36 horas para confirmar ou contestar</li>
+                            <li>Se não houver contestação, você receberá o pagamento automaticamente</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-success border-success" role="alert">
+                        <i class="fas fa-shield-alt"></i> <strong>Proteção Garantida:</strong> 
+                        Os valores estão seguros em escrow até a conclusão do serviço. 
+                        Ambas as partes estão protegidas pelo sistema de garantia.
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('order.ver_ordem', order_id=order.id) }}" 
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye"></i> Ver Detalhes da Ordem
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

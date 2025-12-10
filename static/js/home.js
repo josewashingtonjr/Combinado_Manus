@@ -267,10 +267,16 @@ function handleFormSubmit(form) {
                 
             } else if (formId === 'registerForm') {
                 // Mostrar sucesso para registro
-                showSuccessMessage(form, result.message);
+                showSuccessMessage(form, result.message || 'Conta criada com sucesso!');
+                
+                // Fechar modal e redirecionar para login
                 setTimeout(() => {
-                    switchModal('registerModal', 'loginModal');
-                }, 2000);
+                    closeModal('registerModal');
+                    // Mostrar alerta de sucesso
+                    alert('✅ ' + (result.message || 'Conta criada com sucesso! Faça login para continuar.'));
+                    // Redirecionar para página de login
+                    window.location.href = '/auth/login';
+                }, 1500);
             }
         } else {
             // Mostrar erro

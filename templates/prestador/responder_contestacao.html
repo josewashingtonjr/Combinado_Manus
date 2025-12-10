@@ -1,0 +1,297 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Responder Contestação - Ordem #{{ order.id }}{% endblock %}
+
+{% block prestador_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-reply me-2"></i>Responder Contestação - Ordem #{{ order.id }}</h1>
+                <a href="{{ url_for('order.ver_ordem', order_id=order.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerta de Contestação -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-warning border-warning">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 class="mb-2">
+                            <i class="fas fa-gavel me-2"></i>Contestação Aberta pelo Cliente
+                        </h4>
+                        <p class="mb-0">
+                            O cliente abriu uma contestação sobre esta ordem. Você tem a oportunidade de apresentar sua versão dos fatos e enviar provas que comprovem a execução correta do serviço.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Coluna Principal: Formulário de Resposta -->
+        <div class="col-md-8">
+            <!-- Contestação do Cliente -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Contestação do Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted"><i class="fas fa-calendar me-2"></i>Data da Contestação:</h6>
+                        <p>{{ order.dispute_opened_at.strftime('%d/%m/%Y às %H:%M') }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted"><i class="fas fa-comment me-2"></i>Motivo da Contestação:</h6>
+                        <div class="alert alert-light border">
+                            <p class="mb-0">{{ order.dispute_client_statement or order.dispute_reason }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if order.dispute_evidence_urls %}
+                    <div class="mb-3">
+                        <h6 class="text-muted"><i class="fas fa-paperclip me-2"></i>Provas Enviadas pelo Cliente:</h6>
+                        <div class="list-group">
+                            {% for evidence in order.dispute_evidence_urls %}
+                                {% if evidence.uploaded_by == 'client' or not evidence.uploaded_by %}
+                                <a href="{{ evidence.url }}" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-file me-2"></i>{{ evidence.filename }}
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-secondary">{{ (evidence.size / 1024)|round(2) }} KB</span>
+                                            <i class="fas fa-external-link-alt ms-2"></i>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulário de Resposta -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-reply me-2"></i>Sua Resposta</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('order.responder_contestacao', order_id=order.id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Importante:</strong> Seja claro e objetivo em sua resposta. Forneça todos os detalhes relevantes e, se possível, anexe provas (fotos, vídeos, documentos) que comprovem a execução correta do serviço.
+                        </div>
+                        
+                        <!-- Campo de Resposta -->
+                        <div class="mb-4">
+                            <label for="response" class="form-label">
+                                <i class="fas fa-comment-dots me-1"></i>Sua Justificativa *
+                            </label>
+                            <textarea class="form-control" id="response" name="response" rows="8" required
+                                      placeholder="Explique detalhadamente sua versão dos fatos. Descreva como o serviço foi executado, quais foram os acordos feitos, e por que você considera que o serviço foi realizado corretamente."></textarea>
+                            <small class="text-muted">Mínimo de 20 caracteres. Seja detalhado e profissional.</small>
+                        </div>
+                        
+                        <!-- Upload de Arquivos de Prova -->
+                        <div class="mb-4">
+                            <label for="evidence" class="form-label">
+                                <i class="fas fa-paperclip me-1"></i>Arquivos de Prova (Opcional)
+                            </label>
+                            <input type="file" class="form-control" id="evidence" name="evidence" multiple
+                                   accept=".jpg,.jpeg,.png,.pdf,.mp4">
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Formatos aceitos: JPG, PNG, PDF, MP4. Máximo 10MB por arquivo, até 5 arquivos.
+                            </small>
+                            <small class="text-muted d-block">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                <strong>Dica:</strong> Fotos do serviço concluído, conversas com o cliente, recibos, ou qualquer documento que comprove a execução correta do serviço.
+                            </small>
+                        </div>
+                        
+                        <!-- Visualização de Arquivos Selecionados -->
+                        <div id="file-preview" class="mb-4" style="display: none;">
+                            <h6 class="text-muted"><i class="fas fa-eye me-2"></i>Arquivos Selecionados:</h6>
+                            <div id="file-list" class="list-group"></div>
+                        </div>
+                        
+                        <!-- Botões de Ação -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('order.ver_ordem', order_id=order.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Resposta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Lateral: Informações da Ordem -->
+        <div class="col-md-4">
+            <!-- Resumo da Ordem -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Resumo da Ordem</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">Título:</h6>
+                        <p class="mb-0"><strong>{{ order.title }}</strong></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted">Valor do Serviço:</h6>
+                        <p class="mb-0 h4 text-success">{{ order.value|format_currency }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted">Cliente:</h6>
+                        <p class="mb-0">{{ order.client.nome }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 class="text-muted">Data de Criação:</h6>
+                        <p class="mb-0">{{ order.created_at.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <h6 class="text-muted">Marcado como Concluído:</h6>
+                        <p class="mb-0">{{ order.completed_at.strftime('%d/%m/%Y às %H:%M') if order.completed_at else 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orientações -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Orientações</h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-2">Como responder:</h6>
+                    <ul class="mb-3">
+                        <li>Seja claro e objetivo</li>
+                        <li>Apresente sua versão dos fatos</li>
+                        <li>Anexe provas que comprovem seu trabalho</li>
+                        <li>Mantenha um tom profissional</li>
+                    </ul>
+                    
+                    <h6 class="mb-2">O que acontece depois:</h6>
+                    <ul class="mb-0">
+                        <li>Um administrador analisará o caso</li>
+                        <li>Serão consideradas as provas de ambas as partes</li>
+                        <li>A decisão será comunicada a você</li>
+                        <li>O pagamento será processado conforme a decisão</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para Preview de Arquivos -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('evidence');
+    const filePreview = document.getElementById('file-preview');
+    const fileList = document.getElementById('file-list');
+    
+    fileInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        
+        if (files.length === 0) {
+            filePreview.style.display = 'none';
+            return;
+        }
+        
+        filePreview.style.display = 'block';
+        fileList.innerHTML = '';
+        
+        files.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'list-group-item';
+            
+            const fileSize = (file.size / 1024).toFixed(2);
+            const fileIcon = getFileIcon(file.type);
+            
+            fileItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="${fileIcon} me-2"></i>
+                        <strong>${file.name}</strong>
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary">${fileSize} KB</span>
+                    </div>
+                </div>
+            `;
+            
+            fileList.appendChild(fileItem);
+        });
+    });
+    
+    function getFileIcon(fileType) {
+        if (fileType.startsWith('image/')) {
+            return 'fas fa-image text-primary';
+        } else if (fileType === 'application/pdf') {
+            return 'fas fa-file-pdf text-danger';
+        } else if (fileType.startsWith('video/')) {
+            return 'fas fa-video text-success';
+        } else {
+            return 'fas fa-file text-secondary';
+        }
+    }
+});
+</script>
+
+<!-- Estilos Customizados -->
+<style>
+.card {
+    border-radius: 8px;
+}
+
+.card-header {
+    border-radius: 8px 8px 0 0;
+}
+
+.shadow-sm {
+    box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+}
+
+.list-group-item {
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 150px;
+}
+
+.btn-lg {
+    padding: 12px 24px;
+    font-size: 1.1rem;
+}
+</style>
+
+{% endblock %}

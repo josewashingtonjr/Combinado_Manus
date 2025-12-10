@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Erro na Conversão{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-circle"></i> Erro ao Converter Pré-Ordem
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading">⚠️ Falha na conversão</h5>
+                        <hr>
+                        <p class="mb-0">
+                            Ocorreu um erro ao tentar converter a pré-ordem #{{ pre_order.id }} em ordem definitiva.
+                            A pré-ordem permanece ativa e você pode tentar novamente.
+                        </p>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Informações da Pré-Ordem</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Serviço:</strong> {{ pre_order.title }}</li>
+                                <li><strong>Valor:</strong> R$ {{ "%.2f"|format(pre_order.current_value) }}</li>
+                                {% if user_type == 'cliente' %}
+                                <li><strong>Prestador:</strong> {{ other_party_name }}</li>
+                                {% else %}
+                                <li><strong>Cliente:</strong> {{ other_party_name }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-danger">
+                        <div class="card-body">
+                            <h5 class="card-title text-danger">❌ Detalhes do Erro</h5>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-2"><strong>Tipo de Erro:</strong></p>
+                                <p class="text-danger mb-3">{{ error_type or 'Erro desconhecido' }}</p>
+                                
+                                <p class="mb-2"><strong>Mensagem:</strong></p>
+                                <p class="mb-0">{{ error_message }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if error_type == 'saldo_insuficiente' %}
+                    <div class="alert alert-warning" role="alert">
+                        <h6><i class="fas fa-wallet"></i> Saldo Insuficiente</h6>
+                        <p class="mb-2">A conversão falhou porque não há saldo suficiente para bloquear os valores em escrow.</p>
+                        
+                        {% if user_type == 'cliente' %}
+                        <p class="mb-2"><strong>Valores Necessários:</strong></p>
+                        <ul class="mb-2">
+                            <li>Valor do Serviço: R$ {{ "%.2f"|format(pre_order.current_value) }}</li>
+                            <li>Taxa de Contestação: R$ {{ "%.2f"|format(dispute_fee) if dispute_fee else "0.00" }}</li>
+                            <li><strong>Total Necessário:</strong> R$ {{ "%.2f"|format(pre_order.current_value + (dispute_fee or 0)) }}</li>
+                        </ul>
+                        <p class="mb-0"><strong>Seu Saldo Atual:</strong> R$ {{ "%.2f"|format(current_balance) if current_balance else "0.00" }}</p>
+                        {% else %}
+                        <p class="mb-2"><strong>Taxa de Contestação Necessária:</strong> R$ {{ "%.2f"|format(dispute_fee) if dispute_fee else "0.00" }}</p>
+                        <p class="mb-0"><strong>Seu Saldo Atual:</strong> R$ {{ "%.2f"|format(current_balance) if current_balance else "0.00" }}</p>
+                        {% endif %}
+                    </div>
+                    {% elif error_type == 'escrow_falhou' %}
+                    <div class="alert alert-warning" role="alert">
+                        <h6><i class="fas fa-lock"></i> Falha no Bloqueio de Valores</h6>
+                        <p class="mb-0">
+                            Houve um problema ao tentar bloquear os valores em escrow. 
+                            Isso pode ser temporário. Tente novamente em alguns instantes.
+                        </p>
+                    </div>
+                    {% elif error_type == 'validacao_falhou' %}
+                    <div class="alert alert-warning" role="alert">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Falha na Validação</h6>
+                        <p class="mb-0">
+                            A pré-ordem não passou nas validações necessárias para conversão. 
+                            Verifique se ambas as partes aceitaram os termos e se não há propostas pendentes.
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <h6><i class="fas fa-bug"></i> Erro Técnico</h6>
+                        <p class="mb-0">
+                            Ocorreu um erro técnico durante a conversão. 
+                            Nossa equipe foi notificada e está trabalhando para resolver o problema.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info" role="alert">
+                        <h6><i class="fas fa-info-circle"></i> O que fazer agora:</h6>
+                        <ul class="mb-0">
+                            {% if error_type == 'saldo_insuficiente' %}
+                            <li><strong>Adicione saldo à sua carteira</strong> para cobrir os valores necessários</li>
+                            <li>Após adicionar saldo, aceite os termos novamente para tentar a conversão</li>
+                            {% else %}
+                            <li>Aguarde alguns minutos e tente novamente</li>
+                            <li>Verifique se ambas as partes aceitaram os termos</li>
+                            <li>Certifique-se de que não há propostas pendentes</li>
+                            {% endif %}
+                            <li>Se o problema persistir, entre em contato com o suporte</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-success border-success" role="alert">
+                        <i class="fas fa-shield-alt"></i> <strong>Sua Pré-Ordem Está Segura:</strong> 
+                        A pré-ordem permanece ativa com status "em_negociacao". 
+                        Nenhum valor foi debitado e você pode continuar negociando ou tentar a conversão novamente.
+                    </div>
+
+                    <div class="text-center mt-4">
+                        {% if error_type == 'saldo_insuficiente' %}
+                            {% if user_type == 'cliente' %}
+                            <a href="{{ url_for('cliente.solicitar_tokens') }}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-plus-circle"></i> Adicionar Saldo
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('prestador.solicitar_tokens') }}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-plus-circle"></i> Adicionar Saldo
+                            </a>
+                            {% endif %}
+                        {% endif %}
+                        <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=pre_order.id) }}" 
+                           class="btn btn-primary btn-lg {% if error_type == 'saldo_insuficiente' %}ms-2{% endif %}">
+                            <i class="fas fa-eye"></i> Ver Pré-Ordem
+                        </a>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <a href="#" class="text-muted" data-bs-toggle="modal" data-bs-target="#supportModal">
+                            <i class="fas fa-question-circle"></i> Precisa de ajuda? Entre em contato com o suporte
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Suporte -->
+<div class="modal fade" id="supportModal" tabindex="-1" aria-labelledby="supportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="supportModalLabel">Contato com Suporte</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Informações para o Suporte:</strong></p>
+                <ul>
+                    <li><strong>Pré-Ordem:</strong> #{{ pre_order.id }}</li>
+                    <li><strong>Tipo de Erro:</strong> {{ error_type or 'Desconhecido' }}</li>
+                    <li><strong>Data/Hora:</strong> {{ now.strftime('%d/%m/%Y às %H:%M') if now else 'Agora' }}</li>
+                </ul>
+                <p class="text-muted small">
+                    Inclua essas informações ao entrar em contato com nossa equipe de suporte 
+                    para que possamos ajudá-lo mais rapidamente.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <a href="mailto:suporte@plataforma.com?subject=Erro na Conversão - Pré-Ordem #{{ pre_order.id }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-envelope"></i> Enviar Email
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

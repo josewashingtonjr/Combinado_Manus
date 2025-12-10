@@ -34,6 +34,7 @@
                 </div>
                 
                 <form id="adminLoginForm" class="form" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="form__group">
                         <label for="adminEmail" class="form__label">E-mail</label>
                         <input 

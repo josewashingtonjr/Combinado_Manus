@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo - Sistema de Notificações de Propostas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">
+            <i class="fas fa-bell me-2"></i>
+            Sistema de Notificações de Propostas
+        </h1>
+        
+        <!-- Mensagens Flash (Notificações Imediatas) -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3>Notificações Flash (Feedback Imediato)</h3>
+                
+                <!-- Proposta Criada -->
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Nova proposta de alteração recebida!</strong> João Silva propôs aumentar o valor de R$ 100,00 para R$ 150,00 (+R$ 50,00). Verifique se você tem saldo suficiente e responda à proposta.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Proposta Aprovada -->
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Proposta aceita!</strong> Maria Santos aceitou sua proposta de R$ 150,00 para o serviço 'Desenvolvimento de Website'. Agora você pode aceitar o convite com o novo valor.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Saldo Insuficiente -->
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Saldo insuficiente!</strong> Você precisa de R$ 160,00 no total (proposta + taxa de contestação), mas tem apenas R$ 120,00. Adicione pelo menos R$ 40,00 para continuar.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Proposta Rejeitada -->
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>Proposta rejeitada.</strong> Maria Santos rejeitou sua proposta de R$ 150,00 para o serviço 'Desenvolvimento de Website'. Motivo: Valor muito alto para o orçamento. O convite retornou ao valor original de R$ 100,00.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alertas do Dashboard (Notificações Persistentes) -->
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Dashboard do Cliente - Alertas</h3>
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-user me-2"></i>Área do Cliente
+                    </div>
+                    <div class="card-body">
+                        <!-- Proposta Pendente de Aumento -->
+                        <div class="alert alert-warning mb-3" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-arrow-up text-warning me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Proposta de aumento pendente:</strong> João Silva propôs R$ 150,00 (+R$ 50,00) para 'Desenvolvimento de Website'
+                                </div>
+                                <a href="/cliente/convite/123" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>Ver
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Proposta Pendente de Redução -->
+                        <div class="alert alert-info mb-3" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-arrow-down text-info me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Proposta de redução pendente:</strong> Ana Costa propôs R$ 80,00 (-R$ 20,00) para 'Design de Logo'
+                                </div>
+                                <a href="/cliente/convite/124" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>Ver
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Saldo Baixo -->
+                        <div class="alert alert-warning mb-0" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-wallet text-warning me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Saldo baixo.</strong> Considere adicionar mais saldo à sua conta.
+                                </div>
+                                <a href="/cliente/solicitar-tokens" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-plus me-1"></i>Adicionar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h3>Dashboard do Prestador - Alertas</h3>
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-tools me-2"></i>Área do Prestador
+                    </div>
+                    <div class="card-body">
+                        <!-- Proposta Aceita -->
+                        <div class="alert alert-success mb-3" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Proposta aceita:</strong> Maria Santos aceitou R$ 150,00 para 'Desenvolvimento de Website'. Você pode aceitar o convite agora.
+                                </div>
+                                <a href="/prestador/convite/abc123" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-handshake me-1"></i>Aceitar
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Proposta Rejeitada -->
+                        <div class="alert alert-warning mb-3" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-times-circle text-warning me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Proposta rejeitada:</strong> Carlos Silva rejeitou R$ 200,00 para 'Consultoria de Marketing' (Valor muito alto)
+                                </div>
+                                <a href="/prestador/convites" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-list me-1"></i>Ver Convites
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Novas Oportunidades -->
+                        <div class="alert alert-info mb-0" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-briefcase text-info me-2"></i>
+                                <div class="flex-grow-1">
+                                    <strong>Há 5 novas oportunidades</strong> de trabalho disponíveis!
+                                </div>
+                                <a href="/prestador/ordens-disponiveis" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-search me-1"></i>Ver
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Exemplo de Notificação com Links Diretos -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Notificações com Links Diretos para Ações</h3>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading mb-2">
+                                    <i class="fas fa-bell me-2"></i>Nova Proposta de Alteração
+                                </h5>
+                                <p class="mb-2">
+                                    <strong>Prestador:</strong> João Silva<br>
+                                    <strong>Serviço:</strong> Desenvolvimento de Website<br>
+                                    <strong>Valor Original:</strong> R$ 100,00<br>
+                                    <strong>Valor Proposto:</strong> R$ 150,00 (+R$ 50,00)<br>
+                                    <strong>Justificativa:</strong> Aumento devido à complexidade do projeto
+                                </p>
+                                <p class="mb-0 text-muted">
+                                    <i class="fas fa-clock me-1"></i>Recebido há 5 minutos
+                                </p>
+                            </div>
+                            <div class="ms-3">
+                                <div class="btn-group-vertical" role="group">
+                                    <a href="/cliente/convite/123" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-eye me-1"></i>Ver Detalhes
+                                    </a>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="approveProposal(123)">
+                                        <i class="fas fa-check me-1"></i>Aceitar
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="rejectProposal(123)">
+                                        <i class="fas fa-times me-1"></i>Rejeitar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Exemplo de Verificação de Saldo -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3>Verificação de Saldo para Propostas</h3>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="alert alert-warning" role="alert">
+                            <h5 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Saldo Insuficiente
+                            </h5>
+                            <p>Para aceitar esta proposta, você precisa de:</p>
+                            <ul class="mb-3">
+                                <li><strong>Valor da Proposta:</strong> R$ 150,00</li>
+                                <li><strong>Taxa de Contestação:</strong> R$ 10,00</li>
+                                <li><strong>Total Necessário:</strong> R$ 160,00</li>
+                            </ul>
+                            <p>
+                                <strong>Seu Saldo Atual:</strong> R$ 120,00<br>
+                                <strong>Valor a Adicionar:</strong> R$ 40,00
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="/cliente/solicitar-tokens?amount=40" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>Adicionar R$ 40,00
+                                </a>
+                                <a href="/cliente/solicitar-tokens" class="btn btn-outline-primary">
+                                    <i class="fas fa-wallet me-1"></i>Gerenciar Saldo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Exemplo de funções JavaScript para ações rápidas
+        function approveProposal(proposalId) {
+            if (confirm('Tem certeza que deseja aceitar esta proposta?')) {
+                // Aqui seria feita a requisição AJAX para aprovar
+                console.log('Aprovando proposta:', proposalId);
+                // window.location.href = `/proposta/${proposalId}/aprovar`;
+            }
+        }
+        
+        function rejectProposal(proposalId) {
+            const reason = prompt('Motivo da rejeição (opcional):');
+            if (reason !== null) {
+                // Aqui seria feita a requisição AJAX para rejeitar
+                console.log('Rejeitando proposta:', proposalId, 'Motivo:', reason);
+                // window.location.href = `/proposta/${proposalId}/rejeitar?reason=${encodeURIComponent(reason)}`;
+            }
+        }
+        
+        // Auto-dismiss alerts after 10 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert-dismissible');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 10000);
+    </script>
+</body>
+</html>

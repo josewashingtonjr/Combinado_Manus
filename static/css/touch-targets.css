@@ -1,0 +1,1494 @@
+/* ==============================================================================
+   TOUCH TARGETS - Otimização para dispositivos móveis
+   Requirement 2: Botões Otimizados para Touch - altura mínima de 48px
+   ============================================================================== */
+
+/* ==============================================================================
+   REGRA GLOBAL: TODOS OS BOTÕES DE AÇÃO COM ALTURA MÍNIMA DE 48px
+   Garante que todos os botões do sistema tenham área de toque adequada
+   ============================================================================== */
+
+/* Aplicar altura mínima de 48px a TODOS os botões do sistema */
+.btn,
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-light,
+.btn-dark,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-warning,
+.btn-outline-info,
+.btn-link {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
+}
+
+/* Botões pequenos mantêm altura mínima de 44px (ainda acessível) */
+.btn-sm,
+.btn-group-sm > .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+/* Botões grandes com altura aumentada */
+.btn-lg,
+.btn-group-lg > .btn {
+    min-height: 56px;
+    min-width: 56px;
+    padding: 16px 28px;
+    font-size: 18px;
+}
+
+/* Feedback visual ao tocar/clicar */
+.btn:active,
+button:active,
+[type="button"]:active,
+[type="submit"]:active {
+    transform: scale(0.98);
+    opacity: 0.95;
+}
+
+/* Estado desabilitado */
+.btn:disabled,
+.btn.disabled,
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+}
+
+/* ==============================================================================
+   CLASSE BASE TOUCH TARGET
+   ============================================================================== */
+
+/* Classe base para elementos touch - área mínima de 48x48px */
+.touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.touch-target:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+}
+
+/* Botão mobile otimizado - classe base */
+.btn-mobile {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.btn-mobile:active {
+    transform: scale(0.96);
+    opacity: 0.9;
+}
+
+.btn-mobile:disabled,
+.btn-mobile.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+}
+
+/* Variante primária - ações principais (Aceitar, Confirmar) */
+/* Cores otimizadas para contraste WCAG AA (4.5:1 mínimo) */
+.btn-mobile-primary {
+    background: linear-gradient(135deg, #1e7e34 0%, #17a673 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(30, 126, 52, 0.3);
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-mobile-primary:hover {
+    background: linear-gradient(135deg, #186429 0%, #138a5f 100%);
+    box-shadow: 0 6px 12px rgba(30, 126, 52, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-mobile-primary:active {
+    background: linear-gradient(135deg, #145523 0%, #107a52 100%);
+    transform: scale(0.96);
+    box-shadow: 0 2px 4px rgba(30, 126, 52, 0.25);
+}
+
+/* Variante secundária - ações alternativas */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-mobile-secondary {
+    background: #495057;
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(73, 80, 87, 0.3);
+    font-weight: 600;
+}
+
+.btn-mobile-secondary:hover {
+    background: #3d4349;
+    box-shadow: 0 6px 12px rgba(73, 80, 87, 0.4);
+}
+
+.btn-mobile-secondary:active {
+    transform: scale(0.96);
+    background: #343a40;
+    box-shadow: 0 2px 4px rgba(73, 80, 87, 0.25);
+}
+
+/* Variante outline - ações secundárias menos destacadas */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-mobile-outline {
+    background: transparent;
+    border: 2px solid #4a5fc1;
+    color: #4a5fc1;
+    font-weight: 600;
+}
+
+.btn-mobile-outline:hover {
+    background: #4a5fc1;
+    color: #ffffff;
+    border-color: #4a5fc1;
+}
+
+.btn-mobile-outline:active {
+    transform: scale(0.96);
+    background: #3d4fa8;
+    border-color: #3d4fa8;
+    color: #ffffff;
+}
+
+/* Variante perigo - ações destrutivas (Recusar, Cancelar) */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-mobile-danger {
+    background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(200, 35, 51, 0.3);
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-mobile-danger:hover {
+    background: linear-gradient(135deg, #a71d2a 0%, #8b1722 100%);
+    box-shadow: 0 6px 12px rgba(200, 35, 51, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-mobile-danger:active {
+    background: linear-gradient(135deg, #8b1722 0%, #72131c 100%);
+    transform: scale(0.96);
+    box-shadow: 0 2px 4px rgba(200, 35, 51, 0.25);
+}
+
+/* Variante outline perigo - recusar com menos destaque */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-mobile-outline-danger {
+    background: transparent;
+    border: 2px solid #a71d2a;
+    color: #a71d2a;
+    font-weight: 600;
+}
+
+.btn-mobile-outline-danger:hover {
+    background: #a71d2a;
+    color: #ffffff;
+    border-color: #a71d2a;
+}
+
+.btn-mobile-outline-danger:active {
+    transform: scale(0.96);
+    background: #8b1722;
+    border-color: #8b1722;
+    color: #ffffff;
+}
+
+/* Variante info - ações informativas */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-mobile-info {
+    background: linear-gradient(135deg, #117a8b 0%, #0d6270 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(17, 122, 139, 0.3);
+    font-weight: 600;
+}
+
+.btn-mobile-info:hover {
+    background: linear-gradient(135deg, #0d6270 0%, #0a4f5a 100%);
+    box-shadow: 0 6px 12px rgba(17, 122, 139, 0.4);
+}
+
+.btn-mobile-info:active {
+    transform: scale(0.96);
+    background: linear-gradient(135deg, #0a4f5a 0%, #083d46 100%);
+    box-shadow: 0 2px 4px rgba(17, 122, 139, 0.25);
+}
+
+/* Variante warning - ações de atenção */
+/* Cores otimizadas para contraste WCAG AA - texto escuro em fundo amarelo */
+.btn-mobile-warning {
+    background: linear-gradient(135deg, #d39e00 0%, #ba8b00 100%);
+    color: #1a1a1a;
+    box-shadow: 0 4px 6px rgba(211, 158, 0, 0.3);
+    font-weight: 700;
+}
+
+.btn-mobile-warning:hover {
+    background: linear-gradient(135deg, #ba8b00 0%, #9a7400 100%);
+    box-shadow: 0 6px 12px rgba(211, 158, 0, 0.4);
+}
+
+.btn-mobile-warning:active {
+    transform: scale(0.96);
+    background: linear-gradient(135deg, #9a7400 0%, #7a5c00 100%);
+    box-shadow: 0 2px 4px rgba(211, 158, 0, 0.25);
+}
+
+/* Tamanho grande para ações principais */
+.btn-mobile-lg {
+    min-height: 56px;
+    padding: 16px 28px;
+    font-size: 18px;
+    border-radius: 14px;
+}
+
+/* Tamanho pequeno para ações secundárias */
+.btn-mobile-sm {
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+/* Botão de largura total (mobile) */
+.btn-mobile-block {
+    width: 100%;
+}
+
+/* Estado de loading */
+.btn-mobile-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-mobile-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: btn-mobile-spin 0.8s linear infinite;
+}
+
+@keyframes btn-mobile-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Grupo de botões mobile com espaçamento adequado */
+.btn-mobile-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-mobile-group-horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.btn-mobile-group .btn-mobile {
+    flex: 1;
+    min-width: 120px;
+}
+
+/* Responsividade - botões maiores em mobile */
+@media (max-width: 575px) {
+    .btn-mobile {
+        min-height: 52px;
+        font-size: 17px;
+        width: 100%;
+    }
+    
+    .btn-mobile-group {
+        flex-direction: column;
+    }
+    
+    .btn-mobile-group .btn-mobile {
+        width: 100%;
+    }
+}
+
+/* Acessibilidade - foco visível */
+.btn-mobile:focus-visible {
+    outline: 3px solid #667eea;
+    outline-offset: 3px;
+}
+
+/* Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+    .btn-mobile,
+    .btn-mobile-loading::after {
+        transition: none;
+        animation: none;
+    }
+}
+
+/* Botões de ação com tamanho mínimo para touch */
+.btn-action,
+.btn-lg,
+.btn-action-primary,
+.btn-action-secondary,
+.btn-action-danger {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+/* Botão primário (Aceitar) */
+/* Cores otimizadas para contraste WCAG AA (4.5:1 mínimo) */
+.btn-action-primary,
+.btn-success.btn-lg {
+    background: linear-gradient(135deg, #1e7e34 0%, #17a673 100%);
+    border: none;
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(30, 126, 52, 0.3);
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-action-primary:hover,
+.btn-success.btn-lg:hover {
+    background: linear-gradient(135deg, #186429 0%, #138a5f 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(30, 126, 52, 0.4);
+}
+
+.btn-action-primary:active,
+.btn-success.btn-lg:active {
+    background: linear-gradient(135deg, #145523 0%, #107a52 100%);
+    transform: scale(0.98);
+}
+
+/* Botão secundário (Recusar) */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-action-secondary,
+.btn-outline-danger.btn-lg {
+    background: transparent;
+    border: 2px solid #a71d2a;
+    color: #a71d2a;
+    font-weight: 600;
+}
+
+.btn-action-secondary:hover,
+.btn-outline-danger.btn-lg:hover {
+    background: #a71d2a;
+    color: #ffffff;
+    border-color: #a71d2a;
+    transform: translateY(-2px);
+}
+
+.btn-action-secondary:active,
+.btn-outline-danger.btn-lg:active {
+    transform: scale(0.98);
+    background: #8b1722;
+    border-color: #8b1722;
+    color: #ffffff;
+}
+
+/* Botão de perigo */
+/* Cores otimizadas para contraste WCAG AA */
+.btn-action-danger,
+.btn-danger.btn-lg {
+    background: linear-gradient(135deg, #c82333 0%, #a71d2a 100%);
+    border: none;
+    color: #ffffff;
+    box-shadow: 0 4px 6px rgba(200, 35, 51, 0.3);
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-action-danger:hover,
+.btn-danger.btn-lg:hover {
+    background: linear-gradient(135deg, #a71d2a 0%, #8b1722 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(200, 35, 51, 0.4);
+}
+
+.btn-action-danger:active,
+.btn-danger.btn-lg:active {
+    transform: scale(0.98);
+    background: linear-gradient(135deg, #8b1722 0%, #72131c 100%);
+    box-shadow: 0 2px 4px rgba(200, 35, 51, 0.25);
+}
+
+/* Espaçamento entre botões */
+.btn-action + .btn-action,
+.btn-lg + .btn-lg {
+    margin-top: 12px;
+}
+
+/* Botões em linha */
+.btn-group-touch {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+@media (min-width: 576px) {
+    .btn-group-touch {
+        flex-direction: row;
+    }
+    
+    .btn-group-touch .btn-action,
+    .btn-group-touch .btn-lg {
+        flex: 1;
+    }
+}
+
+/* Cards clicáveis */
+.card-clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.card-clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card-clickable:active {
+    transform: scale(0.98);
+}
+
+/* Links como botões */
+.link-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.link-action:hover {
+    text-decoration: none;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.link-action:active {
+    transform: scale(0.98);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Inputs otimizados para touch */
+.form-control-touch,
+.form-control {
+    min-height: 48px;
+    font-size: 16px; /* Previne zoom no iOS */
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 2px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.form-control-touch:focus,
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+}
+
+.form-control-touch:active,
+.form-control:active {
+    border-color: #5a6fd6;
+}
+
+/* Select otimizado */
+.form-select {
+    min-height: 48px;
+    font-size: 16px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 2px solid #dee2e6;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+}
+
+.form-select:active {
+    border-color: #5a6fd6;
+}
+
+/* Textarea otimizado */
+textarea.form-control {
+    min-height: 100px;
+}
+
+/* Checkbox e Radio otimizados */
+.form-check-input {
+    width: 24px;
+    height: 24px;
+    margin-top: 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.form-check-input:active {
+    transform: scale(0.9);
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-label {
+    padding-left: 8px;
+    font-size: 16px;
+    line-height: 24px;
+    cursor: pointer;
+}
+
+/* Área de toque expandida para elementos pequenos */
+.touch-expand {
+    position: relative;
+}
+
+.touch-expand::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    bottom: -8px;
+    left: -8px;
+}
+
+/* Feedback visual de toque */
+.touch-feedback {
+    position: relative;
+    overflow: hidden;
+}
+
+.touch-feedback::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.touch-feedback:active::after {
+    width: 200%;
+    height: 200%;
+}
+
+/* Desabilitar seleção de texto em botões */
+.btn,
+.btn-action,
+.card-clickable {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevenir zoom duplo toque no iOS */
+* {
+    touch-action: manipulation;
+}
+
+/* Responsividade mobile */
+@media (max-width: 767px) {
+    /* Botões ocupam largura total em mobile */
+    .btn-mobile-full {
+        width: 100%;
+        margin-bottom: 12px;
+    }
+    
+    /* Aumentar área de toque em mobile */
+    .btn-action,
+    .btn-lg {
+        min-height: 56px;
+        font-size: 18px;
+    }
+    
+    /* Cards com padding maior */
+    .card-body {
+        padding: 20px;
+    }
+    
+    /* Títulos menores em mobile */
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Modais otimizados */
+    .modal-dialog {
+        margin: 10px;
+    }
+    
+    .modal-content {
+        border-radius: 16px;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 20px;
+    }
+    
+    /* Alertas com padding maior */
+    .alert {
+        padding: 16px 20px;
+        border-radius: 12px;
+    }
+}
+
+/* Acessibilidade - foco visível */
+.btn:focus-visible,
+.form-control:focus-visible,
+.link-action:focus-visible {
+    outline: 3px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Desabilitar animações para usuários que preferem */
+@media (prefers-reduced-motion: reduce) {
+    .btn-action,
+    .btn-lg,
+    .card-clickable,
+    .touch-feedback::after {
+        transition: none;
+    }
+}
+
+/* ==============================================================================
+   ESPAÇAMENTO ENTRE ELEMENTOS CLICÁVEIS
+   Garante espaçamento mínimo de 8px entre botões adjacentes (Requirement 2)
+   ============================================================================== */
+
+/* Espaçamento padrão entre botões adjacentes */
+.btn + .btn,
+.btn-mobile + .btn-mobile,
+.touch-target + .touch-target {
+    margin-left: 8px;
+}
+
+/* Espaçamento vertical entre botões empilhados */
+.btn-stack > .btn,
+.btn-stack > .btn-mobile,
+.btn-stack > .touch-target {
+    margin-bottom: 12px;
+}
+
+.btn-stack > .btn:last-child,
+.btn-stack > .btn-mobile:last-child,
+.btn-stack > .touch-target:last-child {
+    margin-bottom: 0;
+}
+
+/* Container de ações com espaçamento adequado */
+.action-buttons,
+.actions-container,
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* Variante vertical */
+.action-buttons-vertical,
+.actions-container-vertical,
+.button-group-vertical {
+    flex-direction: column;
+}
+
+/* Variante horizontal com alinhamento */
+.action-buttons-horizontal,
+.actions-container-horizontal,
+.button-group-horizontal {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Espaçamento em cards de convite/ordem */
+.invite-actions,
+.order-actions,
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Em telas maiores, botões lado a lado */
+@media (min-width: 576px) {
+    .invite-actions,
+    .order-actions,
+    .card-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .invite-actions > .btn,
+    .order-actions > .btn,
+    .card-actions > .btn {
+        flex: 1;
+        min-width: 140px;
+    }
+}
+
+/* Espaçamento entre links clicáveis */
+.nav-links,
+.action-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.nav-links a,
+.action-links a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Espaçamento em listas de itens clicáveis */
+.clickable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clickable-list-item {
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-list-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.clickable-list-item:active {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Espaçamento em grids de cards clicáveis */
+.card-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 992px) {
+    .card-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Espaçamento em toolbars e barras de ação */
+.toolbar,
+.action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    flex-wrap: wrap;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+/* Espaçamento em formulários com botões */
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+}
+
+@media (min-width: 576px) {
+    .form-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+    }
+    
+    .form-actions > .btn {
+        min-width: 120px;
+    }
+}
+
+/* Espaçamento em modais */
+.modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 20px;
+}
+
+.modal-footer > .btn {
+    flex: 1;
+    min-width: 100px;
+}
+
+@media (min-width: 576px) {
+    .modal-footer > .btn {
+        flex: 0 0 auto;
+    }
+}
+
+/* Espaçamento em dropdowns */
+.dropdown-menu {
+    padding: 8px 0;
+}
+
+.dropdown-item {
+    min-height: 44px;
+    padding: 10px 16px;
+}
+
+.dropdown-item:active {
+    background-color: #667eea;
+    color: white;
+}
+
+/* Espaçamento em tabs/pills */
+.nav-tabs,
+.nav-pills {
+    gap: 4px;
+}
+
+.nav-tabs .nav-link,
+.nav-pills .nav-link {
+    min-height: 44px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:active,
+.nav-pills .nav-link:active {
+    transform: scale(0.98);
+}
+
+.nav-pills .nav-link:active {
+    background-color: rgba(102, 126, 234, 0.2);
+}
+
+/* Espaçamento em pagination */
+.pagination {
+    gap: 4px;
+}
+
+.page-link {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.page-link:active {
+    transform: scale(0.95);
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+/* Espaçamento em breadcrumbs */
+.breadcrumb {
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.breadcrumb-item a {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.breadcrumb-item a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.breadcrumb-item a:active {
+    transform: scale(0.98);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Espaçamento em alertas com botões */
+.alert-dismissible {
+    padding-right: 56px;
+}
+
+.alert .btn-close {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+    transition: all 0.15s ease;
+}
+
+.alert .btn-close:active {
+    transform: scale(0.9);
+    opacity: 0.7;
+}
+
+/* Espaçamento em badges clicáveis */
+.badge-clickable {
+    min-height: 32px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.badge-clickable:hover {
+    opacity: 0.9;
+}
+
+.badge-clickable:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+.badge-clickable + .badge-clickable {
+    margin-left: 8px;
+}
+
+/* Espaçamento em chips/tags */
+.chip-group,
+.tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip,
+.tag {
+    min-height: 36px;
+    padding: 6px 14px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.chip:hover,
+.tag:hover {
+    opacity: 0.9;
+}
+
+.chip:active,
+.tag:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+/* Espaçamento em icon buttons */
+.icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    border: none;
+}
+
+.icon-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.icon-btn:active {
+    transform: scale(0.9);
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.icon-btn + .icon-btn {
+    margin-left: 8px;
+}
+
+/* Espaçamento em FAB (Floating Action Button) */
+.fab-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 16px;
+    z-index: 1000;
+}
+
+.fab {
+    min-width: 56px;
+    min-height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background-color: #667eea;
+    color: white;
+}
+
+.fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.fab:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ==============================================================================
+   CORES DE ALTO CONTRASTE - WCAG AA (4.5:1 mínimo)
+   Requirement 2: Usar cores contrastantes para botões primários
+   Requirement 7: Garantir contraste mínimo de 4.5:1 para textos
+   ============================================================================== */
+
+/* Variáveis de cores com alto contraste */
+:root {
+    /* Cores primárias com contraste otimizado */
+    --btn-success-bg: #1e7e34;
+    --btn-success-bg-hover: #186429;
+    --btn-success-bg-active: #145523;
+    --btn-success-text: #ffffff;
+    
+    --btn-danger-bg: #c82333;
+    --btn-danger-bg-hover: #a71d2a;
+    --btn-danger-bg-active: #8b1722;
+    --btn-danger-text: #ffffff;
+    
+    --btn-warning-bg: #d39e00;
+    --btn-warning-bg-hover: #ba8b00;
+    --btn-warning-bg-active: #9a7400;
+    --btn-warning-text: #1a1a1a;
+    
+    --btn-info-bg: #117a8b;
+    --btn-info-bg-hover: #0d6270;
+    --btn-info-bg-active: #0a4f5a;
+    --btn-info-text: #ffffff;
+    
+    --btn-primary-bg: #4a5fc1;
+    --btn-primary-bg-hover: #3d4fa8;
+    --btn-primary-bg-active: #324290;
+    --btn-primary-text: #ffffff;
+    
+    --btn-secondary-bg: #495057;
+    --btn-secondary-bg-hover: #3d4349;
+    --btn-secondary-bg-active: #343a40;
+    --btn-secondary-text: #ffffff;
+}
+
+/* Aplicar cores de alto contraste aos botões Bootstrap */
+.btn-success {
+    background-color: var(--btn-success-bg) !important;
+    border-color: var(--btn-success-bg) !important;
+    color: var(--btn-success-text) !important;
+    font-weight: 600;
+}
+
+.btn-success:hover,
+.btn-success:focus {
+    background-color: var(--btn-success-bg-hover) !important;
+    border-color: var(--btn-success-bg-hover) !important;
+}
+
+.btn-success:active {
+    background-color: var(--btn-success-bg-active) !important;
+    border-color: var(--btn-success-bg-active) !important;
+}
+
+.btn-danger {
+    background-color: var(--btn-danger-bg) !important;
+    border-color: var(--btn-danger-bg) !important;
+    color: var(--btn-danger-text) !important;
+    font-weight: 600;
+}
+
+.btn-danger:hover,
+.btn-danger:focus {
+    background-color: var(--btn-danger-bg-hover) !important;
+    border-color: var(--btn-danger-bg-hover) !important;
+}
+
+.btn-danger:active {
+    background-color: var(--btn-danger-bg-active) !important;
+    border-color: var(--btn-danger-bg-active) !important;
+}
+
+.btn-warning {
+    background-color: var(--btn-warning-bg) !important;
+    border-color: var(--btn-warning-bg) !important;
+    color: var(--btn-warning-text) !important;
+    font-weight: 700;
+}
+
+.btn-warning:hover,
+.btn-warning:focus {
+    background-color: var(--btn-warning-bg-hover) !important;
+    border-color: var(--btn-warning-bg-hover) !important;
+}
+
+.btn-warning:active {
+    background-color: var(--btn-warning-bg-active) !important;
+    border-color: var(--btn-warning-bg-active) !important;
+}
+
+.btn-info {
+    background-color: var(--btn-info-bg) !important;
+    border-color: var(--btn-info-bg) !important;
+    color: var(--btn-info-text) !important;
+    font-weight: 600;
+}
+
+.btn-info:hover,
+.btn-info:focus {
+    background-color: var(--btn-info-bg-hover) !important;
+    border-color: var(--btn-info-bg-hover) !important;
+}
+
+.btn-info:active {
+    background-color: var(--btn-info-bg-active) !important;
+    border-color: var(--btn-info-bg-active) !important;
+}
+
+.btn-primary {
+    background-color: var(--btn-primary-bg) !important;
+    border-color: var(--btn-primary-bg) !important;
+    color: var(--btn-primary-text) !important;
+    font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--btn-primary-bg-hover) !important;
+    border-color: var(--btn-primary-bg-hover) !important;
+}
+
+.btn-primary:active {
+    background-color: var(--btn-primary-bg-active) !important;
+    border-color: var(--btn-primary-bg-active) !important;
+}
+
+.btn-secondary {
+    background-color: var(--btn-secondary-bg) !important;
+    border-color: var(--btn-secondary-bg) !important;
+    color: var(--btn-secondary-text) !important;
+    font-weight: 600;
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+    background-color: var(--btn-secondary-bg-hover) !important;
+    border-color: var(--btn-secondary-bg-hover) !important;
+}
+
+.btn-secondary:active {
+    background-color: var(--btn-secondary-bg-active) !important;
+    border-color: var(--btn-secondary-bg-active) !important;
+}
+
+/* Botões outline com cores de alto contraste */
+.btn-outline-success {
+    border-color: var(--btn-success-bg) !important;
+    color: var(--btn-success-bg) !important;
+    font-weight: 600;
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus {
+    background-color: var(--btn-success-bg) !important;
+    border-color: var(--btn-success-bg) !important;
+    color: var(--btn-success-text) !important;
+}
+
+.btn-outline-danger {
+    border-color: var(--btn-danger-bg) !important;
+    color: var(--btn-danger-bg) !important;
+    font-weight: 600;
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    background-color: var(--btn-danger-bg) !important;
+    border-color: var(--btn-danger-bg) !important;
+    color: var(--btn-danger-text) !important;
+}
+
+.btn-outline-warning {
+    border-color: var(--btn-warning-bg) !important;
+    color: #7a5c00 !important; /* Cor mais escura para texto em fundo claro */
+    font-weight: 700;
+}
+
+.btn-outline-warning:hover,
+.btn-outline-warning:focus {
+    background-color: var(--btn-warning-bg) !important;
+    border-color: var(--btn-warning-bg) !important;
+    color: var(--btn-warning-text) !important;
+}
+
+.btn-outline-info {
+    border-color: var(--btn-info-bg) !important;
+    color: var(--btn-info-bg) !important;
+    font-weight: 600;
+}
+
+.btn-outline-info:hover,
+.btn-outline-info:focus {
+    background-color: var(--btn-info-bg) !important;
+    border-color: var(--btn-info-bg) !important;
+    color: var(--btn-info-text) !important;
+}
+
+.btn-outline-primary {
+    border-color: var(--btn-primary-bg) !important;
+    color: var(--btn-primary-bg) !important;
+    font-weight: 600;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    background-color: var(--btn-primary-bg) !important;
+    border-color: var(--btn-primary-bg) !important;
+    color: var(--btn-primary-text) !important;
+}
+
+.btn-outline-secondary {
+    border-color: var(--btn-secondary-bg) !important;
+    color: var(--btn-secondary-bg) !important;
+    font-weight: 600;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    background-color: var(--btn-secondary-bg) !important;
+    border-color: var(--btn-secondary-bg) !important;
+    color: var(--btn-secondary-text) !important;
+}
+
+/* Badges com cores de alto contraste */
+.badge-success,
+.bg-success {
+    background-color: var(--btn-success-bg) !important;
+    color: var(--btn-success-text) !important;
+}
+
+.badge-danger,
+.bg-danger {
+    background-color: var(--btn-danger-bg) !important;
+    color: var(--btn-danger-text) !important;
+}
+
+.badge-warning,
+.bg-warning {
+    background-color: var(--btn-warning-bg) !important;
+    color: var(--btn-warning-text) !important;
+}
+
+.badge-info,
+.bg-info {
+    background-color: var(--btn-info-bg) !important;
+    color: var(--btn-info-text) !important;
+}
+
+.badge-primary,
+.bg-primary {
+    background-color: var(--btn-primary-bg) !important;
+    color: var(--btn-primary-text) !important;
+}
+
+.badge-secondary,
+.bg-secondary {
+    background-color: var(--btn-secondary-bg) !important;
+    color: var(--btn-secondary-text) !important;
+}
+
+/* Alertas com cores de alto contraste */
+.alert-success {
+    background-color: #d4edda;
+    border-color: var(--btn-success-bg);
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: var(--btn-danger-bg);
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: var(--btn-warning-bg);
+    color: #664d03;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: var(--btn-info-bg);
+    color: #0c5460;
+}
+
+.alert-primary {
+    background-color: #cce5ff;
+    border-color: var(--btn-primary-bg);
+    color: #004085;
+}
+
+/* Links com contraste adequado */
+a {
+    color: var(--btn-primary-bg);
+}
+
+a:hover {
+    color: var(--btn-primary-bg-hover);
+}
+
+/* Texto muted com contraste adequado */
+.text-muted {
+    color: #495057 !important; /* Contraste 7:1 com fundo branco */
+}
+
+/* Mobile: espaçamento maior para facilitar toque */
+@media (max-width: 575px) {
+    .action-buttons,
+    .actions-container,
+    .button-group {
+        gap: 16px;
+    }
+    
+    .invite-actions,
+    .order-actions,
+    .card-actions {
+        gap: 16px;
+    }
+    
+    .form-actions {
+        gap: 16px;
+    }
+    
+    .modal-footer {
+        gap: 16px;
+        flex-direction: column;
+    }
+    
+    .modal-footer > .btn {
+        width: 100%;
+    }
+    
+    /* Botões empilhados em mobile */
+    .btn + .btn,
+    .btn-mobile + .btn-mobile {
+        margin-left: 0;
+        margin-top: 12px;
+    }
+    
+    /* FAB mais acessível em mobile */
+    .fab-container {
+        bottom: 80px; /* Espaço para navegação fixa */
+        right: 16px;
+    }
+}

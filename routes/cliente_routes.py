@@ -92,9 +92,22 @@ def ordens():
     page = request.args.get('page', 1, type=int)
     orders = OrderService.get_client_orders(user.id, page)
     
+    # Calcular estatísticas
+    from models import Order
+    all_orders = Order.query.filter_by(client_id=user.id).all()
+    statistics = {
+        'total': len(all_orders),
+        'aguardando': len([o for o in all_orders if o.status == 'aceita']),
+        'para_confirmar': len([o for o in all_orders if o.status == 'concluida']),
+        'concluidas': len([o for o in all_orders if o.status == 'confirmada']),
+        'em_disputa': len([o for o in all_orders if o.status == 'em_disputa']),
+        'canceladas': len([o for o in all_orders if o.status == 'cancelada'])
+    }
+    
     return render_template('cliente/ordens.html', 
                          user=user, 
-                         orders=orders)
+                         orders=orders,
+                         statistics=statistics)
 
 @cliente_bp.route('/ordens/criar')
 @login_required
@@ -384,10 +397,33 @@ def criar_convite():
         wallet_info = {'balance': 0.0}
         flash(f'Erro ao carregar informações da carteira: {str(e)}', 'warning')
     
+    # Verificar se está copiando dados de um convite rejeitado
+    copy_from_id = request.args.get('copy_from')
+    edit_mode = request.args.get('edit') == 'true'
+    copied_invite = None
+    
+    if copy_from_id:
+        try:
+            copied_invite = Invite.query.get(copy_from_id)
+            if copied_invite and copied_invite.client_id == user.id and copied_invite.status == 'recusado':
+                # Mostrar mensagem informativa sobre a cópia
+                if edit_mode:
+                    flash(f'Dados copiados do convite rejeitado. Você pode modificar as informações baseado no feedback: "{copied_invite.rejection_reason or "Sem motivo específico"}"', 'info')
+                else:
+                    flash(f'Dados copiados do convite rejeitado. Revise as informações antes de enviar.', 'info')
+            else:
+                copied_invite = None
+                flash('Convite não encontrado ou não pode ser copiado.', 'warning')
+        except Exception as e:
+            copied_invite = None
+            flash('Erro ao copiar dados do convite.', 'error')
+    
     return render_template('cliente/criar_convite.html', 
                          user=user,
                          wallet=wallet_info,
-                         contestation_fee=InviteService.CONTESTATION_FEE)
+                         contestation_fee=InviteService.CONTESTATION_FEE,
+                         copied_invite=copied_invite,
+                         edit_mode=edit_mode)
 
 @cliente_bp.route('/convites/criar', methods=['POST'])
 @login_required
@@ -405,7 +441,8 @@ def processar_criar_convite():
         service_title = request.form.get('service_title', '').strip()
         service_description = request.form.get('service_description', '').strip()
         service_category = request.form.get('service_category', '').strip()
-        original_value = float(request.form.get('original_value', 0))
+        # Manter como string para converter para Decimal no serviço
+        original_value = request.form.get('original_value', '0')
         delivery_date_str = request.form.get('delivery_date', '')
         
         # Validações básicas
@@ -421,8 +458,14 @@ def processar_criar_convite():
             flash('Descrição do serviço é obrigatória.', 'error')
             return redirect(url_for('cliente.criar_convite'))
         
-        if original_value <= 0:
-            flash('Valor do serviço deve ser maior que zero.', 'error')
+        # Validar e converter valor
+        try:
+            original_value_float = float(original_value)
+            if original_value_float <= 0:
+                flash('Valor do serviço deve ser maior que zero.', 'error')
+                return redirect(url_for('cliente.criar_convite'))
+        except (ValueError, TypeError):
+            flash('Valor do serviço inválido.', 'error')
             return redirect(url_for('cliente.criar_convite'))
         
         # Converter data de entrega
@@ -445,6 +488,15 @@ def processar_criar_convite():
             delivery_date=delivery_date,
             service_category=service_category
         )
+        
+        # Marcar que o cliente já aceitou (pois ele é o criador do convite)
+        # Assim, quando o prestador aceitar, a pré-ordem será criada automaticamente
+        from models import Invite, db
+        invite = Invite.query.get(result['invite_id'])
+        if invite:
+            invite.client_accepted = True
+            invite.client_accepted_at = datetime.now()
+            db.session.commit()
         
         # Gerar link do convite
         invite_link = result.get('invite_link', f"/convite/{result['token']}")
@@ -470,13 +522,28 @@ def ver_convite(invite_id):
         return redirect(url_for('auth.user_login'))
     
     try:
-        from models import Invite
+        from models import Invite, Proposal
         invite = Invite.query.get_or_404(invite_id)
         
         # Verificar se o convite pertence ao cliente
+        # O cliente é sempre o client_id, independente de ser contraproposta ou não
         if invite.client_id != user.id:
+            # Se o usuário não é o cliente, verificar se ele é o prestador
+            # Nesse caso, redirecionar para a view do prestador
+            if 'prestador' in user.roles and invite.invited_phone == user.phone:
+                flash('Este convite deve ser visualizado na área do prestador.', 'info')
+                return redirect(url_for('prestador.ver_convite', token=invite.token))
+            
             flash('Convite não encontrado.', 'error')
             return redirect(url_for('cliente.convites'))
+        
+        # Carregar proposta ativa se existir
+        current_proposal = None
+        if invite.has_active_proposal and invite.current_proposal_id:
+            current_proposal = Proposal.query.get(invite.current_proposal_id)
+        
+        # Adicionar proposta ao objeto invite para uso no template
+        invite.current_proposal = current_proposal
         
         return render_template('cliente/ver_convite.html', 
                              user=user, 
@@ -486,10 +553,10 @@ def ver_convite(invite_id):
         flash(f'Erro ao carregar convite: {str(e)}', 'error')
         return redirect(url_for('cliente.convites'))
 
-@cliente_bp.route('/convites/<int:invite_id>/converter', methods=['POST'])
+@cliente_bp.route('/convites/<int:invite_id>/aceitar', methods=['POST'])
 @login_required
-def converter_convite(invite_id):
-    """Converter convite aceito em ordem de serviço"""
+def aceitar_convite(invite_id):
+    """Aceitar um convite como cliente"""
     user = AuthService.get_current_user()
     
     if 'cliente' not in user.roles:
@@ -497,7 +564,87 @@ def converter_convite(invite_id):
         return redirect(url_for('auth.user_login'))
     
     try:
-        from models import Invite
+        # Usar o novo método de aceitação do InviteService
+        result = InviteService.accept_invite_as_client(invite_id, user.id)
+        
+        # Verificar se a pré-ordem foi criada automaticamente
+        if result.get('pre_order_created'):
+            pre_order_id = result.get('pre_order_id')
+            flash(f'Convite aceito com sucesso! Pré-ordem #{pre_order_id} criada. '
+                  f'Você pode negociar os termos antes de confirmar.', 'success')
+            # Redirecionar para a página de detalhes da pré-ordem
+            return redirect(url_for('pre_ordem.ver_detalhes', pre_order_id=pre_order_id))
+        elif result.get('order_created'):
+            # Fallback para ordem direta (caso legado)
+            order_id = result.get('order_id')
+            flash(f'Convite aceito com sucesso! Ordem #{order_id} criada automaticamente. '
+                  f'Os valores foram bloqueados em garantia.', 'success')
+            return redirect(url_for('cliente.ordens'))
+        else:
+            # Aguardando aceitação do prestador
+            flash('Convite aceito com sucesso! Aguardando aceitação do prestador para criar a pré-ordem.', 'info')
+            return redirect(url_for('cliente.convites'))
+    
+    except Exception as e:
+        # Importar exceções personalizadas
+        from services.exceptions import (
+            InsufficientBalanceError,
+            OrderCreationError,
+            EscrowBlockError,
+            InviteValidationError
+        )
+        
+        # Tratamento específico por tipo de erro
+        # Requirements: 7.4, 8.3, 8.4
+        if isinstance(e, InsufficientBalanceError):
+            # Erro de saldo insuficiente - mensagem clara com valores
+            # Requirements: 7.4, 8.3, 8.4
+            flash(f'{e.message}', 'error')
+            flash('Você pode adicionar saldo através do menu "Solicitar Tokens".', 'info')
+            return redirect(url_for('cliente.ver_convite', invite_id=invite_id))
+            
+        elif isinstance(e, OrderCreationError):
+            # Erro na criação da ordem - convite permanece aceito
+            # Requirements: 7.1, 7.2, 7.3, 7.4
+            flash(f'{e.message}', 'error')
+            flash('Seu convite permanece aceito. Você pode tentar novamente em alguns instantes.', 'info')
+            return redirect(url_for('cliente.convites'))
+            
+        elif isinstance(e, EscrowBlockError):
+            # Erro no bloqueio de escrow - operação cancelada
+            # Requirements: 7.2, 7.5
+            flash(f'{e.message}', 'error')
+            flash('Seu convite permanece aceito. Nenhum valor foi debitado.', 'info')
+            return redirect(url_for('cliente.convites'))
+            
+        elif isinstance(e, InviteValidationError):
+            # Erro de validação do convite
+            # Requirements: 7.4
+            flash(f'Não foi possível aceitar o convite: {e.message}', 'error')
+            return redirect(url_for('cliente.ver_convite', invite_id=invite_id))
+            
+        else:
+            # Erro genérico
+            # Requirements: 7.4
+            error_message = str(e)
+            flash(f'Erro ao aceitar convite: {error_message}. Por favor, tente novamente.', 'error')
+            return redirect(url_for('cliente.ver_convite', invite_id=invite_id))
+
+# REMOVIDO: Conversão de convite agora é feita pelo prestador
+# O prestador é quem ganha com o serviço e paga a taxa para a plataforma
+
+@cliente_bp.route('/convites/<int:invite_id>/excluir', methods=['POST'])
+@login_required
+def excluir_convite(invite_id):
+    """Excluir um convite (apenas se ainda não foi aceito/convertido)"""
+    user = AuthService.get_current_user()
+    
+    if 'cliente' not in user.roles:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('auth.user_login'))
+    
+    try:
+        from models import Invite, db
         invite = Invite.query.get_or_404(invite_id)
         
         # Verificar se o convite pertence ao cliente
@@ -505,20 +652,33 @@ def converter_convite(invite_id):
             flash('Convite não encontrado.', 'error')
             return redirect(url_for('cliente.convites'))
         
-        # Verificar se o convite pode ser convertido
-        if invite.status != 'aceito':
-            flash('Apenas convites aceitos podem ser convertidos em ordens.', 'error')
+        # Verificar se o convite pode ser excluído
+        # Apenas convites finalizados podem ser excluídos (para limpar a lista)
+        if invite.status == 'convertido':
+            flash('Convites já convertidos em ordens não podem ser excluídos.', 'error')
             return redirect(url_for('cliente.ver_convite', invite_id=invite_id))
         
-        # Converter para ordem
-        result = InviteService.convert_invite_to_order(invite_id)
+        if invite.status == 'pendente':
+            flash('Convites pendentes não podem ser excluídos. Aguarde resposta do prestador.', 'warning')
+            return redirect(url_for('cliente.ver_convite', invite_id=invite_id))
         
-        flash(f'Convite convertido em ordem de serviço com sucesso! Ordem #{result["order_id"]} criada.', 'success')
-        return redirect(url_for('cliente.ordens'))
+        if invite.status == 'proposta_enviada':
+            flash('Convites com proposta pendente não podem ser excluídos. Responda a proposta primeiro.', 'warning')
+            return redirect(url_for('cliente.ver_convite', invite_id=invite_id))
+        
+        # Salvar informações para mensagem
+        service_title = invite.service_title
+        
+        # Excluir o convite
+        db.session.delete(invite)
+        db.session.commit()
+        
+        flash(f'Convite "{service_title}" excluído com sucesso.', 'success')
+        return redirect(url_for('cliente.convites'))
         
     except ValueError as e:
         flash(str(e), 'error')
     except Exception as e:
-        flash(f'Erro ao converter convite: {str(e)}', 'error')
+        flash(f'Erro ao excluir convite: {str(e)}', 'error')
     
     return redirect(url_for('cliente.convites'))

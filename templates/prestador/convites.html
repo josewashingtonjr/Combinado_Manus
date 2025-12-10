@@ -4,11 +4,16 @@
 
 {% block prestador_content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-envelope-open-text me-2"></i>Convites Recebidos</h1>
-    <div class="text-muted">
-        <i class="fas fa-envelope me-1"></i>
-        {{ invites|length }} convite(s) para {{ user.email }}
-    </div>
+    <h1><i class="fas fa-envelope-open-text me-2"></i>Meus Convites</h1>
+    <a href="{{ url_for('prestador.criar_convite') }}" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>Criar Proposta
+    </a>
+</div>
+
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Dica:</strong> Você pode criar propostas de serviço para clientes cadastrados no sistema. 
+    Eles receberão sua proposta e poderão aceitar ou negociar.
 </div>
 
 <!-- Lista de Convites -->
@@ -28,6 +33,10 @@
                     {% elif invite.status == 'aceito' %}
                         <span class="badge bg-success">
                             <i class="fas fa-check me-1"></i>Aceito
+                        </span>
+                    {% elif invite.status == 'convertido_pre_ordem' %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-handshake me-1"></i>Pré-Ordem
                         </span>
                     {% elif invite.status == 'recusado' %}
                         <span class="badge bg-danger">
@@ -97,13 +106,17 @@
                 <div class="card-footer">
                     {% if invite.can_be_accepted %}
                         <a href="{{ url_for('prestador.ver_convite', token=invite.token) }}" 
-                           class="btn btn-primary btn-sm">
-                            <i class="fas fa-eye me-1"></i>Ver Detalhes
-                        </a>
-                        <a href="{{ url_for('prestador.ver_convite', token=invite.token) }}" 
                            class="btn btn-success btn-sm">
-                            <i class="fas fa-handshake me-1"></i>Responder
+                            <i class="fas fa-eye me-1"></i>Ver Detalhes e Responder
                         </a>
+                    {% elif invite.status == 'convertido_pre_ordem' and invite.pre_order %}
+                        <a href="{{ url_for('pre_ordem.ver_detalhes', pre_order_id=invite.pre_order.id) }}" 
+                           class="btn btn-success btn-sm">
+                            <i class="fas fa-handshake me-1"></i>Ver Pré-Ordem
+                        </a>
+                        <span class="badge bg-info ms-2">
+                            <i class="fas fa-comments me-1"></i>Negociação
+                        </span>
                     {% else %}
                         <a href="{{ url_for('prestador.ver_convite', token=invite.token) }}" 
                            class="btn btn-outline-secondary btn-sm">
@@ -113,6 +126,15 @@
                             <span class="badge bg-primary ms-2">
                                 <i class="fas fa-check-double me-1"></i>Convertido em Ordem
                             </span>
+                        {% endif %}
+                        {% if invite.status in ['recusado', 'expirado', 'aceito'] %}
+                            <form method="POST" action="{{ url_for('prestador.excluir_convite', invite_id=invite.id) }}" 
+                                  class="d-inline float-end" onsubmit="return confirm('Tem certeza que deseja excluir este convite?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Excluir Convite">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                         {% endif %}
                     {% endif %}
                 </div>

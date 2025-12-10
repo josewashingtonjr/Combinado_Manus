@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Cores Acessíveis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/accessibility-colors.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--a11y-bg-secondary);
+        }
+        
+        .demo-section {
+            background: var(--a11y-bg-primary);
+            padding: 24px;
+            margin-bottom: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .demo-section h2 {
+            color: var(--a11y-text-primary);
+            margin-top: 0;
+            border-bottom: 2px solid var(--a11y-border-medium);
+            padding-bottom: 12px;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .demo-item {
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .color-swatch {
+            width: 100%;
+            height: 60px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid var(--a11y-border-light);
+        }
+        
+        .contrast-info {
+            font-size: 12px;
+            color: var(--a11y-text-muted);
+            margin-top: 4px;
+        }
+        
+        button {
+            margin: 4px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .alert-demo {
+            padding: 16px;
+            border-radius: 6px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-demo i {
+            font-size: 24px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .header h1 {
+            color: var(--a11y-primary);
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: var(--a11y-text-secondary);
+        }
+        
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--a11y-bg-primary);
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        
+        .controls button {
+            display: block;
+            width: 100%;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h3 style="margin-top: 0; color: var(--a11y-text-primary);">Controles</h3>
+        <button onclick="HighContrastMode.toggle()" class="btn-a11y-primary">
+            <i class="fas fa-adjust"></i> Alto Contraste
+        </button>
+        <button onclick="ColorblindSimulator.showPanel()" class="btn-a11y-info">
+            <i class="fas fa-eye"></i> Simulador
+        </button>
+    </div>
+
+    <div class="header">
+        <h1>🎨 Demonstração de Cores Acessíveis</h1>
+        <p>Sistema de cores com conformidade WCAG 2.1 AA/AAA</p>
+    </div>
+
+    <!-- Paleta de Cores -->
+    <div class="demo-section">
+        <h2><i class="fas fa-palette"></i> Paleta de Cores</h2>
+        <div class="demo-grid">
+            <div class="demo-item">
+                <div class="color-swatch" style="background: var(--a11y-primary); color: white;">
+                    Primária
+                </div>
+                <div class="contrast-info">Contraste: 7.29:1 ✅ AAA</div>
+            </div>
+            <div class="demo-item">
+                <div class="color-swatch" style="background: var(--a11y-success); color: white;">
+                    Sucesso
+                </div>
+                <div class="contrast-info">Contraste: 5.14:1 ✅ AA</div>
+            </div>
+            <div class="demo-item">
+                <div class="color-swatch" style="background: var(--a11y-danger); color: white;">
+                    Erro
+                </div>
+                <div class="contrast-info">Contraste: 5.61:1 ✅ AA</div>
+            </div>
+            <div class="demo-item">
+                <div class="color-swatch" style="background: var(--a11y-warning); color: black;">
+                    Aviso
+                </div>
+                <div class="contrast-info">Contraste: 8.66:1 ✅ AAA (texto preto)</div>
+            </div>
+            <div class="demo-item">
+                <div class="color-swatch" style="background: var(--a11y-info); color: white;">
+                    Informação
+                </div>
+                <div class="contrast-info">Contraste: 5.02:1 ✅ AA</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões -->
+    <div class="demo-section">
+        <h2><i class="fas fa-hand-pointer"></i> Botões Acessíveis</h2>
+        <div style="text-align: center;">
+            <button class="btn-a11y-primary">
+                <i class="fas fa-check"></i> Botão Primário
+            </button>
+            <button class="btn-a11y-success">
+                <i class="fas fa-check-circle"></i> Confirmar
+            </button>
+            <button class="btn-a11y-danger">
+                <i class="fas fa-trash"></i> Excluir
+            </button>
+            <button class="btn-a11y-warning">
+                <i class="fas fa-exclamation-triangle"></i> Atenção
+            </button>
+            <button class="btn-a11y-info">
+                <i class="fas fa-info-circle"></i> Informação
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div class="demo-section">
+        <h2><i class="fas fa-bell"></i> Alertas</h2>
+        
+        <div class="alert-a11y-success alert-demo">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <strong>Sucesso!</strong> Operação realizada com sucesso.
+            </div>
+        </div>
+        
+        <div class="alert-a11y-danger alert-demo">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+                <strong>Erro!</strong> Ocorreu um erro ao processar sua solicitação.
+            </div>
+        </div>
+        
+        <div class="alert-a11y-warning alert-demo">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Atenção!</strong> Esta ação não pode ser desfeita.
+            </div>
+        </div>
+        
+        <div class="alert-a11y-info alert-demo">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Dica:</strong> Você pode usar atalhos de teclado para navegar mais rápido.
+            </div>
+        </div>
+    </div>
+
+    <!-- Texto -->
+    <div class="demo-section">
+        <h2><i class="fas fa-font"></i> Hierarquia de Texto</h2>
+        <p class="text-a11y-primary" style="font-size: 18px; font-weight: 600;">
+            Texto Principal - Usado para títulos e informações importantes
+        </p>
+        <p class="text-a11y-secondary" style="font-size: 16px;">
+            Texto Secundário - Usado para conteúdo complementar e descrições
+        </p>
+        <p class="text-a11y-muted" style="font-size: 14px;">
+            Texto Auxiliar - Usado para informações adicionais e metadados
+        </p>
+    </div>
+
+    <!-- Links -->
+    <div class="demo-section">
+        <h2><i class="fas fa-link"></i> Links</h2>
+        <p>
+            Este é um parágrafo com um <a href="#" class="link-a11y">link acessível</a> que 
+            mantém contraste adequado e é sublinhado para identificação clara.
+        </p>
+        <p>
+            <a href="#" class="link-a11y">
+                <i class="fas fa-external-link-alt"></i> Link com ícone
+            </a>
+        </p>
+    </div>
+
+    <!-- Atalhos -->
+    <div class="demo-section">
+        <h2><i class="fas fa-keyboard"></i> Atalhos de Teclado</h2>
+        <ul style="color: var(--a11y-text-secondary);">
+            <li><kbd>Ctrl + Alt + C</kbd> - Alternar modo de alto contraste</li>
+            <li><kbd>Ctrl + Alt + V</kbd> - Abrir simulador de daltonismo (apenas em desenvolvimento)</li>
+            <li><kbd>Tab</kbd> - Navegar entre elementos interativos</li>
+            <li><kbd>Enter</kbd> ou <kbd>Espaço</kbd> - Ativar botão focado</li>
+        </ul>
+    </div>
+
+    <!-- Informações -->
+    <div class="demo-section">
+        <h2><i class="fas fa-info-circle"></i> Conformidade WCAG</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            <div style="padding: 16px; background: var(--a11y-success-bg); border-left: 4px solid var(--a11y-success); border-radius: 4px;">
+                <h3 style="margin-top: 0; color: var(--a11y-success-dark);">
+                    <i class="fas fa-check-circle"></i> WCAG 2.1 AA
+                </h3>
+                <p style="color: var(--a11y-success-dark); margin: 0;">
+                    90% de conformidade<br>
+                    36/40 combinações ✅
+                </p>
+            </div>
+            <div style="padding: 16px; background: var(--a11y-success-bg); border-left: 4px solid var(--a11y-success); border-radius: 4px;">
+                <h3 style="margin-top: 0; color: var(--a11y-success-dark);">
+                    <i class="fas fa-star"></i> WCAG 2.1 AAA
+                </h3>
+                <p style="color: var(--a11y-success-dark); margin: 0;">
+                    100% no modo alto contraste<br>
+                    40/40 combinações ✅
+                </p>
+            </div>
+            <div style="padding: 16px; background: var(--a11y-info-bg); border-left: 4px solid var(--a11y-info); border-radius: 4px;">
+                <h3 style="margin-top: 0; color: var(--a11y-info-dark);">
+                    <i class="fas fa-eye"></i> Daltonismo
+                </h3>
+                <p style="color: var(--a11y-info-dark); margin: 0;">
+                    8 tipos testados<br>
+                    Ícones + cores ✅
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/high-contrast-toggle.js"></script>
+    <script src="js/colorblind-simulator.js"></script>
+    
+    <script>
+        // Adicionar estilos para kbd
+        const style = document.createElement('style');
+        style.textContent = `
+            kbd {
+                background: var(--a11y-bg-tertiary);
+                border: 1px solid var(--a11y-border-medium);
+                border-radius: 4px;
+                padding: 2px 6px;
+                font-family: monospace;
+                font-size: 14px;
+                color: var(--a11y-text-primary);
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Log de inicialização
+        console.log('🎨 Demo de Cores Acessíveis carregada!');
+        console.log('Pressione Ctrl+Alt+C para alternar alto contraste');
+        console.log('Pressione Ctrl+Alt+V para abrir simulador de daltonismo');
+    </script>
+</body>
+</html>

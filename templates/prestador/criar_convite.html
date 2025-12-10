@@ -1,0 +1,128 @@
+{% extends "prestador/base_prestador.html" %}
+
+{% block title %}Criar Proposta de Serviço - Sistema Combinado{% endblock %}
+
+{% block prestador_content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-paper-plane me-2"></i>Criar Proposta de Serviço
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Como funciona:</strong> Você está propondo um serviço para um cliente. 
+                    O cliente receberá sua proposta e poderá aceitar, recusar ou propor alterações.
+                </div>
+
+                <form method="POST" action="{{ url_for('prestador.processar_criar_convite') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <!-- Email do Cliente -->
+                    <div class="mb-3">
+                        <label for="client_email" class="form-label">
+                            <i class="fas fa-user me-1"></i>Email do Cliente *
+                        </label>
+                        <input type="email" class="form-control" id="client_email" name="client_email" 
+                               required placeholder="cliente@exemplo.com">
+                        <div class="form-text">
+                            O cliente deve estar cadastrado no sistema para receber sua proposta.
+                        </div>
+                    </div>
+                    
+                    <!-- Título do Serviço -->
+                    <div class="mb-3">
+                        <label for="service_title" class="form-label">
+                            <i class="fas fa-heading me-1"></i>Título do Serviço *
+                        </label>
+                        <input type="text" class="form-control" id="service_title" name="service_title" 
+                               required maxlength="200" placeholder="Ex: Instalação de Sistema Elétrico">
+                    </div>
+                    
+                    <!-- Descrição -->
+                    <div class="mb-3">
+                        <label for="service_description" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Descrição do Serviço *
+                        </label>
+                        <textarea class="form-control" id="service_description" name="service_description" 
+                                  rows="4" required placeholder="Descreva detalhadamente o serviço que você propõe..."></textarea>
+                        <div class="form-text">
+                            Seja claro sobre o que está incluído no serviço.
+                        </div>
+                    </div>
+                    
+                    <!-- Categoria -->
+                    <div class="mb-3">
+                        <label for="service_category" class="form-label">
+                            <i class="fas fa-tools me-1"></i>Categoria
+                        </label>
+                        <select class="form-select" id="service_category" name="service_category">
+                            <option value="">Selecione uma categoria (opcional)</option>
+                            <option value="eletricista">Eletricista</option>
+                            <option value="encanador">Encanador</option>
+                            <option value="pedreiro">Pedreiro</option>
+                            <option value="pintor">Pintor</option>
+                            <option value="marceneiro">Marceneiro</option>
+                            <option value="jardineiro">Jardineiro</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="reformas">Reformas</option>
+                            <option value="manutencao">Manutenção</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Valor e Data -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="proposed_value" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>Valor Proposto (R$) *
+                            </label>
+                            <input type="number" class="form-control" id="proposed_value" name="proposed_value" 
+                                   required min="1" step="0.01" placeholder="0.00">
+                            <div class="form-text">
+                                Valor que você cobra pelo serviço.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="delivery_date" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Data de Entrega *
+                            </label>
+                            <input type="date" class="form-control" id="delivery_date" name="delivery_date" 
+                                   required min="{{ (now() + timedelta(days=1)).strftime('%Y-%m-%d') }}">
+                            <div class="form-text">
+                                Quando você pode concluir o serviço.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informações sobre Taxas -->
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Importante
+                        </h6>
+                        <ul class="mb-0">
+                            <li>O cliente precisará ter saldo suficiente para aceitar sua proposta</li>
+                            <li>Você precisará ter saldo para a taxa de contestação (R$ 10,00) ao aceitar</li>
+                            <li>O cliente pode aceitar, recusar ou propor alterações no valor</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('prestador.convites') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane me-2"></i>Enviar Proposta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

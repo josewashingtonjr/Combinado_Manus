@@ -1,0 +1,273 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Detalhes do Convite #{{ convite.id }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{{ url_for('admin.convites') }}" class="btn btn-secondary mb-3">
+                <i class="fas fa-arrow-left"></i> Voltar para Convites
+            </a>
+            <h2 class="mb-3">
+                <i class="fas fa-envelope"></i> Detalhes do Convite #{{ convite.id }}
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações Principais -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informações do Convite</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">ID:</th>
+                            <td>{{ convite.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if convite.status == 'pendente' %}
+                                    <span class="badge bg-warning">Pendente</span>
+                                {% elif convite.status == 'aceito' %}
+                                    <span class="badge bg-success">Aceito</span>
+                                {% elif convite.status == 'convertido_pre_ordem' %}
+                                    <span class="badge bg-success">Pré-Ordem Criada</span>
+                                {% elif convite.status == 'recusado' %}
+                                    <span class="badge bg-danger">Recusado</span>
+                                {% elif convite.status == 'expirado' %}
+                                    <span class="badge bg-secondary">Expirado</span>
+                                {% elif convite.status == 'convertido' %}
+                                    <span class="badge bg-info">Convertido</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ convite.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Token:</th>
+                            <td><code>{{ convite.token }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Link do Convite:</th>
+                            <td>
+                                <a href="{{ convite.invite_link }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt"></i> Abrir Link
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Data de Criação:</th>
+                            <td>{{ convite.created_at.strftime('%d/%m/%Y %H:%M:%S') if convite.created_at else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Data de Entrega:</th>
+                            <td>{{ convite.delivery_date.strftime('%d/%m/%Y') if convite.delivery_date else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Data de Expiração:</th>
+                            <td>{{ convite.expires_at.strftime('%d/%m/%Y %H:%M:%S') if convite.expires_at else 'N/A' }}</td>
+                        </tr>
+                        {% if convite.responded_at %}
+                        <tr>
+                            <th>Data de Resposta:</th>
+                            <td>{{ convite.responded_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Cliente -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Informações do Cliente</h5>
+                </div>
+                <div class="card-body">
+                    {% if convite.client %}
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Nome:</th>
+                            <td>{{ convite.client.nome }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ convite.client.email }}</td>
+                        </tr>
+                        <tr>
+                            <th>CPF:</th>
+                            <td>{{ convite.client.cpf }}</td>
+                        </tr>
+                        <tr>
+                            <th>Telefone:</th>
+                            <td>{{ convite.client.phone }}</td>
+                        </tr>
+                    </table>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        Cliente não encontrado
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informações do Serviço -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Informações do Serviço</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Título:</th>
+                            <td><strong>{{ convite.service_title }}</strong></td>
+                        </tr>
+                        {% if convite.service_category %}
+                        <tr>
+                            <th>Categoria:</th>
+                            <td>{{ convite.service_category }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Descrição:</th>
+                            <td>{{ convite.service_description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Valor Original:</th>
+                            <td><strong class="text-primary">R$ {{ "%.2f"|format(convite.original_value|float) }}</strong></td>
+                        </tr>
+                        {% if convite.final_value %}
+                        <tr>
+                            <th>Valor Final:</th>
+                            <td><strong class="text-success">R$ {{ "%.2f"|format(convite.final_value|float) }}</strong></td>
+                        </tr>
+                        {% endif %}
+                        {% if convite.effective_value %}
+                        <tr>
+                            <th>Valor Efetivo:</th>
+                            <td><strong class="text-info">R$ {{ "%.2f"|format(convite.effective_value|float) }}</strong></td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Convidado -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Informações do Convidado</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Telefone:</th>
+                            <td>{{ convite.invited_phone }}</td>
+                        </tr>
+                        {% if convite.invited_email %}
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ convite.invited_email }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propostas e Rejeição -->
+    <div class="row">
+        {% if convite.has_active_proposal %}
+        <div class="col-md-6 mb-4">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Sistema de Propostas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Este convite possui uma proposta ativa.
+                    </div>
+                    {% if convite.current_proposal_id %}
+                    <p><strong>ID da Proposta Atual:</strong> {{ convite.current_proposal_id }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if convite.rejection_reason %}
+        <div class="col-md-6 mb-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Motivo da Rejeição</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ convite.rejection_reason }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if convite.pre_order %}
+        <div class="col-md-6 mb-4">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Pré-Ordem Criada</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID da Pré-Ordem:</strong> {{ convite.pre_order.id }}</p>
+                    <p><strong>Status:</strong> 
+                        {% if convite.pre_order.status == 'em_negociacao' %}
+                            <span class="badge bg-warning">Em Negociação</span>
+                        {% elif convite.pre_order.status == 'aguardando_resposta' %}
+                            <span class="badge bg-info">Aguardando Resposta</span>
+                        {% elif convite.pre_order.status == 'termos_aceitos' %}
+                            <span class="badge bg-success">Termos Aceitos</span>
+                        {% elif convite.pre_order.status == 'convertida' %}
+                            <span class="badge bg-primary">Convertida em Ordem</span>
+                        {% elif convite.pre_order.status == 'cancelada' %}
+                            <span class="badge bg-danger">Cancelada</span>
+                        {% elif convite.pre_order.status == 'expirada' %}
+                            <span class="badge bg-secondary">Expirada</span>
+                        {% else %}
+                            <span class="badge bg-dark">{{ convite.pre_order.status }}</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Valor Atual:</strong> R$ {{ "%.2f"|format(convite.pre_order.current_value|float) }}</p>
+                    <p><strong>Cliente:</strong> {{ convite.pre_order.client.nome if convite.pre_order.client else 'N/A' }}</p>
+                    <p><strong>Prestador:</strong> {{ convite.pre_order.provider.nome if convite.pre_order.provider else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if convite.order_id %}
+        <div class="col-md-6 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Contrato Gerado</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID do Contrato:</strong> {{ convite.order_id }}</p>
+                    <a href="{{ url_for('admin.ver_contrato', order_id=convite.order_id) }}" class="btn btn-success">
+                        <i class="fas fa-file-contract"></i> Ver Contrato
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

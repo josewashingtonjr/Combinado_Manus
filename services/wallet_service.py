@@ -4,6 +4,17 @@
 from models import db, User, Wallet, Transaction, Order
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
+from decimal import Decimal
+from services.atomic_transaction_manager import (
+    atomic_financial_operation,
+    execute_with_retry,
+    validate_balance_integrity,
+    log_financial_operation,
+    InsufficientBalanceError,
+    NegativeBalanceError,
+    EscrowIntegrityError,
+    TransactionIntegrityError
+)
 
 class WalletService:
     """Serviço para gerenciar carteiras e transações"""
@@ -43,14 +54,8 @@ class WalletService:
             db.session.add(wallet)
             db.session.commit()
             
-            # Registra transação inicial
-            initial_transaction = Transaction(
-                user_id=user_id,
-                type="criacao_carteira",
-                amount=0.0,
-                description="Carteira criada automaticamente"
-            )
-            db.session.add(initial_transaction)
+            # Não criar transação inicial com valor zero devido à constraint
+            # A carteira é criada com saldo zero, mas sem transação inicial
             db.session.commit()
             
             return wallet
@@ -198,14 +203,16 @@ class WalletService:
         # Calcular saldo principal
         # Para escrow_bloqueio, o valor já foi debitado do saldo principal
         # então precisamos somar todas as transações normais E as de escrow_bloqueio
-        calculated_balance = sum(t.amount for t in balance_affecting)
+        calculated_balance = Decimal('0.00')
+        for t in balance_affecting:
+            calculated_balance += Decimal(str(t.amount))
         
         # Adicionar o efeito das transações de escrow no saldo principal
         for t in escrow_affecting:
             if t.type == 'escrow_bloqueio':
-                calculated_balance += t.amount  # t.amount já é negativo
+                calculated_balance += Decimal(str(t.amount))  # t.amount já é negativo
             elif t.type == 'escrow_reembolso':
-                calculated_balance += abs(t.amount)  # Reembolso adiciona de volta ao saldo
+                calculated_balance += abs(Decimal(str(t.amount)))  # Reembolso adiciona de volta ao saldo
         
         # Para escrow, precisamos considerar que:
         # - escrow_bloqueio: remove do saldo principal (já contabilizado acima como negativo)
@@ -213,16 +220,16 @@ class WalletService:
         # - escrow_liberacao: remove do escrow
         # - escrow_reembolso: remove do escrow e adiciona de volta ao saldo principal
         
-        calculated_escrow = 0.0
+        calculated_escrow = Decimal('0.00')
         for t in escrow_affecting:
             if t.type == 'escrow_bloqueio':
-                calculated_escrow += abs(t.amount)  # Adiciona ao escrow
+                calculated_escrow += abs(Decimal(str(t.amount)))  # Adiciona ao escrow
             elif t.type in ['escrow_liberacao', 'escrow_reembolso']:
-                calculated_escrow -= abs(t.amount)  # Remove do escrow
+                calculated_escrow -= abs(Decimal(str(t.amount)))  # Remove do escrow
         
         # Verificar se os saldos batem
-        balance_matches = abs(wallet.balance - calculated_balance) < 0.01
-        escrow_matches = abs(wallet.escrow_balance - calculated_escrow) < 0.01
+        balance_matches = abs(Decimal(str(wallet.balance)) - calculated_balance) < Decimal('0.01')
+        escrow_matches = abs(Decimal(str(wallet.escrow_balance)) - calculated_escrow) < Decimal('0.01')
         
         return {
             'wallet_balance': wallet.balance,
@@ -310,15 +317,18 @@ class WalletService:
     
     @staticmethod
     def credit_wallet(user_id, amount, description, transaction_type="credito", order_id=None, related_user_id=None):
-        """Credita um valor na carteira de um usuário (operação genérica)"""
+        """Credita um valor na carteira de um usuário (operação atômica)"""
         if amount <= 0:
             raise ValueError("Valor do crédito deve ser positivo")
         
-        wallet = Wallet.query.filter_by(user_id=user_id).first()
-        if not wallet:
-            raise ValueError("Carteira não encontrada")
+        # Converter para Decimal para compatibilidade com o banco
+        amount = Decimal(str(amount))
         
-        try:
+        def _credit_operation():
+            wallet = Wallet.query.filter_by(user_id=user_id).first()
+            if not wallet:
+                raise ValueError("Carteira não encontrada")
+            
             # Atualizar saldo
             wallet.balance += amount
             wallet.updated_at = datetime.utcnow()
@@ -333,32 +343,49 @@ class WalletService:
                 related_user_id=related_user_id
             )
             db.session.add(transaction)
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="credit_wallet",
+                user_id=user_id,
+                amount=amount,
+                details={
+                    'transaction_type': transaction_type,
+                    'description': description,
+                    'order_id': order_id,
+                    'related_user_id': related_user_id
+                }
+            )
             
             return {
                 'success': True,
-                'new_balance': wallet.balance,
+                'new_balance': float(wallet.balance),
                 'transaction_id': transaction.id
             }
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_credit_operation,
+            operation_name=f"credit_wallet_user_{user_id}"
+        )
     
     @staticmethod
     def debit_wallet(user_id, amount, description, transaction_type="debito", order_id=None, related_user_id=None, force=False):
-        """Debita um valor da carteira de um usuário (operação genérica)"""
+        """Debita um valor da carteira de um usuário (operação atômica com validação)"""
         if amount <= 0:
             raise ValueError("Valor do débito deve ser positivo")
         
-        wallet = Wallet.query.filter_by(user_id=user_id).first()
-        if not wallet:
-            raise ValueError("Carteira não encontrada")
+        # Converter para Decimal para compatibilidade com o banco
+        amount = Decimal(str(amount))
         
-        # Verificar saldo suficiente (a menos que seja forçado)
-        if not force and wallet.balance < amount:
-            raise ValueError(f"Saldo insuficiente. Saldo atual: {wallet.balance}, valor solicitado: {amount}")
-        
-        try:
+        def _debit_operation():
+            wallet = Wallet.query.filter_by(user_id=user_id).first()
+            if not wallet:
+                raise ValueError("Carteira não encontrada")
+            
+            # Validar saldo dentro da mesma transação (a menos que seja forçado)
+            if not force:
+                validate_balance_integrity(wallet, amount, "debit")
+            
             # Atualizar saldo
             wallet.balance -= amount
             wallet.updated_at = datetime.utcnow()
@@ -373,16 +400,31 @@ class WalletService:
                 related_user_id=related_user_id
             )
             db.session.add(transaction)
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="debit_wallet",
+                user_id=user_id,
+                amount=amount,
+                details={
+                    'transaction_type': transaction_type,
+                    'description': description,
+                    'order_id': order_id,
+                    'related_user_id': related_user_id,
+                    'force': force
+                }
+            )
             
             return {
                 'success': True,
-                'new_balance': wallet.balance,
+                'new_balance': float(wallet.balance),
                 'transaction_id': transaction.id
             }
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_debit_operation,
+            operation_name=f"debit_wallet_user_{user_id}"
+        )
 
     # ==============================================================================
     #  SISTEMA DE TOKENOMICS - ADMIN COMO FONTE DE TOKENS
@@ -425,14 +467,14 @@ class WalletService:
     
     @staticmethod
     def admin_create_tokens(amount, description="Criação de tokens pelo admin"):
-        """Permite ao admin criar novos tokens do zero"""
+        """Permite ao admin criar novos tokens do zero (operação atômica)"""
         if amount <= 0:
             raise ValueError("Quantidade de tokens deve ser positiva")
         
-        # Garantir que admin tem carteira
-        admin_wallet = WalletService.ensure_admin_has_wallet()
-        
-        try:
+        def _create_tokens_operation():
+            # Garantir que admin tem carteira
+            admin_wallet = WalletService.ensure_admin_has_wallet()
+            
             # Adicionar tokens à carteira do admin
             admin_wallet.balance += amount
             admin_wallet.updated_at = datetime.utcnow()
@@ -445,7 +487,17 @@ class WalletService:
                 description=description
             )
             db.session.add(transaction)
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="admin_create_tokens",
+                user_id=WalletService.ADMIN_USER_ID,
+                amount=amount,
+                details={
+                    'description': description,
+                    'new_admin_balance': admin_wallet.balance
+                }
+            )
             
             return {
                 'success': True,
@@ -453,29 +505,30 @@ class WalletService:
                 'tokens_created': amount,
                 'transaction_id': transaction.id
             }
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_create_tokens_operation,
+            operation_name="admin_create_tokens"
+        )
     
     @staticmethod
     def admin_sell_tokens_to_user(user_id, amount, description="Compra de tokens"):
-        """Admin vende tokens para um usuário (tokens saem da carteira do admin)"""
+        """Admin vende tokens para um usuário (operação atômica)"""
         if amount <= 0:
             raise ValueError("Quantidade de tokens deve ser positiva")
         
-        # Garantir que admin tem carteira
-        admin_wallet = WalletService.ensure_admin_has_wallet()
-        
-        # Verificar se admin tem tokens suficientes
-        if admin_wallet.balance < amount:
-            raise ValueError(f"Admin não tem tokens suficientes. Saldo atual: {admin_wallet.balance}, solicitado: {amount}")
-        
-        # Garantir que usuário tem carteira
-        user_wallet = Wallet.query.filter_by(user_id=user_id).first()
-        if not user_wallet:
-            user_wallet = WalletService.ensure_user_has_wallet(user_id)
-        
-        try:
+        def _admin_sell_operation():
+            # Garantir que admin tem carteira
+            admin_wallet = WalletService.ensure_admin_has_wallet()
+            
+            # Validar saldo do admin dentro da mesma transação
+            validate_balance_integrity(admin_wallet, amount, "debit")
+            
+            # Garantir que usuário tem carteira
+            user_wallet = Wallet.query.filter_by(user_id=user_id).first()
+            if not user_wallet:
+                user_wallet = WalletService.ensure_user_has_wallet(user_id)
+            
             # Debitar tokens do admin
             admin_wallet.balance -= amount
             admin_wallet.updated_at = datetime.utcnow()
@@ -503,7 +556,19 @@ class WalletService:
             )
             
             db.session.add_all([admin_transaction, user_transaction])
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="admin_sell_tokens_to_user",
+                user_id=WalletService.ADMIN_USER_ID,
+                amount=amount,
+                details={
+                    'target_user_id': user_id,
+                    'description': description,
+                    'admin_new_balance': admin_wallet.balance,
+                    'user_new_balance': user_wallet.balance
+                }
+            )
             
             return {
                 'success': True,
@@ -513,29 +578,30 @@ class WalletService:
                 'admin_transaction_id': admin_transaction.id,
                 'user_transaction_id': user_transaction.id
             }
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_admin_sell_operation,
+            operation_name=f"admin_sell_tokens_to_user_{user_id}"
+        )
     
     @staticmethod
     def user_sell_tokens_to_admin(user_id, amount, description="Saque de tokens"):
-        """Usuário vende tokens de volta para o admin (saque)"""
+        """Usuário vende tokens de volta para o admin (operação atômica)"""
         if amount <= 0:
             raise ValueError("Quantidade de tokens deve ser positiva")
         
-        # Garantir que admin tem carteira
-        admin_wallet = WalletService.ensure_admin_has_wallet()
-        
-        # Verificar carteira do usuário
-        user_wallet = Wallet.query.filter_by(user_id=user_id).first()
-        if not user_wallet:
-            raise ValueError("Carteira do usuário não encontrada")
-        
-        # Verificar se usuário tem tokens suficientes
-        if user_wallet.balance < amount:
-            raise ValueError(f"Saldo insuficiente. Saldo atual: {user_wallet.balance}, solicitado: {amount}")
-        
-        try:
+        def _user_sell_operation():
+            # Garantir que admin tem carteira
+            admin_wallet = WalletService.ensure_admin_has_wallet()
+            
+            # Verificar carteira do usuário
+            user_wallet = Wallet.query.filter_by(user_id=user_id).first()
+            if not user_wallet:
+                raise ValueError("Carteira do usuário não encontrada")
+            
+            # Validar saldo do usuário dentro da mesma transação
+            validate_balance_integrity(user_wallet, amount, "debit")
+            
             # Debitar tokens do usuário
             user_wallet.balance -= amount
             user_wallet.updated_at = datetime.utcnow()
@@ -563,7 +629,18 @@ class WalletService:
             )
             
             db.session.add_all([user_transaction, admin_transaction])
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="user_sell_tokens_to_admin",
+                user_id=user_id,
+                amount=amount,
+                details={
+                    'description': description,
+                    'user_new_balance': user_wallet.balance,
+                    'admin_new_balance': admin_wallet.balance
+                }
+            )
             
             return {
                 'success': True,
@@ -573,9 +650,11 @@ class WalletService:
                 'user_transaction_id': user_transaction.id,
                 'admin_transaction_id': admin_transaction.id
             }
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_user_sell_operation,
+            operation_name=f"user_sell_tokens_to_admin_{user_id}"
+        )
     
     @staticmethod
     def get_admin_wallet_info():
@@ -628,18 +707,23 @@ class WalletService:
 
     @staticmethod
     def transfer_to_escrow(user_id, amount, order_id):
-        """Transfere um valor do saldo principal para o saldo em escrow"""
+        """Transfere um valor do saldo principal para o saldo em escrow (operação atômica)"""
+        # Converter para Decimal para garantir compatibilidade com campos do banco
+        from decimal import Decimal
+        if not isinstance(amount, Decimal):
+            amount = Decimal(str(amount))
+        
         if amount <= 0:
             raise ValueError("Valor deve ser positivo")
         
-        wallet = Wallet.query.filter_by(user_id=user_id).first()
-        if not wallet:
-            raise ValueError("Carteira não encontrada")
-        
-        if wallet.balance < amount:
-            raise ValueError(f"Saldo insuficiente para transferir para escrow. Saldo atual: {wallet.balance}, valor solicitado: {amount}")
-        
-        try:
+        def _escrow_transfer_operation():
+            wallet = Wallet.query.filter_by(user_id=user_id).first()
+            if not wallet:
+                raise ValueError("Carteira não encontrada")
+            
+            # Validar saldo dentro da mesma transação
+            validate_balance_integrity(wallet, amount, "escrow_transfer")
+            
             # Transferir do saldo principal para escrow
             wallet.balance -= amount
             wallet.escrow_balance += amount
@@ -654,7 +738,18 @@ class WalletService:
                 order_id=order_id
             )
             db.session.add(transaction)
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="transfer_to_escrow",
+                user_id=user_id,
+                amount=amount,
+                details={
+                    'order_id': order_id,
+                    'new_balance': wallet.balance,
+                    'new_escrow_balance': wallet.escrow_balance
+                }
+            )
             
             return {
                 'success': True,
@@ -662,9 +757,11 @@ class WalletService:
                 'new_escrow_balance': wallet.escrow_balance,
                 'transaction_id': transaction.id
             }
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_escrow_transfer_operation,
+            operation_name=f"transfer_to_escrow_user_{user_id}_order_{order_id}"
+        )
     
     @staticmethod
     def get_escrow_balance(user_id):
@@ -686,7 +783,7 @@ class WalletService:
     @staticmethod
     def release_from_escrow(order_id, system_fee_percent=0.05):
         """
-        Libera o valor em escrow para o prestador e a taxa para o admin
+        Libera o valor em escrow para o prestador e a taxa para o admin (operação atômica)
         
         Fluxo conforme Planta Arquitetônica seção 7.5:
         1. Verificar se ordem existe e tem valor em escrow
@@ -694,30 +791,30 @@ class WalletService:
         3. Liberar escrow: tokens→prestador, taxa→admin
         4. Registrar todas as transações para auditoria
         """
-        order = Order.query.get(order_id)
-        if not order:
-            raise ValueError("Ordem não encontrada")
-        
-        if not order.provider_id:
-            raise ValueError("Ordem não tem prestador associado")
-        
-        client_wallet = Wallet.query.filter_by(user_id=order.client_id).first()
-        provider_wallet = Wallet.query.filter_by(user_id=order.provider_id).first()
-        
-        if not client_wallet or not provider_wallet:
-            raise ValueError("Carteira não encontrada")
-        
-        # Garantir que admin tem carteira
-        admin_wallet = WalletService.ensure_admin_has_wallet()
-        
-        # Calcular valores
-        system_fee = order.value * system_fee_percent
-        provider_amount = order.value - system_fee
-        
-        if client_wallet.escrow_balance < order.value:
-            raise ValueError(f"Saldo em escrow insuficiente. Necessário: {order.value}, disponível: {client_wallet.escrow_balance}")
-        
-        try:
+        def _release_escrow_operation():
+            order = Order.query.get(order_id)
+            if not order:
+                raise ValueError("Ordem não encontrada")
+            
+            if not order.provider_id:
+                raise ValueError("Ordem não tem prestador associado")
+            
+            client_wallet = Wallet.query.filter_by(user_id=order.client_id).first()
+            provider_wallet = Wallet.query.filter_by(user_id=order.provider_id).first()
+            
+            if not client_wallet or not provider_wallet:
+                raise ValueError("Carteira não encontrada")
+            
+            # Garantir que admin tem carteira
+            admin_wallet = WalletService.ensure_admin_has_wallet()
+            
+            # Calcular valores
+            system_fee = order.value * system_fee_percent
+            provider_amount = order.value - system_fee
+            
+            # Validar saldo em escrow dentro da mesma transação
+            validate_balance_integrity(client_wallet, order.value, "escrow_release")
+            
             # 1. Liberar do escrow do cliente
             client_wallet.escrow_balance -= order.value
             client_wallet.updated_at = datetime.utcnow()
@@ -762,7 +859,20 @@ class WalletService:
             )
             
             db.session.add_all([t1, t2, t3])
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="release_from_escrow",
+                user_id=order.client_id,
+                amount=order.value,
+                details={
+                    'order_id': order_id,
+                    'provider_id': order.provider_id,
+                    'provider_amount': provider_amount,
+                    'system_fee': system_fee,
+                    'system_fee_percent': system_fee_percent
+                }
+            )
             
             return {
                 'success': True,
@@ -775,33 +885,34 @@ class WalletService:
                 'provider_new_balance': provider_wallet.balance,
                 'admin_new_balance': admin_wallet.balance
             }
-            
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise ValueError(f"Erro ao liberar escrow: {str(e)}")
+        
+        return execute_with_retry(
+            operation=_release_escrow_operation,
+            operation_name=f"release_from_escrow_order_{order_id}"
+        )
 
     @staticmethod
     def refund_from_escrow(order_id):
         """
-        Reembolsa o valor em escrow para o cliente em caso de cancelamento
+        Reembolsa o valor em escrow para o cliente em caso de cancelamento (operação atômica)
         
         Fluxo:
         1. Verificar se ordem existe e tem valor em escrow
         2. Devolver tokens do escrow para o saldo principal do cliente
         3. Registrar transação de reembolso para auditoria
         """
-        order = Order.query.get(order_id)
-        if not order:
-            raise ValueError("Ordem não encontrada")
-        
-        client_wallet = Wallet.query.filter_by(user_id=order.client_id).first()
-        if not client_wallet:
-            raise ValueError("Carteira do cliente não encontrada")
-        
-        if client_wallet.escrow_balance < order.value:
-            raise ValueError(f"Saldo em escrow insuficiente para reembolso. Necessário: {order.value}, disponível: {client_wallet.escrow_balance}")
-        
-        try:
+        def _refund_escrow_operation():
+            order = Order.query.get(order_id)
+            if not order:
+                raise ValueError("Ordem não encontrada")
+            
+            client_wallet = Wallet.query.filter_by(user_id=order.client_id).first()
+            if not client_wallet:
+                raise ValueError("Carteira do cliente não encontrada")
+            
+            # Validar saldo em escrow dentro da mesma transação
+            validate_balance_integrity(client_wallet, order.value, "escrow_release")
+            
             # Devolver tokens do escrow para o saldo principal
             client_wallet.escrow_balance -= order.value
             client_wallet.balance += order.value
@@ -816,7 +927,18 @@ class WalletService:
                 order_id=order_id
             )
             db.session.add(transaction)
-            db.session.commit()
+            
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="refund_from_escrow",
+                user_id=order.client_id,
+                amount=order.value,
+                details={
+                    'order_id': order_id,
+                    'new_balance': client_wallet.balance,
+                    'new_escrow_balance': client_wallet.escrow_balance
+                }
+            )
             
             return {
                 'success': True,
@@ -825,10 +947,11 @@ class WalletService:
                 'new_escrow_balance': client_wallet.escrow_balance,
                 'transaction_id': transaction.id
             }
-            
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise ValueError(f"Erro ao processar reembolso: {str(e)}")
+        
+        return execute_with_retry(
+            operation=_refund_escrow_operation,
+            operation_name=f"refund_from_escrow_order_{order_id}"
+        )
 
     @staticmethod
     def resolve_dispute_custom_split(order_id, client_percentage, provider_percentage, system_fee_percentage=0.0):
@@ -955,46 +1078,212 @@ class WalletService:
             raise ValueError(f"Erro ao resolver disputa: {str(e)}")
     
     @staticmethod
+    def release_escrow_to_balance(user_id, amount, order_id, description):
+        """
+        Libera um valor específico do escrow para o saldo principal do usuário
+        
+        Args:
+            user_id: ID do usuário
+            amount: Valor a liberar
+            order_id: ID da ordem relacionada
+            description: Descrição da transação
+            
+        Returns:
+            dict com resultado da operação
+        """
+        if amount <= 0:
+            raise ValueError("Valor deve ser positivo")
+        
+        amount = Decimal(str(amount))
+        
+        def _release_operation():
+            wallet = Wallet.query.filter_by(user_id=user_id).first()
+            if not wallet:
+                raise ValueError(f"Carteira do usuário {user_id} não encontrada")
+            
+            # Validar saldo em escrow
+            if wallet.escrow_balance < amount:
+                raise EscrowIntegrityError(
+                    f"Saldo em escrow insuficiente. Necessário: {amount}, disponível: {wallet.escrow_balance}"
+                )
+            
+            # Transferir do escrow para saldo principal
+            wallet.escrow_balance -= amount
+            wallet.balance += amount
+            wallet.updated_at = datetime.utcnow()
+            
+            # Registrar transação
+            transaction = Transaction(
+                user_id=user_id,
+                type="escrow_liberacao",
+                amount=amount,
+                description=description,
+                order_id=order_id
+            )
+            db.session.add(transaction)
+            
+            # Log da operação
+            log_financial_operation(
+                operation_type="release_escrow_to_balance",
+                user_id=user_id,
+                amount=amount,
+                details={
+                    'order_id': order_id,
+                    'description': description,
+                    'new_balance': float(wallet.balance),
+                    'new_escrow_balance': float(wallet.escrow_balance)
+                }
+            )
+            
+            return {
+                'success': True,
+                'new_balance': float(wallet.balance),
+                'new_escrow_balance': float(wallet.escrow_balance),
+                'transaction_id': transaction.id
+            }
+        
+        return execute_with_retry(
+            operation=_release_operation,
+            operation_name=f"release_escrow_to_balance_user_{user_id}_order_{order_id}"
+        )
+    
+    @staticmethod
+    def transfer_from_escrow_to_user(from_user_id, to_user_id, amount, order_id, description):
+        """
+        Transfere um valor do escrow de um usuário para o saldo de outro usuário
+        
+        Args:
+            from_user_id: ID do usuário que tem o valor em escrow
+            to_user_id: ID do usuário que receberá o valor
+            amount: Valor a transferir
+            order_id: ID da ordem relacionada
+            description: Descrição da transação
+            
+        Returns:
+            dict com resultado da operação
+        """
+        if amount <= 0:
+            raise ValueError("Valor deve ser positivo")
+        
+        amount = Decimal(str(amount))
+        
+        def _transfer_operation():
+            from_wallet = Wallet.query.filter_by(user_id=from_user_id).first()
+            to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
+            
+            if not from_wallet:
+                raise ValueError(f"Carteira do usuário {from_user_id} não encontrada")
+            if not to_wallet:
+                # Se for admin, garantir que tem carteira
+                if to_user_id == WalletService.ADMIN_USER_ID:
+                    WalletService.ensure_admin_has_wallet()
+                    to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
+                else:
+                    raise ValueError(f"Carteira do usuário {to_user_id} não encontrada")
+            
+            # Validar saldo em escrow
+            if from_wallet.escrow_balance < amount:
+                raise EscrowIntegrityError(
+                    f"Saldo em escrow insuficiente. Necessário: {amount}, disponível: {from_wallet.escrow_balance}"
+                )
+            
+            # Transferir do escrow para o destinatário
+            from_wallet.escrow_balance -= amount
+            to_wallet.balance += amount
+            from_wallet.updated_at = datetime.utcnow()
+            to_wallet.updated_at = datetime.utcnow()
+            
+            # Registrar transações
+            from_transaction = Transaction(
+                user_id=from_user_id,
+                type="escrow_liberacao",
+                amount=-amount,
+                description=f"{description} (transferido para usuário {to_user_id})",
+                order_id=order_id,
+                related_user_id=to_user_id
+            )
+            
+            to_transaction = Transaction(
+                user_id=to_user_id,
+                type="recebimento",
+                amount=amount,
+                description=description,
+                order_id=order_id,
+                related_user_id=from_user_id
+            )
+            
+            db.session.add_all([from_transaction, to_transaction])
+            
+            # Log da operação
+            log_financial_operation(
+                operation_type="transfer_from_escrow_to_user",
+                user_id=from_user_id,
+                amount=amount,
+                details={
+                    'to_user_id': to_user_id,
+                    'order_id': order_id,
+                    'description': description,
+                    'from_new_escrow': float(from_wallet.escrow_balance),
+                    'to_new_balance': float(to_wallet.balance)
+                }
+            )
+            
+            return {
+                'success': True,
+                'from_new_escrow_balance': float(from_wallet.escrow_balance),
+                'to_new_balance': float(to_wallet.balance),
+                'from_transaction_id': from_transaction.id,
+                'to_transaction_id': to_transaction.id
+            }
+        
+        return execute_with_retry(
+            operation=_transfer_operation,
+            operation_name=f"transfer_from_escrow_user_{from_user_id}_to_{to_user_id}_order_{order_id}"
+        )
+
+    @staticmethod
     def transfer_tokens_between_users(from_user_id, to_user_id, amount, description):
-        """Transfere tokens entre dois usuários (incluindo AdminUsers)"""
+        """Transfere tokens entre dois usuários (operação atômica)"""
         if amount <= 0:
             raise ValueError("Valor deve ser positivo")
         
         if from_user_id == to_user_id:
             raise ValueError("Não é possível transferir para o mesmo usuário")
         
-        # Verificar se remetente tem carteira e saldo suficiente
-        from_wallet = Wallet.query.filter_by(user_id=from_user_id).first()
-        if not from_wallet:
-            # Tentar criar carteira se for usuário normal
-            try:
-                WalletService.ensure_user_has_wallet(from_user_id)
-                from_wallet = Wallet.query.filter_by(user_id=from_user_id).first()
-            except:
-                raise ValueError(f"Carteira do remetente (ID {from_user_id}) não encontrada")
-        
-        if from_wallet.balance < amount:
-            raise ValueError(f"Saldo insuficiente. Saldo atual: {from_wallet.balance}, valor solicitado: {amount}")
-        
-        # Verificar se destinatário tem carteira
-        to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
-        if not to_wallet:
-            # Se for o admin principal (ID 0), garantir que tem carteira
-            if to_user_id == WalletService.ADMIN_USER_ID:
-                WalletService.ensure_admin_has_wallet()
-                to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
-            else:
+        def _transfer_operation():
+            # Verificar se remetente tem carteira e saldo suficiente
+            from_wallet = Wallet.query.filter_by(user_id=from_user_id).first()
+            if not from_wallet:
                 # Tentar criar carteira se for usuário normal
                 try:
-                    WalletService.ensure_user_has_wallet(to_user_id)
-                    to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
+                    WalletService.ensure_user_has_wallet(from_user_id)
+                    from_wallet = Wallet.query.filter_by(user_id=from_user_id).first()
                 except:
-                    raise ValueError(f"Carteira do destinatário (ID {to_user_id}) não encontrada")
-        
-        try:
-            # Realizar transferência
+                    raise ValueError(f"Carteira do remetente (ID {from_user_id}) não encontrada")
+            
+            # Validar saldo dentro da mesma transação
+            validate_balance_integrity(from_wallet, amount, "debit")
+            
+            # Verificar se destinatário tem carteira
+            to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
+            if not to_wallet:
+                # Se for o admin principal (ID 0), garantir que tem carteira
+                if to_user_id == WalletService.ADMIN_USER_ID:
+                    WalletService.ensure_admin_has_wallet()
+                    to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
+                else:
+                    # Tentar criar carteira se for usuário normal
+                    try:
+                        WalletService.ensure_user_has_wallet(to_user_id)
+                        to_wallet = Wallet.query.filter_by(user_id=to_user_id).first()
+                    except:
+                        raise ValueError(f"Carteira do destinatário (ID {to_user_id}) não encontrada")
+            
+            # Realizar transferência atômica
             from_wallet.balance -= amount
             to_wallet.balance += amount
+            from_wallet.updated_at = datetime.utcnow()
+            to_wallet.updated_at = datetime.utcnow()
             
             # Registrar transação para o remetente (saída)
             from_transaction = Transaction(
@@ -1016,7 +1305,18 @@ class WalletService:
             )
             db.session.add(to_transaction)
             
-            db.session.commit()
+            # Log da operação para auditoria
+            log_financial_operation(
+                operation_type="transfer_tokens_between_users",
+                user_id=from_user_id,
+                amount=amount,
+                details={
+                    'to_user_id': to_user_id,
+                    'description': description,
+                    'from_new_balance': from_wallet.balance,
+                    'to_new_balance': to_wallet.balance
+                }
+            )
             
             return {
                 'success': True,
@@ -1025,7 +1325,8 @@ class WalletService:
                 'from_new_balance': from_wallet.balance,
                 'to_new_balance': to_wallet.balance
             }
-            
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            raise e
+        
+        return execute_with_retry(
+            operation=_transfer_operation,
+            operation_name=f"transfer_tokens_user_{from_user_id}_to_{to_user_id}"
+        )

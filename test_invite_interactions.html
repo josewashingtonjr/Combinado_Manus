@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Interações da Página de Convite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="static/css/invite.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Logo do Sistema -->
+                <div class="text-center mb-4">
+                    <img src="static/images/logo.svg" 
+                         alt="Logo Sistema Combinado" 
+                         class="img-fluid"
+                         style="max-height: 100px;">
+                </div>
+                
+                <h1 class="text-center mb-4">Teste das Interações JavaScript</h1>
+                
+                <!-- Teste de Botões de Ação -->
+                <div class="test-section">
+                    <h3><i class="fas fa-mouse-pointer me-2"></i>Botões de Ação</h3>
+                    <p>Teste os estados de loading e confirmações:</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <form onsubmit="return false;">
+                                <button type="submit" class="btn btn-success btn-lg w-100 accept-btn">
+                                    <i class="fas fa-check me-2"></i>
+                                    <span class="btn-text">Aceitar Convite</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-danger btn-lg w-100 reject-btn" 
+                                    data-bs-toggle="modal" data-bs-target="#testRejectModal">
+                                <i class="fas fa-times me-2"></i>
+                                <span class="btn-text">Rejeitar Convite</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teste de Validação de Formulário -->
+                <div class="test-section">
+                    <h3><i class="fas fa-check-circle me-2"></i>Validação de Formulário</h3>
+                    <p>Teste as validações em tempo real:</p>
+                    <form id="testCadastroForm" onsubmit="return false;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="test_nome" class="form-label">Nome Completo</label>
+                                    <input type="text" class="form-control" id="test_nome" name="nome" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="test_email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="test_email" name="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="test_cpf" class="form-label">CPF</label>
+                                    <input type="text" class="form-control" id="cpf" name="cpf" maxlength="14" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="test_phone" class="form-label">Telefone</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Senha</label>
+                                    <input type="password" class="form-control" id="password" name="password" minlength="6" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirmar Senha</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" minlength="6" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                Aceito os termos de uso
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Testar Validação
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Teste de Motivos Rápidos -->
+                <div class="test-section">
+                    <h3><i class="fas fa-list me-2"></i>Motivos Rápidos</h3>
+                    <p>Teste a seleção de motivos rápidos:</p>
+                    <div class="mb-3">
+                        <label for="test_reason" class="form-label">Motivo da rejeição</label>
+                        <textarea class="form-control" id="reject_reason" rows="3"></textarea>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                data-reason="Não tenho disponibilidade na data solicitada">
+                            <i class="fas fa-calendar-times me-1"></i>Sem disponibilidade
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                data-reason="Não trabalho com este tipo de serviço">
+                            <i class="fas fa-tools me-1"></i>Fora da especialidade
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm quick-reason" 
+                                data-reason="Localização muito distante">
+                            <i class="fas fa-map-marker-alt me-1"></i>Localização distante
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teste de Toasts -->
+                <div class="test-section">
+                    <h3><i class="fas fa-bell me-2"></i>Notificações Toast</h3>
+                    <p>Teste os diferentes tipos de notificação:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-success" onclick="testToast('success')">
+                            <i class="fas fa-check me-1"></i>Sucesso
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="testToast('error')">
+                            <i class="fas fa-times me-1"></i>Erro
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="testToast('info')">
+                            <i class="fas fa-info me-1"></i>Informação
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="testToast('warning')">
+                            <i class="fas fa-exclamation me-1"></i>Aviso
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Teste -->
+    <div class="modal fade" id="testRejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Teste de Rejeição</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="rejectForm" onsubmit="return false;">
+                    <div class="modal-body">
+                        <p>Este é um teste do modal de rejeição.</p>
+                        <div class="mb-3">
+                            <label for="modal_reason" class="form-label">Motivo</label>
+                            <textarea class="form-control" id="modal_reason" name="reason" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger confirm-reject-btn">
+                            <i class="fas fa-times me-2"></i>
+                            <span class="btn-text">Confirmar Teste</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/js/invite-interactions.js"></script>
+    <script>
+        // Funções de teste para toasts
+        function testToast(type) {
+            const messages = {
+                'success': 'Operação realizada com sucesso!',
+                'error': 'Ocorreu um erro durante a operação.',
+                'info': 'Esta é uma mensagem informativa.',
+                'warning': 'Atenção: verifique os dados inseridos.'
+            };
+            
+            // Acessar a instância da classe InviteInteractions
+            if (window.inviteInteractions) {
+                window.inviteInteractions.showToast(messages[type], type);
+            } else {
+                alert('InviteInteractions não foi inicializado corretamente.');
+            }
+        }
+
+        // Expor a instância para testes
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                // A instância é criada automaticamente pelo invite-interactions.js
+                console.log('Página de teste carregada. Teste as funcionalidades acima.');
+            }, 100);
+        });
+    </script>
+</body>
+</html>
